@@ -21,6 +21,7 @@ extern FILE *g_logfile;
 uint8_t  g_local_mac[MAC_ADDR_LEN];
 uint32_t g_if_index;
 uint32_t g_if_mtu;
+uint8_t  g_if_name[10];
 
 /*
  * Pre-Initialization
@@ -60,7 +61,7 @@ vps_error initialization(void *reserved)
     vps_trace(VPS_ENTRYEXIT, "Entering Initialization");
 
     /*TODO:Get interface name from *reserved */
-    if((err = get_inf_property("eth0", g_local_mac, &g_if_index,
+    if((err = get_inf_property(g_if_name, g_local_mac, &g_if_index,
 				&g_if_mtu)) != VPS_SUCCESS)
     {
         vps_trace(VPS_ERROR, "Unable to get local mac, interface index, mtu");

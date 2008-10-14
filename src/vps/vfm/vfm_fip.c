@@ -355,7 +355,6 @@ fcoe_vHBA_keep_alive(uint8_t *msg_desc, fcoe_vHBA_alive *alive)
 }
 
 
-
 /** fcoe_vHBA_deregister
  * This function first fills the TLV from the buffer using the
  * get_tlv function. It then fills the predefined data structures

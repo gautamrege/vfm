@@ -13,21 +13,19 @@ extern uint8_t g_if_mtu;
 
 int send_sd = -1;
 /* TODO: Current hard coded mac */
-uint8_t g_bridge_mac[MAC_ADDR_LEN] = {0x00, 0x30, 0x48, 0x68, 0xB3, 0xDE};
-uint8_t g_bridge_enc_mac[MAC_ADDR_LEN] = {0x00, 0x02, 0xC9, 0x01, 0xC8, 0x80};
+uint8_t g_bridge_mac[MAC_ADDR_LEN];
+uint8_t g_bridge_enc_mac[MAC_ADDR_LEN];
 
 /**
  * send buffer on socket.
  *
- * [IN] *sd        : socket descriptor.
  * [IN] *sock_addr : Link layer 2 socket address.
  * [IN] send_type  : Multicast,Unicast etc.
  * [IN] *buff      : packet buffer.
  * [IN] length     : buffer length.
  */
 vps_error
-send_buffer(int *sd, 
-        uint8_t send_type, 
+send_buffer(uint8_t send_type, 
         uint8_t *buff,
         int length)
 {
@@ -37,7 +35,17 @@ send_buffer(int *sd,
 
     g_socket_addr.sll_pkttype = send_type;
 
-    if(sendto(*sd, buff, length, 0, 
+    if(send_sd == -1)
+    {
+        if(VPS_SUCCESS != (err = open_socket(g_if_index, g_local_mac,
+						&send_sd)))
+        {
+            vps_trace(VPS_ERROR, "Error in opening socket");
+            goto out;
+        }
+    }              
+
+    if(sendto(send_sd, buff, length, 0, 
             (struct sockaddr*)&g_socket_addr, sizeof(struct sockaddr_ll)) < 0)
     {
         vps_trace(VPS_ERROR, "Error at send buffer");
@@ -129,37 +137,24 @@ fill_ether_hdr(uint8_t *buff,
  */
 vps_error
 fill_tunnel_hdr(uint8_t *buff,
-                          mlx_tunnel_hdr *tunnel_hdr, 
-                          int *offset)
+        mlx_tunnel_hdr *tunnel_hdr, 
+        int *offset)
 {
 
     vps_error err = VPS_SUCCESS;
 
-    int tunnel_hdr_len;
-    uint8_t tunnel_hdr_type = TUNNEL_HDR_TYPE;
-
     vps_trace(VPS_ENTRYEXIT, "Entering fill_tunnel_hdr");
 
-    /* TODO: Comment */
-    tunnel_hdr_len = (sizeof(mlx_tunnel_hdr) + sizeof(uint16_t) ) / DWORD;
-  
-    /*Copy Tunnel header type  and increament offset by 1 bytes*/
-    memcpy(buff + *offset, &tunnel_hdr_type , sizeof(uint8_t));
 
-    *offset += sizeof(uint8_t);
+    tunnel_hdr->type   = TUNNEL_HDR_TYPE;
+//    tunnel_hdr->length = (sizeof(mlx_tunnel_hdr) + payload_len)/DWORD;
 
-    /*Copy Tunnel header length and increament offset by 1 bytes*/
-    memcpy(buff + *offset, &tunnel_hdr_len , sizeof(uint8_t));
-
-    *offset += sizeof(uint8_t);
-
-   
     /*Copy Tunnel header data and increament offset by tunnel 
      * header length bytes
      */
-    memcpy(buff + *offset, tunnel_hdr , tunnel_hdr_len * DWORD);
+    memcpy(buff + *offset, tunnel_hdr , sizeof(mlx_tunnel_hdr));
 
-    *offset += (tunnel_hdr_len * DWORD) - sizeof(uint16_t);
+    *offset += sizeof(mlx_tunnel_hdr);
     
     vps_trace(VPS_ENTRYEXIT, "Leaving fill_tunnel_hdr");
 
@@ -217,6 +212,8 @@ send_packet(uint8_t tunnel_flag,
     if(tunnel_flag == TRUE)
     {
         /*Fill tunnel header*/
+        tunnel_hdr->length = (sizeof(mlx_tunnel_hdr) + 4*DWORD + 
+                             sizeof(ctrl_hdr) + desc_length)/DWORD;
         fill_tunnel_hdr(buff, tunnel_hdr, &offset);
 
         /* TODO: Clean up this demo HACK */
@@ -233,8 +230,7 @@ send_packet(uint8_t tunnel_flag,
         }
     }
 
-    /*-- 3. Add control header --*/
-     
+    /*-- 3. Add control header --*/     
     /*Control header*/
     control_hdr->opcode = htons(control_hdr->opcode);
     control_hdr->desc_list_length = htons(control_hdr->desc_list_length);
@@ -265,18 +261,8 @@ send_packet(uint8_t tunnel_flag,
 
     offset += sizeof(uint32_t);
 
-    if(send_sd == -1)
-    {
-        if(VPS_SUCCESS != (err = open_socket(g_if_index, g_local_mac,
-						&send_sd)))
-        {
-            vps_trace(VPS_ERROR, "Error in opening socket");
-            goto out;
-        }
-    }              
-
     /*--8.send data by socket*/
-    if((err = send_buffer(&send_sd, MULTICAST, buff, offset ))!= VPS_SUCCESS)
+    if((err = send_buffer( MULTICAST, buff, offset ))!= VPS_SUCCESS)
     {
         vps_trace(VPS_ERROR, "Packet send err");
         err = VPS_ERROR_SEND_PK;
@@ -286,4 +272,72 @@ out:
 
     vps_trace(VPS_ENTRYEXIT, "Leaving send packet");
     return err; 
+}
+
+/*
+ * Send FC packet.
+ *
+ *[IN] *vfm_mac    : Mac addresss of VFM
+ *[IN] *bridge_mac : Mac addresss of BridgeX.
+ *[IN] *tunnel_hdr : Tunnel Header to add to packet.
+ *[IN] *desc_buff  : Descriptor buffer to add to packet.
+ *[IN] *desc_len   : Descriptor buffer length.
+ *
+ * Return : error code.
+ *          Packet sending error. 
+ */
+vps_error send_fc_packet( uint8_t *vfm_mac,  
+                          uint8_t *bridge_mac,
+                          mlx_tunnel_hdr *tunnel_hdr,
+                          uint8_t *desc_buff,
+                          uint32_t desc_len)
+{
+ 
+    vps_error err = VPS_SUCCESS;
+
+    uint8_t buff[MAX_PK_LEN];
+    uint32_t offset       = 0;
+    uint32_t vlan_tag     = 0; 
+    uint32_t en_footer    = 0; 
+    uint32_t fc_footer    = 0;
+    uint32_t sof          = 0;
+
+
+    vps_trace(VPS_ENTRYEXIT, "Entering send_fc_packet");
+
+
+    /*-- 1.Add ethernet header.-- */
+    fill_ether_hdr(buff, g_bridge_mac, vfm_mac, &vlan_tag, &offset);
+
+    /*--2.Fill tunnel header */  
+    /* Tunnel Header Length + SOF length + Descriptor Length +FC footer length + */
+    tunnel_hdr->length = (sizeof(mlx_tunnel_hdr) + DWORD + desc_len + DWORD)/DWORD;
+    fill_tunnel_hdr(buff, tunnel_hdr, &offset);
+
+    /*--3.Add SOF to FC header.--*/
+    memcpy(buff + offset, &sof , sizeof(uint32_t));
+    offset += sizeof(uint32_t);
+
+    /*--4.Add FC header and message descriptor.--*/
+    memcpy(buff + offset, desc_buff , desc_len);
+    offset += desc_len; 
+
+    /*--5.Add  FC footer.--*/
+    memcpy(buff + offset, &fc_footer , sizeof(uint32_t));
+    offset += sizeof(uint32_t);
+
+    /*--6.Add ethernet footer.--*/
+    memcpy(buff + offset, &en_footer , sizeof(uint32_t));
+    offset += sizeof(uint32_t);
+
+    /*--7.send data by socket*/
+    if((err = send_buffer( MULTICAST, buff, offset ))!= VPS_SUCCESS)
+    {
+        vps_trace(VPS_ERROR, "Packet send err");
+        err = VPS_ERROR_SEND_PK;
+    }
+     
+    vps_trace(VPS_ENTRYEXIT, "Leaving send_fc_packet");
+
+    return err;
 }

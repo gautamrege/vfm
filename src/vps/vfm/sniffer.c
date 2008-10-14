@@ -112,7 +112,6 @@ read_tunnel_hdr(uint8_t *buff,
         mlx_tunnel_hdr *tunnel_hdr)
 {
     vps_error err = VPS_SUCCESS;
-    uint8_t tunnel_pk_len = 0;
 
     vps_trace(VPS_ENTRYEXIT, "Entering read_tunnel_hdr");
 
@@ -128,23 +127,10 @@ read_tunnel_hdr(uint8_t *buff,
     {
         vps_trace(VPS_INFO, "Tunneled packet..");
 
-        (*ret_pos)++;
-
-        /* Get length of tunnel header */   
-
-        /*** TODO: BUG??? SHould the Tunnel Header keep the Packet DWORD 
-          * length or ONLY the tunnel DWORD lenght
-          * DEMO: Ignoring tunnel length
-          */
-        //tunnel_pk_len = buff[*ret_pos] * DWORD - sizeof(uint16_t);    
-        tunnel_pk_len = 6 * DWORD - sizeof(uint16_t);    
-
-        (*ret_pos)++;
-
         /* copy bytes from buffer to tunnel header strucuter  */
-        memcpy(tunnel_hdr, buff + *ret_pos, tunnel_pk_len);
+        memcpy(tunnel_hdr, buff + *ret_pos, sizeof(mlx_tunnel_hdr));
 
-        *ret_pos = *ret_pos + tunnel_pk_len;
+        *ret_pos = *ret_pos + sizeof(mlx_tunnel_hdr);
 
         /* convert network byte order to host byte order 
          * Mask first byte because both gw_id and vfm_id size are 24 bits 
@@ -269,10 +255,14 @@ decide_packet(eth_hdr *fip_eth_hdr_fw, mlx_tunnel_hdr *t_hdr,
             {
                 case 2:
                     /* TODO: remove this comment later on 
-                     * Sending Broadcast  GW Advertisement 
                      * fcoe_bridgeX_discovery(desc_buff, &adv); 
                      */
 
+                    /* Sending VFM FLOGI */
+                    create_packet(2, 1, NULL);
+                    vps_trace(VPS_ERROR, "--*** SENT VFM FLOGI***--");
+
+                  /* Sending Broadcast  GW Advertisement */
                     memset(multicast_mac, 0xFF, 6);
                     create_packet(1, 2, multicast_mac);
                     vps_trace(VPS_ERROR, "--*** SENT MULTICAST GW ADVERTISEMENT***--");
@@ -286,11 +276,9 @@ decide_packet(eth_hdr *fip_eth_hdr_fw, mlx_tunnel_hdr *t_hdr,
                 case 1 :  
                     vps_trace(VPS_ERROR, "--*** FLOGI REQUEST RECEIVED ***--");
 
-                    t_hdr->port_num |= SET_E; 
-                    send_packet(1 , g_local_mac, 
-                            fip_eth_hdr_fw->shost_mac, fip_eth_hdr_fw->dhost_mac,
-                            t_hdr, c_hdr, desc_buff);
-                    vps_trace(VPS_ERROR, "--*** FLOGI REQUEST SENT TO BRIDGE (E=1) ***--");
+                    prepare_fdisc_request(desc_buff);
+
+                    vps_trace(VPS_ERROR, "--*** FDISC REQUEST SENT TO BRIDGE (E=1) ***--");
 
                 case 2 :
                     break;

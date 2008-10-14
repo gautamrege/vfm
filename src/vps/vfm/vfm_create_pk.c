@@ -16,6 +16,12 @@ extern uint8_t g_bridge_mac[MAC_ADDR_LEN];
 #define SET_S  0x2
 #define SET_F  0x1
 
+#define SET_E            0x80       /* to set the tunnel hdr E flag */ 
+
+/* Size of FLOGI/FDISC request*/
+#define FLOGI_SIZE 35
+
+
 /**
  * create_tlv
  * This function fills the TLV i.e the Type, length, value structure
@@ -292,7 +298,7 @@ fcoe_vfm_vHBA_deregister(fcoe_vHBA_dereg *dereg, uint8_t *msg_desc)
 }
 
 vps_error
-prepare_fcoe_vHBA_advertisement(ctrl_hdr *hdr, uint8_t **msg_desc)
+prepare_fcoe_vHBA_advertisement(ctrl_hdr *control_hdr, uint8_t **msg_desc)
 {
     fcoe_vHBA_adv gw_adv;
     vps_error err = VPS_SUCCESS;
@@ -323,17 +329,63 @@ prepare_fcoe_vHBA_advertisement(ctrl_hdr *hdr, uint8_t **msg_desc)
     gw_adv.fka_adv_period = htonl(50000); 
 
     /* Allocate memory for the descriptor list or Payload */ 
-    *msg_desc = (uint8_t *)malloc(hdr->desc_list_length * DWORD);
-    memset(*msg_desc, 0, hdr->desc_list_length * DWORD);
+    *msg_desc = (uint8_t *)malloc(control_hdr->desc_list_length * DWORD);
+    memset(*msg_desc, 0, control_hdr->desc_list_length * DWORD);
    
     fcoe_vHBA_advertisement(&gw_adv, *msg_desc);
     
     vps_trace(VPS_ENTRYEXIT, "Leaving prepare_fcoe_vHBA_advertisement");
     return err;
 
+}
+
+/** prepare_fdisc_request 
+  * This function takes the payload of the flogi request from the Host
+  * and then converts it into a FDISC request by changing the LS command code
+  * It also creates the FC header and appends the FDISC payload to it and
+  * forwards it to the Software GW( i.e. BridgeX).
+  * 
+  * *data [IN] : Contains the TLV of FLOGI payload. 
+  *
+  */
+vps_error 
+prepare_fdisc_request(void *data)
+{
+
+    uint8_t *payload;
+    mlx_tunnel_hdr tun_hdr;
+    vps_error err = VPS_SUCCESS;
+
+    vps_trace(VPS_ENTRYEXIT, "Entering prepare_fdisc_request");
+
+
+    /* Prepare Default tunnel */
+    memset(&tun_hdr, 0, sizeof(tun_hdr));
+
+    tun_hdr.port_num |= SET_E; 
+    /* T10 Vender ID = "Mellanox" */
+    strcpy(tun_hdr.t10_vender_id, "MELLANOX");
+
+    /* prepare FC Header  and Payload */  
+    payload = (uint8_t *)malloc(FLOGI_SIZE * DWORD );
+    memset(payload, 0, FLOGI_SIZE * DWORD);
+
+    data += DWORD;              /* Move data 1 DWORD ahead to FC payload */
+    memcpy(payload, data, FLOGI_SIZE * DWORD);
+
+    /* Convert FLOGI to FDISC */
+//    memcpy(payload, 0x51, sizeof(uint8_t));
+   payload[6 * DWORD] = 0x51;
+
+   
+    send_fc_packet(g_local_mac, g_bridge_mac, &tun_hdr, payload, FLOGI_SIZE * DWORD);
+
+    vps_trace(VPS_ENTRYEXIT, "Leaving prepare_fdisc_request");
+    return err;
 
 
 }
+
 
 /** create_packet
   *
@@ -365,10 +417,11 @@ create_packet(uint16_t op,
     
     vps_error err = VPS_SUCCESS;
     uint8_t tunnel_flag;
+    uint32_t desc_len;
     uint8_t *msg_desc;
     uint8_t conx_mac[MAC_ADDR_LEN];
     uint8_t broad_mac[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF} ;
-    ctrl_hdr hdr;
+    ctrl_hdr control_hdr;
     mlx_tunnel_hdr tun_hdr;
 
     vps_trace(VPS_ENTRYEXIT, "Entering create_packet");
@@ -380,19 +433,20 @@ create_packet(uint16_t op,
     strcpy(tun_hdr.t10_vender_id, "MELLANOX");
     /* TODO: Fill the other tunnel default values */
 
-    /* Prepare Default header */
-    memset(&hdr, 0, sizeof(hdr));
+
+    /* Prepare Default Control header */
+    memset(&control_hdr, 0, sizeof(control_hdr));
 
     /* VFM BridgeX Advertisement Respone i.e.Gateway Advertisement to Host */
     if(op == 1 && subop == 2)
     {
-        hdr.opcode  = 1;
-        hdr.subcode = 2;
-        hdr.reserved = 0;
-        hdr.desc_list_length = 13;
-        hdr.flags |= SET_FP;
-        hdr.flags |= SET_SP;
-        hdr.flags |= SET_F;
+        control_hdr.opcode  = 1;
+        control_hdr.subcode = 2;
+        control_hdr.reserved = 0;
+        control_hdr.desc_list_length = 13;
+        control_hdr.flags |= SET_FP;
+        control_hdr.flags |= SET_SP;
+        control_hdr.flags |= SET_F;
         
         /* Copy Host MAC address which is sent in connectX Discovery*/
         memcpy(conx_mac, data, 6 * sizeof(uint8_t));
@@ -402,11 +456,18 @@ create_packet(uint16_t op,
             /* If and only if this is a unicast message to a conx
              * then set A = 1 & S = 1.
              */
-            hdr.flags |= SET_A;
-            hdr.flags |= SET_S;
+            control_hdr.flags |= SET_A;
+            control_hdr.flags |= SET_S;
         }
 
-        prepare_fcoe_vHBA_advertisement(&hdr, &msg_desc);
+        prepare_fcoe_vHBA_advertisement(&control_hdr, &msg_desc);
+        
+        /* Call to the function which will take this payload and then send the
+         * packet by putting the ethernet and tunnel header.
+         */
+        send_packet(tunnel_flag, g_local_mac, conx_mac, g_bridge_mac,
+                                                        &tun_hdr, &control_hdr, msg_desc);
+
     } 
 
     /* Associating a VFM with a bridge i.e. VFM response to bridge adv */
@@ -414,7 +475,6 @@ create_packet(uint16_t op,
     {
 
         /*TODO Set Flags*/
-        msg_desc = (uint8_t *)malloc(12 * DWORD);
         fcoe_bridge_adv_res(data, msg_desc);
     }
 
@@ -425,13 +485,30 @@ create_packet(uint16_t op,
         /*TODO Complete the whole function*/
     }
     
-    
+    else if(op == 2 && subop == 1)
+    {
+
+        tun_hdr.port_num |= SET_E;
+        /* Create VFM FLOGI Request */
+        msg_desc = (uint8_t *)malloc(FLOGI_SIZE * DWORD);
+        memset(msg_desc, 0 , FLOGI_SIZE * DWORD);
+
+       /* TODO: HACK: Fixing the FC header */
+	msg_desc[0] = 0x22;
+	msg_desc[1] = 0xff;
+	msg_desc[2] = 0xff;
+	msg_desc[3] = 0xfe;
+	msg_desc[12] = 0x01;
+	msg_desc[13] = 0x29;
+        /* To send the FC packet on the FC Plane */
+
+        send_fc_packet(g_local_mac, g_bridge_mac, &tun_hdr, msg_desc, FLOGI_SIZE * DWORD);
+
+    }
         
     /** Call to the function which will take this payload and then send the 
       * packet by putting the ethernet and tunnel header.
       */
-    send_packet(tunnel_flag, g_local_mac, conx_mac, g_bridge_mac, 
-                                        &tun_hdr, &hdr, msg_desc);
 
     vps_trace(VPS_ENTRYEXIT, "Leaving create_packet ");
     return err;

@@ -51,8 +51,8 @@
 #define TLV_12           12
 
                                     /* MELLANOX SPECIFIC TLV's */
-#define MLX_TLV_1        101        /* Table 9: VFM Solicitation Descriptor                                                       for BridgeX */
-#define MLX_TLV_2        102        /* Table 5: BridgeX Discovery Advertisement                                                   Descriptor – */
+#define MLX_TLV_1        101        /* Table 9: VFM Solicitation Descriptor  for BridgeX */
+#define MLX_TLV_2        102        /* Table 5: BridgeX Discovery Advertisement Descriptor */
 
 #define GET_PK_TYPE(op, subop) ((uint32_t)(op) << 8 | (subop)) & 0x00ffffff
 
@@ -61,6 +61,12 @@
 #define VFM_RES GET_PK_TYPE(0xFFFA, 0x1)
 #define CX_DISC GET_PK_TYPE(   0x1, 0x1)
 #define GW_ADV  GET_PK_TYPE(   0x1, 0x2)
+
+/*Get First byte */
+#define GET_FIRST_BYTE(dword) (uint8_t)((dword & 0xFF000000) >> 24)
+
+/*Get Last 3 bytes */
+#define GET_LAST_3_BYTES(dword) (dword & 0x00FFFFFF)
 
 
 /* Ethernet  header. */
@@ -72,6 +78,44 @@ typedef struct __eth_hdr{
     /* Version is the most significant 4-bits. last 12=bit is reserved */
     uint16_t version;
 }eth_hdr;
+
+/* FC Header*/
+typedef struct __fc_hdr{
+    uint32_t sof;                   /* start of frame delimiter */
+    /* link service 22h = Unsolocited control for request
+       23h = Solocited control for request 
+       and frame destination address 
+       Route Control   = 0xFF000000 >> 24;
+       Dest  identifier= 0x00FFFFFF; 
+     */
+    uint32_t rt_ctrl_dest_id;     
+    /*reserved + Frame source address 
+      Reserved          = 0xFF000000 >> 24;
+      Source  identifier= 0x00FFFFFF; */
+    uint32_t src_id; 
+
+    /*01h = Extended Link Service 
+      290000h = frame is from the originator of the exchange 
+      990000h = frame is from the originator of the exchange  
+      Type          = 0xFF000000 >> 24;
+      Frame Control = 0x00FFFFFF; 
+     */                                 
+    uint32_t type_frame_ctrl; 
+    uint8_t seq_id;                /* Uniquely identifies frames in a 
+                                      non-streamed sequence or 
+                                      when only one sequence is open */
+    uint8_t data_field_ctrl;       /*Set to 00h to indicate that 
+                                      no optional FC headers are used*/
+    uint16_t seq_count;            /*Indicates the sequential order
+                                      of frames within a sequence. 
+                                      Start with 0000h */
+    uint16_t org_id;               /*Assigned by originator*/
+    uint16_t res_id;               /*Assigned by originator*/   
+    uint32_t parameter;            /* set 00000000h*/ 
+}fc_hdr;
+
+
+
 
 /* Standard Control Header structure.*/
 typedef struct __ctrl_hdr {
@@ -94,6 +138,8 @@ typedef struct __mlx_hdr {
 
 /* Tunnel Header structure */
 typedef struct __mlx_tunnel_hdr {
+    uint8_t type;
+    uint8_t length;
     uint16_t reserved1;
     uint8_t  t10_vender_id[NAME_LEN];  /* T10 Vender ID = "Mellanox" */
     uint8_t  group;
@@ -350,5 +396,23 @@ vps_error send_packet(uint8_t tunnel_flag,
         ctrl_hdr *control_hdr,
         uint8_t *desc_buff);
 
+/*Create packet for sending
+ *
+ *[IN] *vfm_mac    : Mac addresss of VFM
+ *[IN] *bridge_mac : Mac addresss of BridgeX.
+ *[IN] *tunnel_hdr : Tunnel Header to add to packet.
+ *[IN] *desc_buff  : Descriptor buffer to add to packet.
+ *[IN] desc_len
+ *
+ * Return : error code.
+ *          Packet sending error.
+ */
+
+vps_error send_fc_packet(
+        uint8_t *vfm_mac,
+        uint8_t *bridge_mac,
+        mlx_tunnel_hdr *tunnel_hdr,
+        uint8_t *desc_buff,
+        uint32_t desc_len);
 
 #endif /* __VFM_FIP_H_ */
