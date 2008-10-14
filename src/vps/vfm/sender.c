@@ -1,5 +1,7 @@
+/*
+ * Copyright (c) 2008  VirtualPlane Systems, Inc.
+ */
 #include <net_util.h>
-
 
 #define MULTICAST PACKET_MULTICAST
 #define BROADCAST PACKET_BROADCAST

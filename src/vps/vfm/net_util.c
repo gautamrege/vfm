@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) 2008  VirtualPlane Systems, Inc.
+ */
 #include<net_util.h>
 
 struct sockaddr_ll g_socket_addr;

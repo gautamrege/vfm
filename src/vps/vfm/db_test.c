@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) 2008  VirtualPlane Systems, Inc.
+ */
 #ifdef DB_TEST
 
 #include <common.h>

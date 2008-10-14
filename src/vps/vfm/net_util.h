@@ -1,4 +1,6 @@
-
+/*
+ * Copyright (c) 2008  VirtualPlane Systems, Inc.
+ */
 #ifndef __NET_UTIL_H_
 #define __NET_UTIL_H_
 

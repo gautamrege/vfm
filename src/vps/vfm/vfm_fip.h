@@ -1,7 +1,8 @@
 /*
- *  Header File : Data Structures for ALL FIP packets
+ * Copyright (c) 2008  VirtualPlane Systems, Inc.
+ * 
+ * Header File: Data Structures for ALL FIP packets
  */
-
 #ifndef __VFM_FIP_H_
 #define __VFM_FIP_H_
 

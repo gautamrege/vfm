@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) 2008  VirtualPlane Systems, Inc.
+ */
 #ifndef __DB_ACCESS_H__
 #define __DB_ACCESS_H__
 

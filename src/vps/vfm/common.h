@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) 2008  VirtualPlane Systems, Inc.
+ */
 #ifndef __VPS_COMMON_H__
 #define __VPS_COMMON_H__
 

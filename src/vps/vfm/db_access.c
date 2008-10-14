@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) 2008  VirtualPlane Systems, Inc.
+ */
 #include <db_access.h>
 
 /* The sqlite database pointer */

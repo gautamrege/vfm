@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) 2008  VirtualPlane Systems, Inc.
+ */
 #include <common.h>
 #include <stdarg.h>
 #include <time.h>

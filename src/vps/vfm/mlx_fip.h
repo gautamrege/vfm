@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) 2008  VirtualPlane Systems, Inc.
+ */
 #ifndef __MLX_FIP_H__
 #define __MLX_FIP_H__
 

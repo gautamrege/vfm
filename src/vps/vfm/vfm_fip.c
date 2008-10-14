@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) 2008  VirtualPlane Systems, Inc.
+ */
 #include<stdio.h>
 #include<stdint.h>
 #include<common.h>

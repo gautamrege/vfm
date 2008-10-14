@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) 2008  VirtualPlane Systems, Inc.
+ */
 create table bridges (
     mac char(6) NOT NULL,                   /* MAC: 48-bits */
     node_name char(8),                      /* 64-bits */

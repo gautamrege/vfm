@@ -1,4 +1,7 @@
-/* The is the VFM server which has the following functionalities:
+/*
+ * Copyright (c) 2008  VirtualPlane Systems, Inc.
+ * 
+ * The is the VFM server which has the following functionalities:
  * - runs as a daemon process
  * - sniffs FIP control packets for solicitations / heartbeat
  * - sends periodic advertisements for virtual interfaces
