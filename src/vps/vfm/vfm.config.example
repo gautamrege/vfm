@@ -1,0 +1,19 @@
+# Do NOT change the order of the configuration variables as far as possible 
+
+# gw_internal_mac: This is the MAC Adress of the SWGW interface wchich is 
+# connected to on internal network
+gw_internal_mac AA:AA:AA:AA:AA:AA
+
+# gw_mac: This is the MAC Adress of the SWGW interface wchich is connected
+# to the Bridge controller
+gw_mac BB:BB:BB:BB:BB:BB
+
+# vfm_eth_intf: This is VFM interface which is connected to the SWGW
+vfm_eth_intf eth0
+
+# vfm_log_level: This is the log level for DEBUG trace.
+# 1 = ERROR
+# 2 = WARNING
+# 3 = INFO
+# 4 = ENTRYEXIT
+vfm_log_level 3
