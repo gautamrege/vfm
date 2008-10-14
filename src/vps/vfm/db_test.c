@@ -6,7 +6,8 @@
 #include <common.h>
 #include <db_access.h>
 
-void test_update_bridge()
+void
+test_update_bridge()
 {
     vps_error err;
 
@@ -65,7 +66,8 @@ void test_update_bridge()
     vps_trace(VPS_ERROR, "vpsdb_add_resource: %d", err);
 }
 
-void get_gateway_info(vpsdb_gateway* gw)
+void
+get_gateway_info(vpsdb_gateway* gw)
 {
     int i;
     printf("      + Gw Id     : %d\n", gw->gw_id);
@@ -86,7 +88,8 @@ void get_gateway_info(vpsdb_gateway* gw)
     printf("\n");
 }
 
-void get_all_gw()
+void
+get_all_gw()
 {
     vpsdb_resource rsc;
     vpsdb_gateway *gateway;
@@ -106,7 +109,8 @@ out:
     return;
 }
 
-void get_bridge_info()
+void
+get_bridge_info()
 {
     vpsdb_resource rsc;
     vpsdb_bridge *bridge;
@@ -162,4 +166,3 @@ out:
     return;
 }
 #endif /* DB_TEST */
-

@@ -17,7 +17,8 @@ sqlite3 *g_db = NULL;
 #define LOGFILE "/vfm.log"
 #define SQLITE3_DB "/vfm.db"
 
-int parse_configuration()
+int
+parse_configuration()
 {
     /* Read a config file and populate the globals.
      * (Gautam) I agrued over having a global data struct instead of simple
@@ -31,7 +32,8 @@ int parse_configuration()
     g_logfile = fopen(LOGFILE, "a");
 }
 
-int configure_database()
+int
+configure_database()
 {
     int rc;
     vps_error err = VPS_SUCCESS;
@@ -47,7 +49,8 @@ int configure_database()
     return err;
 }
 
-void vps_trace(int level, const char* format, ...)
+void
+vps_trace(int level, const char* format, ...)
 {
     FILE *fp = stderr;
     va_list args;

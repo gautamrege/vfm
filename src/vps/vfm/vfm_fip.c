@@ -16,7 +16,8 @@
   * Returns vps_error: 0 for success. The caller should free the tlv->value
   */
 
-vps_error get_tlv(uint8_t *msg_desc, vp_tlv *tlv)
+vps_error
+get_tlv(uint8_t *msg_desc, vp_tlv *tlv)
 {
     vps_error err = VPS_SUCCESS;
     uint32_t length;
@@ -62,7 +63,8 @@ vps_error get_tlv(uint8_t *msg_desc, vp_tlv *tlv)
   * Returns vps_error : 0 for success.
   */
 
-vps_error get_tlv_value(vp_tlv *tlv, void *data)
+vps_error
+get_tlv_value(vp_tlv *tlv, void *data)
 {
     vps_error err = VPS_SUCCESS;
     vps_trace(VPS_ENTRYEXIT, "Entering get_tlv_value");
@@ -227,7 +229,8 @@ vps_error get_tlv_value(vp_tlv *tlv, void *data)
   *
   */
 
-vps_error fcoe_conx_discovery(uint8_t *msg_desc, fcoe_conx_vfm_adv *solicit)
+vps_error
+fcoe_conx_discovery(uint8_t *msg_desc, fcoe_conx_vfm_adv *solicit)
 {
     vps_error err = VPS_SUCCESS;
     vps_trace(VPS_ENTRYEXIT, "Entering connectX_solication");
@@ -268,7 +271,8 @@ vps_error fcoe_conx_discovery(uint8_t *msg_desc, fcoe_conx_vfm_adv *solicit)
   *
   */
 
-vps_error fcoe_bridgeX_discovery(uint8_t *msg_desc, fcoe_bridge_vfm_adv *adv)
+vps_error
+fcoe_bridgeX_discovery(uint8_t *msg_desc, fcoe_bridge_vfm_adv *adv)
 {
     vps_error err = VPS_SUCCESS;
     vps_trace(VPS_ENTRYEXIT, "Entering fcoe_BridgeX_discovery");
@@ -317,7 +321,8 @@ vps_error fcoe_bridgeX_discovery(uint8_t *msg_desc, fcoe_bridge_vfm_adv *adv)
  *
  */
 
-vps_error fcoe_vHBA_keep_alive(uint8_t *msg_desc, fcoe_vHBA_alive *alive)
+vps_error
+fcoe_vHBA_keep_alive(uint8_t *msg_desc, fcoe_vHBA_alive *alive)
 {
     
     vps_error err = VPS_SUCCESS;
@@ -363,7 +368,8 @@ vps_error fcoe_vHBA_keep_alive(uint8_t *msg_desc, fcoe_vHBA_alive *alive)
  *  Returns vps_error: 0 for success.
  *
  */
-vps_error fcoe_vHBA_deregister(uint8_t *msg_desc, fcoe_vHBA_dereg *dereg)
+vps_error
+fcoe_vHBA_deregister(uint8_t *msg_desc, fcoe_vHBA_dereg *dereg)
 {
     
     vps_error err = VPS_SUCCESS;
@@ -394,7 +400,8 @@ vps_error fcoe_vHBA_deregister(uint8_t *msg_desc, fcoe_vHBA_dereg *dereg)
 
 
 #ifdef TEST
-vps_error display(fcoe_conx_vfm_adv *solicit)
+vps_error
+display(fcoe_conx_vfm_adv *solicit)
 {
     vps_error err = VPS_SUCCESS;
     int i =0;
@@ -417,7 +424,8 @@ vps_error display(fcoe_conx_vfm_adv *solicit)
     return err;
 }
 
-vps_error display1(fcoe_bridge_vfm_adv *solicit)
+vps_error
+display1(fcoe_bridge_vfm_adv *solicit)
 {
     vps_error err = VPS_SUCCESS;
     printf("\n\nBRIDGEX DISCOVERY PACKET");
@@ -452,7 +460,8 @@ vps_error display1(fcoe_bridge_vfm_adv *solicit)
 
 }
 
-vps_error display_alive(fcoe_vHBA_alive *alive)
+vps_error
+display_alive(fcoe_vHBA_alive *alive)
 {
     vps_error err = VPS_SUCCESS;
     int i =0;
@@ -483,7 +492,8 @@ vps_error display_alive(fcoe_vHBA_alive *alive)
 }
 
 
-int packet_process()
+int
+packet_process()
 {
     int a;
     fcoe_bridge_vfm_adv adv;

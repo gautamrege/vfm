@@ -4,11 +4,14 @@
 #ifndef __MLX_FIP_H__
 #define __MLX_FIP_H__
 
-/** ---- Mellanox Plug-in for VFM ----
-  * This header file contains all Mellanox specific headers. 
- **/
+/**
+ * ---- Mellanox Plug-in for VFM ----
+ * This header file contains all Mellanox specific headers. 
+ */
 
-/* Mellanox Gateway */
+/**
+ * Mellanox Gateway
+ */
 typedef struct __mlx_gateway {
     uint8_t  ext_ports;
     uint8_t  flags;
@@ -17,7 +20,9 @@ typedef struct __mlx_gateway {
                                        30 bytes=15 ports * 2 bits */ 
 }mlx_gateway;
 
-/** --- Mellanox Specific BridgeX Adverisment  (Ref: Table 11) ---**/
+/**
+ * --- Mellanox Specific BridgeX Adverisment  (Ref: Table 11) ---
+ */
 typedef struct __mlx_bridgeX{
     uint16_t gw_num;               /* Gateway number */
     uint16_t db_id;                /* Database ID :Initially 0x0 */
@@ -28,7 +33,9 @@ typedef struct __mlx_bridgeX{
                                       elements is decided by gw_num */
 }mlx_bridgeX;
 
-/** --- Mellanox Specific BridgeX Adverisment  (Ref: Table 15) ---**/
+/**
+ * --- Mellanox Specific BridgeX Adverisment  (Ref: Table 15) ---
+ */
 typedef struct __mlx_adv_res{
     uint16_t gwid;               /* Gateway id: Comes in Bx Advertisement */
     uint16_t db_id;              /* Database ID: VFM sets this for new Bx */ 

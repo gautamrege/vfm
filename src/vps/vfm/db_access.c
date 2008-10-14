@@ -8,10 +8,11 @@ extern sqlite3 *g_db;
 
 /**
  * vpsdb_update 
- *  This routine is used to update the database. It does need to 
+ * This routine is used to update the database. It does need to 
  * process any results.
  */
-vps_error vpsdb_update(const char* query)
+vps_error
+vpsdb_update(const char* query)
 {
     vps_error err = VPS_SUCCESS;
     char *zErrMsg = 0;
@@ -31,7 +32,8 @@ vps_error vpsdb_update(const char* query)
     return err;
 }
 
-vps_error validate_add_bridge(vpsdb_resource *info)
+vps_error
+validate_add_bridge(vpsdb_resource *info)
 {
     vps_error err = VPS_SUCCESS;
     vps_trace(VPS_ENTRYEXIT, "Entering validate_add_bridge");
@@ -49,7 +51,8 @@ vps_error validate_add_bridge(vpsdb_resource *info)
     return err;
 }
 
-vps_error add_external_ports(uint16_t gw_id, uint16_t *ext_ports)
+vps_error
+add_external_ports(uint16_t gw_id, uint16_t *ext_ports)
 {
     vps_error err = VPS_SUCCESS;
     char insert_external_ports[1024]; 
@@ -89,7 +92,8 @@ vps_error add_external_ports(uint16_t gw_id, uint16_t *ext_ports)
     return err;
 }
 
-vps_error add_gateway(const char* bridge_id, vpsdb_gateway *gw)
+vps_error
+add_gateway(const char* bridge_id, vpsdb_gateway *gw)
 {
     vps_error err = VPS_SUCCESS;
     uint8_t tmp[32];
@@ -143,7 +147,8 @@ out:
     return err;
 }
 
-vps_error add_bridge(vpsdb_resource *info)
+vps_error
+add_bridge(vpsdb_resource *info)
 {
     vps_error err = VPS_SUCCESS;
     vpsdb_bridge *bridge = (vpsdb_bridge*)info->data;
@@ -186,10 +191,11 @@ vps_error add_bridge(vpsdb_resource *info)
         sprintf(insert_bridge_query, "%s,\"%s\"", insert_bridge_query, tmp);
 
         /* Max recv */
-        sprintf(insert_bridge_query, "%s,%d", insert_bridge_query, ptr->max_recv);
+        sprintf(insert_bridge_query, "%s,%d", insert_bridge_query,
+		ptr->max_recv);
         /* TODO: Hard-code for now the model, vendor and fw_version */
-        sprintf(insert_bridge_query, "%s,\"%s\",\"%s\",\"%s\"", insert_bridge_query,
-                                     "Mellanox", "ConnectX", "MT_version" );
+        sprintf(insert_bridge_query, "%s,\"%s\",\"%s\",\"%s\"",
+		insert_bridge_query, "Mellanox", "ConnectX", "MT_version" );
         strcat(insert_bridge_query, ");");
 
         vps_trace(VPS_INFO, "insert bridge query: %s", insert_bridge_query);
@@ -219,35 +225,43 @@ out:
     return err;
 }
 
-/* This routine is called ONCE for each record from the result set 
+/**
+ * This routine is called ONCE for each record from the result set 
  * This is a special routine for external_ports. There is no resource type
  * called external ports, so we have to be careful. We use the resource
  * only as a temporary storage structure.
  */
-int process_external_ports(void *data, int num_cols, char **values, char **cols)
+int process_external_ports(void *data, int num_cols, char **values,
+			    char **cols)
 {
     vpsdb_resource *rsc = (vpsdb_resource*)data;
     uint16_t *external_ports = (uint16_t*)rsc->data;
 
-    /* According to the query, values[0] = id & values[1] = status */
-    /* Ports start from 1 to 15, so we need to decrement the index */
+    /*
+     * According to the query, values[0] = id & values[1] = status
+     * Ports start from 1 to 15, so we need to decrement the index
+     */
     external_ports[atoi(values[0]) - 1] = (uint16_t)atoi(values[1]);
     return 0;
 }
 
-/* This routine is called ONCE for each record from the result set - Gateways */
+/*
+ * This routine is called ONCE for each record from the result set - Gateways
+ */
 int process_gateway(void *data, int num_cols, char **values, char **cols)
 {
     vpsdb_resource *rsc = (vpsdb_resource*)data;
     vpsdb_gateway *gateway;
     uint8_t i;
-    vps_trace(VPS_ENTRYEXIT, "Entering process_gateway. Count: %d", rsc->count);
+    vps_trace(VPS_ENTRYEXIT, "Entering process_gateway. Count: %d",
+		rsc->count);
 
     if(NULL == (rsc->data = realloc(rsc->data, 
                     sizeof(vpsdb_gateway) * (rsc->count + 1))))
     {
         /* The block could not be realloc'ed. This can cause serious problems
-         * Hence we return with a db_error */
+         * Hence we return with a db_error
+	 */
         vps_trace(VPS_ERROR, "Could not realloc memory: %d", rsc->count + 1);
         return 1; /* This will propogate with SQL_ABORT */
     }
@@ -286,7 +300,9 @@ int process_gateway(void *data, int num_cols, char **values, char **cols)
     return 0;
 }
 
-/* This routine is called ONCE for each record from the result set - Bridge */
+/**
+ * This routine is called ONCE for each record from the result set - Bridge
+ */
 int process_bridge(void *data, int num_cols, char **values, char **cols)
 {
     vpsdb_resource *rsc = (vpsdb_resource*)data;
@@ -299,8 +315,10 @@ int process_bridge(void *data, int num_cols, char **values, char **cols)
     if(NULL == (rsc->data = realloc(rsc->data, 
                     sizeof(vpsdb_bridge) * (rsc->count + 1))))
     {
-        /* The block could not be realloc'ed. This can cause serious problems
-         * Hence we return with a db_error */
+        /*
+	 * The block could not be realloc'ed. This can cause serious problems
+         * Hence we return with a db_error
+	 */
         vps_trace(VPS_ERROR, "Could not realloc memory: %d", rsc->count + 1);
         return 1; /* This will propogate with SQL_ABORT */
     }
@@ -336,11 +354,13 @@ int process_bridge(void *data, int num_cols, char **values, char **cols)
     return 0; /* Callback must return 0 on success */
 }
 
-/* This is a read-only function which processes select queries.
- * The callback function will be given the vpsdb_resource parameter, so its 
+/**
+ * This is a read-only function which processes select queries.
+ * The callback function will be given the vpsdb_resource parameter, so its
  * the onus of that callback function to populate the data correctly
  */
-vps_error vpsdb_read(const char* query, 
+vps_error
+vpsdb_read(const char* query, 
                      int (*sql_cb)(void*,int,char**,char**),
                      vpsdb_resource *rsc)
 {
@@ -365,7 +385,8 @@ vps_error vpsdb_read(const char* query,
     return err;
 }
 
-vps_error populate_gw_external_ports(vpsdb_gateway *gw)
+vps_error
+populate_gw_external_ports(vpsdb_gateway *gw)
 {
     vps_error err = VPS_SUCCESS;
     char query[1024];
@@ -403,7 +424,8 @@ out:
 }
 
 /* The name is the MAC address of the gateway */
-vps_error populate_gateway_information(vpsdb_resource *rsc, const char* name)
+vps_error
+populate_gateway_information(vpsdb_resource *rsc, const char* name)
 {
     vpsdb_gateway *bridge;
     vps_error err = VPS_SUCCESS;
@@ -439,7 +461,8 @@ out:
     return err;
 }
 
-vps_error populate_bridge_info(vpsdb_resource *rsc, const char* name)
+vps_error
+populate_bridge_info(vpsdb_resource *rsc, const char* name)
 {
     vpsdb_bridge *bridge;
     vps_error err = VPS_SUCCESS;
@@ -479,7 +502,8 @@ vps_error populate_bridge_info(vpsdb_resource *rsc, const char* name)
         memcpy(tmp_str, bridge->mac, 6);
         /* For each gateway, the external port status is updated in the func.*/
         populate_gateway_information(&gw_rsc, tmp_str);
-        /* Move data from the resource into the bridge. Pointer assignment
+        /*
+	 * Move data from the resource into the bridge. Pointer assignment
          * Now, the ownership of the gateway allocation is with the bridge
          * structure.
          */
@@ -490,31 +514,35 @@ out:
     return err;
 }
 
-vps_error populate_host_info(vpsdb_resource *info, const char* name)
+vps_error
+populate_host_info(vpsdb_resource *info, const char* name)
 {
     vps_error err = VPS_SUCCESS;
     return err;
 }
 
-vps_error add_host(vpsdb_resource *info)
+vps_error
+add_host(vpsdb_resource *info)
 {
     vps_error err = VPS_SUCCESS;
     return err;
 }
 
-vps_error validate_add_host(vpsdb_resource *host)
+vps_error
+validate_add_host(vpsdb_resource *host)
 {
     vps_error err = VPS_SUCCESS;
     return err;
 }
 
-/** vpsdb_get_resource
+/** 
+ * vpsdb_get_resource
  *
- *  This routine gets data from the Sqlite database and populate the 
+ * This routine gets data from the Sqlite database and populate the 
  * respective data structures.
- *
  */
-vps_error vpsdb_get_resource(uint32_t type, vpsdb_resource *info, const char *name) 
+vps_error
+vpsdb_get_resource(uint32_t type, vpsdb_resource *info, const char *name) 
 {
     vps_error err = VPS_SUCCESS;
 
@@ -561,13 +589,15 @@ out:
     return err;
 }
 
-/** vpsdb_add_resource
+/**
+ * vpsdb_add_resource
  *
- *  This routine adds information to the database. If its a host, it may contain
+ * This routine adds information to the database. If its a host, it may contain
  * CNAs. Each CNA may in turn contains vHBAs or vNICs. If its a bridge, the 
  * gateways associated with the bridge will be added into the database
  */
-vps_error vpsdb_add_resource(uint32_t type, vpsdb_resource *rsc)
+vps_error
+vpsdb_add_resource(uint32_t type, vpsdb_resource *rsc)
 {
     vps_error err = VPS_SUCCESS;
 

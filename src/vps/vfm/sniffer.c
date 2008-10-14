@@ -7,7 +7,7 @@ extern uint32_t g_if_index;
 #define VLAN_TAG_POS 12                  /* byte wiseVLAN Tag Postion in \
                                             EN header */ 
 
-/*Get vlan tag */
+/* Get vlan tag */
 #define GET_VLAN_TAG(buff) (uint16_t)(buff[VLAN_TAG_POS] << 8 | \
         buff[VLAN_TAG_POS+1])
 
@@ -18,7 +18,7 @@ extern uint32_t g_if_index;
 #define SET_E            0x80       /* to set the tunnel hdr E flag */ 
 
 
-/*
+/**
  * Read ethernet header and check for FIP packet.
  * [IN]  *buff      : buffer read from socket. 
  * [IN]  size       : Read number of bytes read from socket.
@@ -29,7 +29,8 @@ extern uint32_t g_if_index;
  *          FIP packet or not.
  *          Incomplete packet.         
  */
-vps_error read_eth_hdr(uint8_t *buff, 
+vps_error
+read_eth_hdr(uint8_t *buff, 
         uint32_t size, 
         uint32_t *ret_pos, 
         eth_hdr *fip_eth_hdr)
@@ -92,7 +93,7 @@ out:
     return err;
 }
 
-/*
+/**
  * parse tunnel header
  * [IN]  *buff       : buffer read from socket. 
  * [IN]  size        : Read number of bytes read from socket.
@@ -103,7 +104,8 @@ out:
  * Return : error code.
  *          incomplete packet.   
  */
-vps_error read_tunnel_hdr(uint8_t *buff,
+vps_error
+read_tunnel_hdr(uint8_t *buff,
         uint32_t size, 
         uint32_t *ret_pos,
         uint8_t *tunnel_flag,
@@ -121,7 +123,7 @@ vps_error read_tunnel_hdr(uint8_t *buff,
         goto out;
     }
 
-    /* If tunnel header present in packet then parse it*/
+    /* If tunnel header present in packet then parse it */
     if(buff[*ret_pos] == TUNNEL_HDR_TYPE)
     {
         vps_trace(VPS_INFO, "Tunneled packet..");
@@ -165,7 +167,8 @@ out :
     return err; 
 }
 
-/* parse control header 
+/**
+ * parse control header 
  * [IN]  *buff       : buffer read from socket. 
  * [IN]  size        : Read number of bytes read from socket.
  * [OUT] *ret_pos    : Number of bytes processed.
@@ -174,7 +177,8 @@ out :
  * Returns : error code
  *           Incomplete packet
  */
-vps_error read_ctrl_hdr(uint8_t *buff, 
+vps_error
+read_ctrl_hdr(uint8_t *buff, 
         uint32_t size,
         uint32_t *ret_pos, 
         ctrl_hdr *fip_ctrl_hdr)
@@ -222,18 +226,20 @@ out:
   *
   * Returns vps_error.
   */
-vps_error decide_packet(eth_hdr *fip_eth_hdr_fw, mlx_tunnel_hdr *t_hdr, ctrl_hdr * c_hdr, uint8_t *desc_buff)
+vps_error
+decide_packet(eth_hdr *fip_eth_hdr_fw, mlx_tunnel_hdr *t_hdr,
+		ctrl_hdr * c_hdr, uint8_t *desc_buff)
 {
 
-/*  Reference: 
-    Opcode = 0x1 Subcode = 0x1 ConnectX Solicitation Descriptor
-    Opcode = 0x1 Subcode = 0x2 BridgeX Gateway Advertisement Descripto
-    Opcode = 0x2 Subcode = 0x1 ConnectX Login/Logout Descriptor
-    Opcode = 0x2 Subcode = 0x1 BridgeX Login Response Descripto
-    Opcode = 0x3 Subcode = 0x1 ConnectX Keep Alive Descriptor – vHBA over EN 
-    Opcode = 0x3 Subcode = 0x2 ConnectX Clear Virtual Link Descriptor
-
-*/  
+    /*  Reference: 
+	Opcode = 0x1 Subcode = 0x1 ConnectX Solicitation Descriptor
+	Opcode = 0x1 Subcode = 0x2 BridgeX Gateway Advertisement Descripto
+	Opcode = 0x2 Subcode = 0x1 ConnectX Login/Logout Descriptor
+	Opcode = 0x2 Subcode = 0x1 BridgeX Login Response Descripto
+	Opcode = 0x3 Subcode = 0x1 ConnectX Keep Alive Descriptor – vHBA
+	over EN
+	Opcode = 0x3 Subcode = 0x2 ConnectX Clear Virtual Link Descriptor
+    */  
     vps_error err = VPS_SUCCESS;
 
     fcoe_conx_vfm_adv solicit;
@@ -307,16 +313,17 @@ vps_error decide_packet(eth_hdr *fip_eth_hdr_fw, mlx_tunnel_hdr *t_hdr, ctrl_hdr
     }
     vps_trace(VPS_ENTRYEXIT, "Leaving decide_packet ");
     return err;
-
 }
-/* send_gw_ad
+
+/**
+ * send_gw_ad
  * This function triggers the process by simulating the arrival of a 
  * BridgeX Discovery from the bridge. 
  * TODO: This is temporary and will be removed when we get the actual 
  * BridgeX Discovery from bridge.
  */
-
-void send_gw_ad()
+void
+send_gw_ad()
 {
     ctrl_hdr c_hdr;
 
@@ -327,7 +334,7 @@ void send_gw_ad()
 
 }
 
-/*
+/**
  * Read whole packet.
  * Update database and send response.
  * 
@@ -336,7 +343,8 @@ void send_gw_ad()
  * Return : err
  *          Invalid packet.
  */
-vps_error read_packet(int sd)
+vps_error
+read_packet(int sd)
 {  
     vps_error err = VPS_SUCCESS;
 
@@ -461,7 +469,8 @@ out:
  *
  *  Returns : Error code.
  */ 
-void*  start_sniffer(void *arg)
+void*
+start_sniffer(void *arg)
 {
     vps_error err = VPS_SUCCESS;
     int bytes_read ;

@@ -16,7 +16,8 @@ extern uint8_t g_bridge_mac[MAC_ADDR_LEN];
 #define SET_S  0x2
 #define SET_F  0x1
 
-/** create_tlv
+/**
+ * create_tlv
  * This function fills the TLV i.e the Type, length, value structure
  * 
  * data  [IN]   : value to be filled in the tlv->value.
@@ -25,7 +26,8 @@ extern uint8_t g_bridge_mac[MAC_ADDR_LEN];
  *
  * Returns vps_error: 0 for success. The caller should free the tlv->value
  */
-vps_error create_tlv( void *data,  vp_tlv *tlv)
+vps_error
+create_tlv( void *data,  vp_tlv *tlv)
 {
     vps_error err = VPS_SUCCESS;
     uint32_t length;
@@ -127,7 +129,8 @@ vps_error create_tlv( void *data,  vp_tlv *tlv)
   *  Returns vps_error: 0 for success.
   *
   */
-vps_error fcoe_vHBA_advertisement(fcoe_vHBA_adv *adv, uint8_t *msg_desc)
+vps_error
+fcoe_vHBA_advertisement(fcoe_vHBA_adv *adv, uint8_t *msg_desc)
 {
 
     vps_error err = VPS_SUCCESS;
@@ -223,7 +226,8 @@ vps_error fcoe_vHBA_advertisement(fcoe_vHBA_adv *adv, uint8_t *msg_desc)
  *  Returns vps_error: 0 for success.
  *
  */
-vps_error fcoe_bridge_adv_res(fcoe_vfm_bridge_adv_res *adv_res, 
+vps_error
+fcoe_bridge_adv_res(fcoe_vfm_bridge_adv_res *adv_res, 
                 uint8_t *msg_desc)
 {
 
@@ -282,11 +286,13 @@ vps_error fcoe_bridge_adv_res(fcoe_vfm_bridge_adv_res *adv_res,
  *        it from the VFM to the ConnectX.
  *
  */
-vps_error fcoe_vfm_vHBA_deregister(fcoe_vHBA_dereg *dereg, uint8_t *msg_desc)
+vps_error
+fcoe_vfm_vHBA_deregister(fcoe_vHBA_dereg *dereg, uint8_t *msg_desc)
 {
 }
 
-vps_error prepare_fcoe_vHBA_advertisement(ctrl_hdr *hdr, uint8_t **msg_desc)
+vps_error
+prepare_fcoe_vHBA_advertisement(ctrl_hdr *hdr, uint8_t **msg_desc)
 {
     fcoe_vHBA_adv gw_adv;
     vps_error err = VPS_SUCCESS;
@@ -351,7 +357,8 @@ vps_error prepare_fcoe_vHBA_advertisement(ctrl_hdr *hdr, uint8_t **msg_desc)
   *
   * Returns vps_error.
   */
-vps_error create_packet(uint16_t op,
+vps_error
+create_packet(uint16_t op,
                         uint8_t subop,
                         void *data)
 {

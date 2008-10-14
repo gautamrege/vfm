@@ -16,7 +16,8 @@ int send_sd = -1;
 uint8_t g_bridge_mac[MAC_ADDR_LEN] = {0x00, 0x30, 0x48, 0x68, 0xB3, 0xDE};
 uint8_t g_bridge_enc_mac[MAC_ADDR_LEN] = {0x00, 0x02, 0xC9, 0x01, 0xC8, 0x80};
 
-/* send buffer on socket.
+/**
+ * send buffer on socket.
  *
  * [IN] *sd        : socket descriptor.
  * [IN] *sock_addr : Link layer 2 socket address.
@@ -24,7 +25,8 @@ uint8_t g_bridge_enc_mac[MAC_ADDR_LEN] = {0x00, 0x02, 0xC9, 0x01, 0xC8, 0x80};
  * [IN] *buff      : packet buffer.
  * [IN] length     : buffer length.
  */
-vps_error send_buffer(int *sd, 
+vps_error
+send_buffer(int *sd, 
         uint8_t send_type, 
         uint8_t *buff,
         int length)
@@ -49,7 +51,8 @@ out :
 }
 
 
-/*Fill ethernet header
+/**
+ * Fill ethernet header
  *
  * [IN] *buff      : Packet buffer
  * [IN] *dhost_mac : Destination host mac address.
@@ -59,7 +62,8 @@ out :
  *
  * Return : error code.
  */
-vps_error fill_ether_hdr(uint8_t *buff,
+vps_error
+fill_ether_hdr(uint8_t *buff,
                        uint8_t *dhost_mac,
                        uint8_t *shost_mac,
                        uint32_t *vlantag,
@@ -114,7 +118,7 @@ vps_error fill_ether_hdr(uint8_t *buff,
 
 }
 
-/*
+/**
  * Copy tunnel header in to packet buffer.
  *
  * [IN] *buff      : Packet buffer
@@ -123,7 +127,8 @@ vps_error fill_ether_hdr(uint8_t *buff,
  *
  * Return : error code.
  */
-vps_error  fill_tunnel_hdr(uint8_t *buff,
+vps_error
+fill_tunnel_hdr(uint8_t *buff,
                           mlx_tunnel_hdr *tunnel_hdr, 
                           int *offset)
 {
@@ -163,7 +168,8 @@ vps_error  fill_tunnel_hdr(uint8_t *buff,
 
 
 
-/*Create packet for sending 
+/**
+ * Create packet for sending 
  *
  *[IN] tunnel_flag : Use for add tunnel header or not.
  *[IN] *vfm_mac    : Mac addresss of VFM
@@ -177,7 +183,8 @@ vps_error  fill_tunnel_hdr(uint8_t *buff,
  *          Packet sending error. 
  */
 
-vps_error send_packet(uint8_t tunnel_flag, 
+vps_error
+send_packet(uint8_t tunnel_flag, 
         uint8_t *vfm_mac, 
         uint8_t *conx_mac, 
         uint8_t *bridge_mac,
@@ -221,7 +228,8 @@ vps_error send_packet(uint8_t tunnel_flag,
         else
         {
             /*fill ethernet haeader*/ 
-            fill_ether_hdr(buff, conx_mac, g_bridge_enc_mac, &vlan_tag, &offset);
+            fill_ether_hdr(buff, conx_mac, g_bridge_enc_mac, &vlan_tag,
+			    &offset);
         }
     }
 
@@ -259,7 +267,8 @@ vps_error send_packet(uint8_t tunnel_flag,
 
     if(send_sd == -1)
     {
-        if(VPS_SUCCESS != (err = open_socket(g_if_index, g_local_mac, &send_sd)))
+        if(VPS_SUCCESS != (err = open_socket(g_if_index, g_local_mac,
+						&send_sd)))
         {
             vps_trace(VPS_ERROR, "Error in opening socket");
             goto out;
@@ -277,5 +286,4 @@ out:
 
     vps_trace(VPS_ENTRYEXIT, "Leaving send packet");
     return err; 
-
 }

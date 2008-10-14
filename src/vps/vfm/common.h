@@ -12,7 +12,8 @@
 #include <sqlite3.h>
 #include <string.h>
 
-/* For now define vps_error as an int. Later, it can be seamlessly put as a
+/*
+ * For now define vps_error as an int. Later, it can be seamlessly put as a
  * struct if needed. Hence we are defining error parsing routines.
  */
 typedef uint32_t vps_error;
@@ -35,13 +36,14 @@ typedef uint32_t vps_error;
 #define VPS_DBERROR                     100
 #define VPS_DBERROR_INVALID             101
 #define VPS_DBERROR_INVALID_RESOURCE    102
-/* Dummy routine to get error value. It is recommended that we use this so as
+/*
+ * Dummy routine to get error value. It is recommended that we use this so as
  * to maintain uniformity later
  */
 #define GET_ERROR(err) err
 #define SET_ERROR(err, value) err = value;
 
-/*** TRACE LOGS ***/
+/* TRACE LOGS */
 #define VPS_NO_LOGS   0
 #define VPS_ERROR     1
 #define VPS_WARNING   2

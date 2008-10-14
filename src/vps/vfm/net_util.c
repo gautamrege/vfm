@@ -5,7 +5,7 @@
 
 struct sockaddr_ll g_socket_addr;
 
-/*
+/**
  * Determine if the Ethernet address is a multicast.
  * 
  * [IN] *addr: Ethernet address
@@ -16,12 +16,13 @@ struct sockaddr_ll g_socket_addr;
  * i.e uinicast  = 00 : 50 : 56 : C0 : 00 : 01
  *     multicast = 10 : 50 : 56 : C0 : 00 : 01
  */
-int is_multicast_ether_addr(uint8_t *addr)
+int
+is_multicast_ether_addr(uint8_t *addr)
 {
     return (0x01 & addr[0]);
 }
  
-/*
+/**
  * Determine if the Ethernet address is broadcast
  *
  * [IN] *addr: Ethernet address
@@ -30,13 +31,15 @@ int is_multicast_ether_addr(uint8_t *addr)
  *
  * i.e FF : FF : FF : FF : FF : FF
  */
- int is_broadcast_ether_addr(uint8_t *addr)
+int
+is_broadcast_ether_addr(uint8_t *addr)
 {
     return (addr[0] & addr[1] & addr[2] & addr[3] & addr[4] & addr[5]) == 0xff;
 }
 
 
-/* This method get mac address , interfac index and 
+/** 
+ * This method get mac address , interfac index and 
  * max transmission uinit  of interface. 
  * 
  *  [IN]  *sd       : socket descriptor.
@@ -51,8 +54,8 @@ int is_multicast_ether_addr(uint8_t *addr)
  *           error to get interface index.    
  *           error to get interface MTU.
  */
-
-vps_error get_inf_property(char *if_name,
+vps_error
+get_inf_property(char *if_name,
         uint8_t *mac_addr,
         uint8_t *if_index, 
         uint16_t *if_mtu)
@@ -121,7 +124,7 @@ out:
     return err;
 }
 
-/*
+/**
  * Open raw socket for receive all type of packet
  * on OSI layer-2 and bind with network interface.
  *
@@ -132,7 +135,8 @@ out:
  * Returns : Error code.
  *           Error in open socket.
  */
-vps_error open_socket(uint8_t if_index, uint8_t *mac_addr, int *sd)
+vps_error
+open_socket(uint8_t if_index, uint8_t *mac_addr, int *sd)
 {
     vps_error err = VPS_SUCCESS;
 
@@ -165,12 +169,13 @@ out :
 
 }
 
-/*Bind socket to network interface for listen.
+/**
+ * Bind socket to network interface for listen.
  *
  * [IN] *sd : socket descriptor.
- *
  */
-vps_error bind_socket(int *sd)
+vps_error
+bind_socket(int *sd)
 {
     vps_error err = VPS_SUCCESS;
 
