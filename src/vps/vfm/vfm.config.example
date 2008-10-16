@@ -17,3 +17,9 @@ vfm_eth_intf eth0
 # 3 = INFO
 # 4 = ENTRYEXIT
 vfm_log_level 3
+
+# wwpn of SW GW
+wwnn 10:00:00:10:86:02:09:22
+
+# wwnn of SW GW
+wwpn 20:00:00:10:86:02:09:22

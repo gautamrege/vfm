@@ -9,6 +9,9 @@ extern uint8_t g_local_mac[MAC_ADDR_LEN];
 extern uint8_t g_bridge_enc_mac[MAC_ADDR_LEN];
 extern uint8_t g_bridge_mac[MAC_ADDR_LEN];
 
+uint8_t g_wwnn[8];
+uint8_t g_wwpn[8];
+
 /* To set the specific Flags */
 #define SET_FP 0x8000
 #define SET_SP 0x4000
@@ -16,7 +19,7 @@ extern uint8_t g_bridge_mac[MAC_ADDR_LEN];
 #define SET_S  0x2
 #define SET_F  0x1
 
-#define SET_E            0x80       /* to set the tunnel hdr E flag */ 
+#define SET_E  0x80       /* to set the tunnel hdr E flag */ 
 
 /* Size of FLOGI/FDISC request*/
 #define FLOGI_SIZE 35
@@ -339,13 +342,44 @@ prepare_fcoe_vHBA_advertisement(ctrl_hdr *control_hdr, uint8_t **msg_desc)
 
 }
 
+/* To prepare the FC header */
+
+vps_error
+prepare_fc_hdr(fc_hdr *fc_header)
+{
+
+    vps_error err = VPS_SUCCESS;
+    vps_trace(VPS_ENTRYEXIT, "Entering prepare_fc_hdr");
+
+
+    fc_header->rt_ctrl_dest_id = htonl(0x22FFFFFE);
+    fc_header->src_id = 0x0;
+    fc_header->type_frame_ctrl = htonl(0x01290000);
+    fc_header->seq_id = 0x0;
+    fc_header->data_field_ctrl = 0x0;
+    fc_header->seq_count = 0x0000;
+    fc_header->org_id = htons(0x0001);
+    fc_header->res_id = htons(0xffff);
+    fc_header->parameter = 0x00000000;
+    
+    
+    vps_trace(VPS_ENTRYEXIT, "Leaving prepare_fc_hdr");
+    return err;
+}
+
+
+
+
+
+
+
 /** prepare_fdisc_request 
   * This function takes the payload of the flogi request from the Host
   * and then converts it into a FDISC request by changing the LS command code
   * It also creates the FC header and appends the FDISC payload to it and
   * forwards it to the Software GW( i.e. BridgeX).
   * 
-  * *data [IN] : Contains the TLV of FLOGI payload. 
+  * *data [IN] : Contains the TLV of FLOGI header and FLOGI payload. 
   *
   */
 vps_error 
@@ -366,16 +400,18 @@ prepare_fdisc_request(void *data)
     /* T10 Vender ID = "Mellanox" */
     strcpy(tun_hdr.t10_vender_id, "MELLANOX");
 
-    /* prepare FC Header  and Payload */  
+    /* prepare FC Header and Payload */  
+  
     payload = (uint8_t *)malloc(FLOGI_SIZE * DWORD );
     memset(payload, 0, FLOGI_SIZE * DWORD);
 
-    data += DWORD;              /* Move data 1 DWORD ahead to FC payload */
+    data += DWORD;              /* Move data 1 DWORD ahead to FC Header */
+    
+    /* Copy Header and payload */
     memcpy(payload, data, FLOGI_SIZE * DWORD);
 
-    /* Convert FLOGI to FDISC */
-//    memcpy(payload, 0x51, sizeof(uint8_t));
-   payload[6 * DWORD] = 0x51;
+    /* Convert FLOGI to FDISC by changing the LS command code to 0x51*/
+    payload[6 * DWORD] = 0x51;
 
    
     send_fc_packet(g_local_mac, g_bridge_mac, &tun_hdr, payload, FLOGI_SIZE * DWORD);
@@ -386,6 +422,54 @@ prepare_fdisc_request(void *data)
 
 }
 
+vps_error 
+create_vfm_flogi()
+{
+
+    uint8_t *msg_desc, *temp;
+    mlx_tunnel_hdr tun_hdr;
+    fc_hdr fc_header;
+    vps_error err = VPS_SUCCESS;
+
+    vps_trace(VPS_ENTRYEXIT, "Entering prepare_fdisc_request");
+
+    /* Prepare Default tunnel */
+    memset(&tun_hdr, 0, sizeof(tun_hdr));
+
+    tun_hdr.port_num |= SET_E;
+    /* T10 Vender ID = "Mellanox" */
+    strcpy(tun_hdr.t10_vender_id, "MELLANOX");
+
+
+    /* Create VFM FLOGI Request */
+    prepare_fc_hdr(&fc_header);
+    msg_desc = (uint8_t *)malloc(FLOGI_SIZE * DWORD);
+    memset(msg_desc, 0 , FLOGI_SIZE * DWORD);
+
+    temp = msg_desc;
+    /* Copy the FC header */
+    memcpy(temp, &fc_header, sizeof(fc_header));
+    temp += sizeof(fc_header);
+
+    /* Copy/Make the payload */
+    temp[0] = 0x04;     /* LS Command code */
+    temp[4] = 0x20;     /* Highest FC PH version*/
+    temp[5] = 0x20;     /* Lowest FC PH version*/
+    temp[7] = 0x0a;     /* Bufer to buffer credit LSB */
+    temp[10] = 0x05;    /* Data Receive size */    
+    temp[11] = 0xac;    /* Data Receive size */    
+
+    memcpy(temp+20, g_wwpn, sizeof(g_wwpn));
+    memcpy(temp+28, g_wwnn, sizeof(g_wwnn));
+
+    temp[68] = 0x88;   /* Class 3 service options */
+
+    /* To send the FC packet on the FC Plane */
+    send_fc_packet(g_local_mac, g_bridge_mac, &tun_hdr, msg_desc, FLOGI_SIZE * DWORD);
+
+    vps_trace(VPS_ENTRYEXIT, "Leaving prepare_fdisc_request");
+    return err;
+}
 
 /** create_packet
   *
@@ -411,8 +495,8 @@ prepare_fdisc_request(void *data)
   */
 vps_error
 create_packet(uint16_t op,
-                        uint8_t subop,
-                        void *data)
+              uint8_t subop,
+              void *data)
 {
     
     vps_error err = VPS_SUCCESS;
@@ -487,22 +571,7 @@ create_packet(uint16_t op,
     
     else if(op == 2 && subop == 1)
     {
-
-        tun_hdr.port_num |= SET_E;
-        /* Create VFM FLOGI Request */
-        msg_desc = (uint8_t *)malloc(FLOGI_SIZE * DWORD);
-        memset(msg_desc, 0 , FLOGI_SIZE * DWORD);
-
-       /* TODO: HACK: Fixing the FC header */
-	msg_desc[0] = 0x22;
-	msg_desc[1] = 0xff;
-	msg_desc[2] = 0xff;
-	msg_desc[3] = 0xfe;
-	msg_desc[12] = 0x01;
-	msg_desc[13] = 0x29;
-        /* To send the FC packet on the FC Plane */
-
-        send_fc_packet(g_local_mac, g_bridge_mac, &tun_hdr, msg_desc, FLOGI_SIZE * DWORD);
+        prepare_fdisc_request(data);
 
     }
         

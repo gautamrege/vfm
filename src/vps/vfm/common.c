@@ -17,21 +17,23 @@ sqlite3 *g_db = NULL;
 extern uint8_t g_bridge_mac[6];
 extern uint8_t g_bridge_enc_mac[6];
 extern uint8_t g_if_name[10];
+extern uint8_t g_wwnn[8];
+extern uint8_t g_wwpn[8];
 
 #define LOGFILE "/vfm.log"
 #define SQLITE3_DB "/vfm.db"
 
 void 
-parse_mac(uint8_t *buff, uint8_t *out_buff)
+parse_mac(uint8_t *buff,int length, uint8_t *out_buff)
 {
     int i =0,j=0;
-    for(i =0; i < 17; i++)
+    for(i =0; i < length*3-1; i++)
     {
         if (buff[i] == ':')
             continue;
         else if (buff[i] >= 'A' && buff[i] <= 'F')
             buff[i] -= 55;
-        else if(buff[i] >= 'a' && buff[i] <= 'f')
+        else if (buff[i] >= 'a' && buff[i] <= 'f')
             buff[i] -= 87;
         else if(buff[i] >= '0' && buff[i] <= '9')
             buff[i] -= 48;
@@ -41,7 +43,7 @@ parse_mac(uint8_t *buff, uint8_t *out_buff)
             abort();
         }
     }
-    for(i =0; i < 6; i++, j+=3)
+    for(i =0; i < length; i++, j+=3)
         out_buff[i] = buff[j]<<4 | buff[j+1];
 }
 
@@ -61,14 +63,14 @@ parse_configuration()
     if((fp = fopen("vfm.config","r"))!=NULL)
     {
        fscanf(fp, "%s %s", type, value);
-       parse_mac(value, g_bridge_enc_mac);
+       parse_mac(value, 6, g_bridge_enc_mac);
 
        printf("Bridge Internal mac : %2X:%2X:%2X:%2X:%2X:%2X\n",
                g_bridge_enc_mac[0], g_bridge_enc_mac[1], g_bridge_enc_mac[2],
                g_bridge_enc_mac[3], g_bridge_enc_mac[4], g_bridge_enc_mac[5]);
 
        fscanf(fp, "%s %s",type,value);
-       parse_mac(value, g_bridge_mac);
+       parse_mac(value, 6,g_bridge_mac);
 
 
        printf("Bridge  mac : %2X:%2X:%2X:%2X:%2X:%2X\n",
@@ -82,6 +84,25 @@ parse_configuration()
        fscanf(fp, "%s %s", type, temp);
        g_loglevel = atoi(temp);
        printf("Log Level  : %d\n", g_loglevel);
+
+       fscanf(fp, "%s %s",type,value);
+       parse_mac(value, 8, g_wwnn);
+
+
+       printf("WWNN : %2X:%2X:%2X:%2X:%2X:%2X:%2X:%2X\n",
+	   g_wwnn[0], g_wwnn[1], g_wwnn[2],
+           g_wwnn[3], g_wwnn[4], g_wwnn[5],
+           g_wwnn[6], g_wwnn[7]);
+
+       fscanf(fp, "%s %s",type,value);
+       parse_mac(value, 8, g_wwpn);
+
+
+       printf("WWPN: %2X:%2X:%2X:%2X:%2X:%2X:%2X:%2X\n",
+	   g_wwpn[0], g_wwpn[1], g_wwpn[2],
+           g_wwpn[3], g_wwpn[4], g_wwpn[5],
+           g_wwpn[6], g_wwpn[7]);
+
     }
     else
     {

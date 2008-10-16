@@ -81,7 +81,6 @@ typedef struct __eth_hdr{
 
 /* FC Header*/
 typedef struct __fc_hdr{
-    uint32_t sof;                   /* start of frame delimiter */
     /* link service 22h = Unsolocited control for request
        23h = Solocited control for request 
        and frame destination address 

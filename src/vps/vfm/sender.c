@@ -299,8 +299,9 @@ vps_error send_fc_packet( uint8_t *vfm_mac,
     uint32_t offset       = 0;
     uint32_t vlan_tag     = 0; 
     uint32_t en_footer    = 0; 
-    uint32_t fc_footer    = 0;
-    uint32_t sof          = 0;
+    uint32_t sof          = htonl(0x2e2ed1d1);
+    uint32_t eof          = htonl(0x4141bebe);
+    uint32_t crc          = ~0;    
 
 
     vps_trace(VPS_ENTRYEXIT, "Entering send_fc_packet");
@@ -322,15 +323,22 @@ vps_error send_fc_packet( uint8_t *vfm_mac,
     memcpy(buff + offset, desc_buff , desc_len);
     offset += desc_len; 
 
-    /*--5.Add  FC footer.--*/
-    memcpy(buff + offset, &fc_footer , sizeof(uint32_t));
+    /*--5. Calculate CRC */
+    crc = crc32_sb8_64_bit(crc, desc_buff, desc_len);
+
+    /*--6.Add  FC footer.--*/
+    memcpy(buff + offset, &crc , sizeof(uint32_t));
     offset += sizeof(uint32_t);
 
-    /*--6.Add ethernet footer.--*/
+    /* --7 Add EOF --*/
+    memcpy(buff + offset, &eof , sizeof(uint32_t));
+    offset += sizeof(uint32_t);
+
+    /*--8.Add ethernet footer.--*/
     memcpy(buff + offset, &en_footer , sizeof(uint32_t));
     offset += sizeof(uint32_t);
 
-    /*--7.send data by socket*/
+    /*--9.send data by socket*/
     if((err = send_buffer( MULTICAST, buff, offset ))!= VPS_SUCCESS)
     {
         vps_trace(VPS_ERROR, "Packet send err");

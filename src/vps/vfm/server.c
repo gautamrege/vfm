@@ -14,6 +14,7 @@
 #include <common.h>
 #include <vfm_fip.h>
 #include <db_access.h>
+#include <crc32_le.h>
 
 extern sqlite3 *g_db;
 extern FILE *g_logfile;
@@ -167,6 +168,7 @@ int main(int argc, char* argv[])
         goto out;
     }
 
+
 #ifdef DB_TEST
     test_update_bridge(); /* update bridge to DB */
     get_bridge_info();    /* Get all Bridge information */
@@ -178,6 +180,11 @@ int main(int argc, char* argv[])
 
     /* Sleep for 1 second, for sniffer to start properly */
     sleep(1);
+
+    /* Sending VFM FLOGI */
+    create_vfm_flogi(); 
+    vps_trace(VPS_ERROR, "--*** SENT VFM FLOGI***--");
+
 
     /* TODO: Remove this after SWGW demo */
     /* Send gateway Advertisement */

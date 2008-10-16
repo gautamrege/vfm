@@ -258,9 +258,6 @@ decide_packet(eth_hdr *fip_eth_hdr_fw, mlx_tunnel_hdr *t_hdr,
                      * fcoe_bridgeX_discovery(desc_buff, &adv); 
                      */
 
-                    /* Sending VFM FLOGI */
-                    create_packet(2, 1, NULL);
-                    vps_trace(VPS_ERROR, "--*** SENT VFM FLOGI***--");
 
                   /* Sending Broadcast  GW Advertisement */
                     memset(multicast_mac, 0xFF, 6);
@@ -275,8 +272,9 @@ decide_packet(eth_hdr *fip_eth_hdr_fw, mlx_tunnel_hdr *t_hdr,
             {
                 case 1 :  
                     vps_trace(VPS_ERROR, "--*** FLOGI REQUEST RECEIVED ***--");
+                    create_packet(2, 1, desc_buff);
 
-                    prepare_fdisc_request(desc_buff);
+//                    prepare_fdisc_request(desc_buff);
 
                     vps_trace(VPS_ERROR, "--*** FDISC REQUEST SENT TO BRIDGE (E=1) ***--");
 

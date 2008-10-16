@@ -5,6 +5,9 @@ SRC=server.c \
     net_util.c \
     vfm_create_pk.c \
     sender.c \
+    crc32_le.c \
+    crc32_le_tab.c \
+    ether_crc32.c \
     vfm_fip.c
 TEST_SRC=db_test.c
 DEFS=-DMELLANOX
