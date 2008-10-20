@@ -19,7 +19,7 @@ uint8_t g_wwpn[8];
 #define SET_S  0x2
 #define SET_F  0x1
 
-#define SET_E  0x80       /* to set the tunnel hdr E flag */ 
+#define SET_E            0x80       /* to set the tunnel hdr E flag */ 
 
 /* Size of FLOGI/FDISC request*/
 #define FLOGI_SIZE 35
@@ -461,7 +461,23 @@ create_vfm_flogi()
 
     memcpy(temp+20, g_wwpn, sizeof(g_wwpn));
     memcpy(temp+28, g_wwnn, sizeof(g_wwnn));
+/*
+    temp[20] = 0x20;    
+    temp[22] = 0x00;
+    temp[23] = 0x10;
+    temp[24] = 0x86;
+    temp[25] = 0x02;
+    temp[26] = 0x09;
+    temp[27] = 0x22;
 
+    temp[28] = 0x10;   
+    temp[30] = 0x00;
+    temp[31] = 0x10;
+    temp[32] = 0x86;
+    temp[33] = 0x02;
+    temp[34] = 0x09;
+    temp[35] = 0x22;
+*/
     temp[68] = 0x88;   /* Class 3 service options */
 
     /* To send the FC packet on the FC Plane */

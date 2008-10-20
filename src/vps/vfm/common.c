@@ -23,8 +23,20 @@ extern uint8_t g_wwpn[8];
 #define LOGFILE "/vfm.log"
 #define SQLITE3_DB "/vfm.db"
 
+/*
+ * Parse input buffer to address according to address length.
+ * Mac or WWPN or WWNN address.
+ * 
+ * [IN] input_type : Name of address holder.
+ * [IN] *buff      : Input buufer read from the file (Only one line).\
+ * [IN] length     : Length of address.(Mac length = 6,WWPN and WWNN length=8).
+ * [OUT]*out_buff  : Output address buffer.
+ */
 void 
-parse_mac(uint8_t *buff,int length, uint8_t *out_buff)
+parse_address(const char *input_type,
+              uint8_t *buff,
+              int length, 
+              uint8_t *out_buff)
 {
     int i =0,j=0;
     for(i =0; i < length*3-1; i++)
@@ -39,7 +51,7 @@ parse_mac(uint8_t *buff,int length, uint8_t *out_buff)
             buff[i] -= 48;
         else
         {
-            printf("ERROR: Incorrect mac specified\n");
+            printf("ERROR: Incorrect (%s) specified\n",input_type);
             abort();
         }
     }
@@ -47,13 +59,20 @@ parse_mac(uint8_t *buff,int length, uint8_t *out_buff)
         out_buff[i] = buff[j]<<4 | buff[j+1];
 }
 
-int
+/*
+ * Parse configuration file.(vfm.config)
+ *
+ * Returns : vps_err
+ */
+vps_error
 parse_configuration()
 {
     /* Read a config file and populate the globals.
      * (Gautam) I agrued over having a global data struct instead of simple
      * globals because of simplicity.
      */
+
+    vps_error err = VPS_SUCCESS;
 
     FILE *fp;
     uint8_t type[30];
@@ -63,42 +82,42 @@ parse_configuration()
     if((fp = fopen("vfm.config","r"))!=NULL)
     {
        fscanf(fp, "%s %s", type, value);
-       parse_mac(value, 6, g_bridge_enc_mac);
+       parse_address("gw_internal_mac", value, 6, g_bridge_enc_mac);
 
-       printf("Bridge Internal mac : %2X:%2X:%2X:%2X:%2X:%2X\n",
+       printf("Bridge Internal mac : %0.2X:%0.2X:%0.2X:%0.2X:%0.2X:%0.2X\n",
                g_bridge_enc_mac[0], g_bridge_enc_mac[1], g_bridge_enc_mac[2],
                g_bridge_enc_mac[3], g_bridge_enc_mac[4], g_bridge_enc_mac[5]);
 
        fscanf(fp, "%s %s",type,value);
-       parse_mac(value, 6,g_bridge_mac);
+       parse_address("gw_mac", value, 6,g_bridge_mac);
 
 
-       printf("Bridge  mac : %2X:%2X:%2X:%2X:%2X:%2X\n",
+       printf("Bridge  mac : %0.2X:%0.2X:%0.2X:%0.2X:%0.2X:%0.2X\n",
 	   g_bridge_mac[0], g_bridge_mac[1], g_bridge_mac[2],
 	   g_bridge_mac[3], g_bridge_mac[4], g_bridge_mac[5]);
 
 
        fscanf(fp, "%s %s", type, g_if_name);
-       printf("If name  : %s\n", g_if_name);
+       printf("VFM eth interface: %s\n", g_if_name);
 
        fscanf(fp, "%s %s", type, temp);
        g_loglevel = atoi(temp);
        printf("Log Level  : %d\n", g_loglevel);
 
        fscanf(fp, "%s %s",type,value);
-       parse_mac(value, 8, g_wwnn);
+       parse_address("wwnn", value, 8, g_wwnn);
 
 
-       printf("WWNN : %2X:%2X:%2X:%2X:%2X:%2X:%2X:%2X\n",
+       printf("WWNN : %0.2X:%0.2X:%0.2X:%0.2X:%0.2X:%0.2X:%0.2X:%0.2X\n",
 	   g_wwnn[0], g_wwnn[1], g_wwnn[2],
            g_wwnn[3], g_wwnn[4], g_wwnn[5],
            g_wwnn[6], g_wwnn[7]);
 
        fscanf(fp, "%s %s",type,value);
-       parse_mac(value, 8, g_wwpn);
+       parse_address("wwpn", value, 8, g_wwpn);
 
 
-       printf("WWPN: %2X:%2X:%2X:%2X:%2X:%2X:%2X:%2X\n",
+       printf("WWPN: %0.2X:%0.2X:%0.2X:%0.2X:%0.2X:%0.2X:%0.2X:%0.2X\n",
 	   g_wwpn[0], g_wwpn[1], g_wwpn[2],
            g_wwpn[3], g_wwpn[4], g_wwpn[5],
            g_wwpn[6], g_wwpn[7]);
@@ -114,11 +133,17 @@ parse_configuration()
         g_logfile = fopen(LOGFILE, "a");
 
     }
+    
+    return err;
 }
 
-
-
-int
+/*
+ * Configure database.
+ *
+ * Returns : vps_err
+ *           database initialization error.      
+ */
+vps_error
 configure_database()
 {
     int rc;

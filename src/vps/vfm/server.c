@@ -68,8 +68,8 @@ vps_error initialization(void *reserved)
         vps_trace(VPS_ERROR, "Unable to get local mac, interface index, mtu");
     }
 
-    vps_trace(VPS_INFO, "local_mac: %2X:%2X:%2X:%2X:%2X:%2X if_index: %d ",
-		"mtu: %d", g_local_mac[0], g_local_mac[1], g_local_mac[2],
+    vps_trace(VPS_INFO, "local_mac: %0.2X:%0.2X:%0.2X:%0.2X:%0.2X:%0.2X if_index: %d mtu: %d", 
+        g_local_mac[0], g_local_mac[1], g_local_mac[2],
 		g_local_mac[3], g_local_mac[4], g_local_mac[5],
 		g_if_index, g_if_mtu);
 

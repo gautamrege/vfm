@@ -298,7 +298,7 @@ vps_error send_fc_packet( uint8_t *vfm_mac,
     uint8_t buff[MAX_PK_LEN];
     uint32_t offset       = 0;
     uint32_t vlan_tag     = 0; 
-    uint32_t en_footer    = 0; 
+    uint32_t en_footer    = 0xFFFFFFFF; 
     uint32_t sof          = htonl(0x2e2ed1d1);
     uint32_t eof          = htonl(0x4141bebe);
     uint32_t crc          = ~0;    
@@ -311,32 +311,33 @@ vps_error send_fc_packet( uint8_t *vfm_mac,
     fill_ether_hdr(buff, g_bridge_mac, vfm_mac, &vlan_tag, &offset);
 
     /*--2.Fill tunnel header */  
-    /* Tunnel Header Length + SOF length + Descriptor Length +FC footer length + */
-    tunnel_hdr->length = (sizeof(mlx_tunnel_hdr) + DWORD + desc_len + DWORD)/DWORD;
+    /* Tunnel Header Length + SOF length + Descriptor Length +FC footer length*2  */
+    tunnel_hdr->length = (sizeof(mlx_tunnel_hdr) + desc_len )/DWORD;
     fill_tunnel_hdr(buff, tunnel_hdr, &offset);
 
     /*--3.Add SOF to FC header.--*/
-    memcpy(buff + offset, &sof , sizeof(uint32_t));
-    offset += sizeof(uint32_t);
+  /*  memcpy(buff + offset, &sof , sizeof(uint32_t));
+    offset += sizeof(uint32_t);*/
 
     /*--4.Add FC header and message descriptor.--*/
     memcpy(buff + offset, desc_buff , desc_len);
     offset += desc_len; 
 
     /*--5. Calculate CRC */
-    crc = crc32_sb8_64_bit(crc, desc_buff, desc_len);
+/*   crc = crc32_sb8_64_bit(crc, desc_buff, desc_len);*/
 
     /*--6.Add  FC footer.--*/
-    memcpy(buff + offset, &crc , sizeof(uint32_t));
-    offset += sizeof(uint32_t);
+/*    memcpy(buff + offset, &crc , sizeof(uint32_t));
+     offset += sizeof(uint32_t);*/
 
     /* --7 Add EOF --*/
-    memcpy(buff + offset, &eof , sizeof(uint32_t));
-    offset += sizeof(uint32_t);
+/*    memcpy(buff + offset, &eof , sizeof(uint32_t));
+    offset += sizeof(uint32_t);*/
 
     /*--8.Add ethernet footer.--*/
-    memcpy(buff + offset, &en_footer , sizeof(uint32_t));
+/*  memcpy(buff + offset, &en_footer , sizeof(uint32_t));
     offset += sizeof(uint32_t);
+*/
 
     /*--9.send data by socket*/
     if((err = send_buffer( MULTICAST, buff, offset ))!= VPS_SUCCESS)
