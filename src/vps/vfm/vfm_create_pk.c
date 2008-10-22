@@ -4,10 +4,12 @@
 #include<stdio.h>
 #include<stdint.h>
 #include<net_util.h>
+#include<map_util.h>
 
 extern uint8_t g_local_mac[MAC_ADDR_LEN];
 extern uint8_t g_bridge_enc_mac[MAC_ADDR_LEN];
 extern uint8_t g_bridge_mac[MAC_ADDR_LEN];
+extern uint32_t g_gw_src_id;
 
 uint8_t g_wwnn[8];
 uint8_t g_wwpn[8];
@@ -25,6 +27,7 @@ uint8_t g_wwpn[8];
 #define FLOGI_SIZE 35
 
 
+
 /**
  * create_tlv
  * This function fills the TLV i.e the Type, length, value structure
@@ -36,7 +39,7 @@ uint8_t g_wwpn[8];
  * Returns vps_error: 0 for success. The caller should free the tlv->value
  */
 vps_error
-create_tlv( void *data,  vp_tlv *tlv)
+create_tlv(void *data, vp_tlv *tlv)
 {
     vps_error err = VPS_SUCCESS;
     uint32_t length;
@@ -99,6 +102,7 @@ create_tlv( void *data,  vp_tlv *tlv)
             memcpy(tlv->value, data, sizeof(uint16_t));
             break;
         case TLV_7 : /*TODO : FLOGI Request */
+             memcpy(tlv->value + sizeof(uint16_t), data, length);
             break;
         case TLV_12:
             /**TYPE :12 FKA_ADVERTISEMENT PERIOD (32 bits)
@@ -121,7 +125,7 @@ create_tlv( void *data,  vp_tlv *tlv)
     
     
     vps_trace(VPS_ENTRYEXIT, "Leaving create_tlv");
-    
+    return err;
 }
 
 
@@ -247,7 +251,7 @@ fcoe_bridge_adv_res(fcoe_vfm_bridge_adv_res *adv_res,
 
     /* TODO : Write code for creating the FIP packet by reading the values
      *        from the database and filling up the packet structure to send
-     *        it from the VFM to the BridgeX.
+     * *DUMMY CODE*       it from the VFM to the BridgeX.
      *
      *        Type = 2 , Type = 4 , Type = 6, Type = MLNX_ADV_RES
      */
@@ -259,6 +263,7 @@ fcoe_bridge_adv_res(fcoe_vfm_bridge_adv_res *adv_res,
     create_tlv(&adv_res->vfm_mac, tlv);
     memcpy(offset, tlv, tlv->length);
     offset += tlv->length;
+    free(tlv->value);
 
     
     /* TLV 4 : NODE NAME, len = 3 */
@@ -267,7 +272,7 @@ fcoe_bridge_adv_res(fcoe_vfm_bridge_adv_res *adv_res,
     create_tlv(&adv_res->node_name, tlv);
     memcpy(offset, tlv, tlv->length);
     offset += tlv->length;
-    
+    free(tlv->value);
     
     /* TLV 6 : MAX RECV , len = 1 */
     tlv->type   = 6;
@@ -275,6 +280,7 @@ fcoe_bridge_adv_res(fcoe_vfm_bridge_adv_res *adv_res,
     create_tlv(&adv_res->max_recv, tlv);
     memcpy(offset, tlv, tlv->length);
     offset += tlv->length;
+    free(tlv->value);
     
 
     /* MLX_TLV_1 : Priority , len = 2 */
@@ -282,7 +288,7 @@ fcoe_bridge_adv_res(fcoe_vfm_bridge_adv_res *adv_res,
     tlv->length = 6;
     create_tlv(&adv_res->res, tlv);
     memcpy(offset, tlv, tlv->length);
-    offset += tlv->length;
+    free(tlv->value);
     
     vps_trace(VPS_ENTRYEXIT, "Leaving fcoe_bridge_adv_res");
     return err;
@@ -347,10 +353,8 @@ prepare_fcoe_vHBA_advertisement(ctrl_hdr *control_hdr, uint8_t **msg_desc)
 vps_error
 prepare_fc_hdr(fc_hdr *fc_header)
 {
-
     vps_error err = VPS_SUCCESS;
     vps_trace(VPS_ENTRYEXIT, "Entering prepare_fc_hdr");
-
 
     fc_header->rt_ctrl_dest_id = htonl(0x22FFFFFE);
     fc_header->src_id = 0x0;
@@ -358,22 +362,16 @@ prepare_fc_hdr(fc_hdr *fc_header)
     fc_header->seq_id = 0x0;
     fc_header->data_field_ctrl = 0x0;
     fc_header->seq_count = 0x0000;
-    fc_header->org_id = htons(0x0001);
+    fc_header->ox_id = htons(0x0001);
     fc_header->res_id = htons(0xffff);
-    fc_header->parameter = 0x00000000;
-    
+    fc_header->parameter = 0x12345678;
     
     vps_trace(VPS_ENTRYEXIT, "Leaving prepare_fc_hdr");
     return err;
 }
 
 
-
-
-
-
-
-/** prepare_fdisc_request 
+/** create_packet_ex 
   * This function takes the payload of the flogi request from the Host
   * and then converts it into a FDISC request by changing the LS command code
   * It also creates the FC header and appends the FDISC payload to it and
@@ -382,139 +380,255 @@ prepare_fc_hdr(fc_hdr *fc_header)
   * *data [IN] : Contains the TLV of FLOGI header and FLOGI payload. 
   *
   */
-vps_error 
-prepare_fdisc_request(void *data)
+vps_error
+create_packet_ex(eth_hdr *fip_eth_hdr_fw, mlx_tunnel_hdr *tunnel_hdr, ctrl_hdr *control_hdr, uint8_t *desc_buff)
 {
+	uint8_t *payload, *temp;
+    req_entry_map entry;    
+	uint32_t lscomd         = 6 * DWORD;
+	uint32_t oxid_loc       = 4 * DWORD;
+    uint32_t vhba_mac_loc   = FLOGI_SIZE * DWORD + 2;
+	uint16_t vfm_gen_oxid;
+    uint8_t *offset = desc_buff;
+    uint32_t temp_src_id;
+	vps_error err = VPS_SUCCESS;
+	vps_trace(VPS_ENTRYEXIT, "Entering create_packet_ex");
 
-    uint8_t *payload;
-    mlx_tunnel_hdr tun_hdr;
-    vps_error err = VPS_SUCCESS;
+	/* Set the portnum to 80 to set the E Flag which signifies that the packet
+	 * is to be sent on the External Port*/
+	tunnel_hdr->port_num |= SET_E;
 
-    vps_trace(VPS_ENTRYEXIT, "Entering prepare_fdisc_request");
+	/* T10 Vender ID = "Mellanox" */
+	strcpy(tunnel_hdr->t10_vender_id, "MELLANOX");
 
+	/* prepare FC Header and Payload */
+	payload = (uint8_t *)malloc(FLOGI_SIZE * DWORD );
+	memset(payload, 0, FLOGI_SIZE * DWORD);
 
-    /* Prepare Default tunnel */
-    memset(&tun_hdr, 0, sizeof(tun_hdr));
+    /* The offset is pointing to the TLV. We want to skip the Type & Length so
+     * Move data 1 DWORD ahead to FC Header */
+	offset  += DWORD;
 
-    tun_hdr.port_num |= SET_E; 
-    /* T10 Vender ID = "Mellanox" */
-    strcpy(tun_hdr.t10_vender_id, "MELLANOX");
+	/* Copy Header and payload */
+	memcpy(payload, offset , FLOGI_SIZE * DWORD);
 
-    /* prepare FC Header and Payload */  
-  
-    payload = (uint8_t *)malloc(FLOGI_SIZE * DWORD );
-    memset(payload, 0, FLOGI_SIZE * DWORD);
+	
+    /* Copy the dest_id from the flogi response to the source_id of the 
+     * FDISC request. As this request is sent on behalf of the ConnectX
+     * by the VFM. 
+     */
+    //temp_src_id = htonl(0x00011500);
+    temp_src_id = htonl(g_gw_src_id);
+    memcpy(payload + DWORD, &temp_src_id, sizeof(uint32_t));
+    /* Convert FLOGI to FDISC by changing the LS command code 0x04 to 0x51 
+	 * 6 DWORDS = FC HEADER , 29 DWORDS = FLOGI PAYLOAD, 
+	 * First byte of Payload = LS Command Code.
+	 */
+	payload[lscomd] = 0x51;
 
-    data += DWORD;              /* Move data 1 DWORD ahead to FC Header */
-    
-    /* Copy Header and payload */
-    memcpy(payload, data, FLOGI_SIZE * DWORD);
+	/* Fill the mapping structure from the ConnectX FLOGI Request */
 
-    /* Convert FLOGI to FDISC by changing the LS command code to 0x51*/
-    payload[6 * DWORD] = 0x51;
+    memcpy(&(entry.oxid), (payload + oxid_loc), sizeof(uint16_t));
+    entry.ctrl_flags = control_hdr->flags;
+    entry.flag = 0x0;
+    memcpy(entry.mac, fip_eth_hdr_fw->shost_mac, MAC_ADDR_LEN);
+    memcpy(entry.vhba_mac, offset + vhba_mac_loc, MAC_ADDR_LEN);
 
-   
-    send_fc_packet(g_local_mac, g_bridge_mac, &tun_hdr, payload, FLOGI_SIZE * DWORD);
+    /* Map the entry to the index in the map list */
+    vfm_gen_oxid = htons(add_entry_to_map(&entry));
 
-    vps_trace(VPS_ENTRYEXIT, "Leaving prepare_fdisc_request");
-    return err;
+	/* Copy the VFM_generated OXID in the FDISC payload */
+	memcpy(payload + oxid_loc, &vfm_gen_oxid, sizeof(uint16_t));
 
+	/* TODO: Copy the TLV 2 ie the Server Requested MAC depending upon 
+	 * the flags set in the Control header.
+	 */
 
+	send_fc_packet(g_local_mac, g_bridge_mac, tunnel_hdr, payload, FLOGI_SIZE * DWORD);
+
+	vps_trace(VPS_ENTRYEXIT, "Leaving create_packet_ex");
+	return err;
 }
 
 vps_error 
 create_vfm_flogi()
 {
 
-    uint8_t *msg_desc, *temp;
-    mlx_tunnel_hdr tun_hdr;
-    fc_hdr fc_header;
-    vps_error err = VPS_SUCCESS;
+	uint8_t *msg_desc, *temp;
+	mlx_tunnel_hdr tun_hdr;
+	fc_hdr fc_header;
+    req_entry_map entry;
+	vps_error err = VPS_SUCCESS;
 
-    vps_trace(VPS_ENTRYEXIT, "Entering prepare_fdisc_request");
+	vps_trace(VPS_ENTRYEXIT, "Entering create_vfm_flogi");
 
-    /* Prepare Default tunnel */
-    memset(&tun_hdr, 0, sizeof(tun_hdr));
+	/* Prepare Default tunnel */
+	memset(&tun_hdr, 0, sizeof(tun_hdr));
 
-    tun_hdr.port_num |= SET_E;
-    /* T10 Vender ID = "Mellanox" */
-    strcpy(tun_hdr.t10_vender_id, "MELLANOX");
+	tun_hdr.port_num |= SET_E;
+	/* T10 Vender ID = "Mellanox" */
+	strcpy(tun_hdr.t10_vender_id, "MELLANOX");
 
 
-    /* Create VFM FLOGI Request */
-    prepare_fc_hdr(&fc_header);
-    msg_desc = (uint8_t *)malloc(FLOGI_SIZE * DWORD);
-    memset(msg_desc, 0 , FLOGI_SIZE * DWORD);
+	/* Create VFM FLOGI Request */
+	prepare_fc_hdr(&fc_header);
+	msg_desc = (uint8_t *)malloc(FLOGI_SIZE * DWORD);
+	memset(msg_desc, 0 , FLOGI_SIZE * DWORD);
 
-    temp = msg_desc;
-    /* Copy the FC header */
-    memcpy(temp, &fc_header, sizeof(fc_header));
-    temp += sizeof(fc_header);
+	/* Fill the mapping structure from the FLOGI Request */
 
-    /* Copy/Make the payload */
-    temp[0] = 0x04;     /* LS Command code */
-    temp[4] = 0x20;     /* Highest FC PH version*/
-    temp[5] = 0x20;     /* Lowest FC PH version*/
-    temp[7] = 0x0a;     /* Bufer to buffer credit LSB */
-    temp[10] = 0x05;    /* Data Receive size */    
-    temp[11] = 0xac;    /* Data Receive size */    
+	entry.oxid = fc_header.ox_id; 
+    entry.ctrl_flags = 0x0000;
+    entry.flag = 1;
+    memcpy(entry.mac, g_local_mac, MAC_ADDR_LEN);
+    memcpy(entry.vhba_mac, g_local_mac, MAC_ADDR_LEN);
 
-    memcpy(temp+20, g_wwpn, sizeof(g_wwpn));
-    memcpy(temp+28, g_wwnn, sizeof(g_wwnn));
-/*
-    temp[20] = 0x20;    
-    temp[22] = 0x00;
-    temp[23] = 0x10;
-    temp[24] = 0x86;
-    temp[25] = 0x02;
-    temp[26] = 0x09;
-    temp[27] = 0x22;
+    /* Manipulate the ox_id according to the map entry */
+    fc_header.ox_id = htons(add_entry_to_map(&entry));
 
-    temp[28] = 0x10;   
-    temp[30] = 0x00;
-    temp[31] = 0x10;
-    temp[32] = 0x86;
-    temp[33] = 0x02;
-    temp[34] = 0x09;
-    temp[35] = 0x22;
-*/
-    temp[68] = 0x88;   /* Class 3 service options */
+	temp = msg_desc;
+	/* Copy the FC header */
+	memcpy(temp, &fc_header, sizeof(fc_hdr));
+	temp += sizeof(fc_hdr);
+
+	/* Copy/Make the payload */
+	temp[0] = 0x04;     /* LS Command code */
+	temp[4] = 0x20;     /* Highest FC PH version*/
+	temp[5] = 0x20;     /* Lowest FC PH version*/
+	temp[7] = 0x0a;     /* Bufer to buffer credit LSB */
+	temp[10] = 0x05;    /* Data Receive size */    
+	temp[11] = 0xac;    /* Data Receive size */    
+
+	memcpy(temp+20, g_wwpn, sizeof(g_wwpn));
+	memcpy(temp+28, g_wwnn, sizeof(g_wwnn));
+
+	
+	temp[68] = 0x88;   /* Class 3 service options */
 
     /* To send the FC packet on the FC Plane */
     send_fc_packet(g_local_mac, g_bridge_mac, &tun_hdr, msg_desc, FLOGI_SIZE * DWORD);
 
-    vps_trace(VPS_ENTRYEXIT, "Leaving prepare_fdisc_request");
+    /* TODO: HACK: Waiting for 5 seconds for FLOGI response */
+    sleep(2);
+
+    vps_trace(VPS_ENTRYEXIT, "Leaving create_vfm_flogi");
     return err;
 }
 
-/** create_packet
-  *
-  * Working: Depending upon the type of packet that is to 
-  * be created as specified by the "VFM CORE Logic" i.e which response 
-  * to send for a particular request, the data structure required 
-  * is filled up from the database. The pointer to structure is passed to this
-  * function which is collected in 'data' and the opcode and Subopcode.
-  * Now depending upon the Opcode and Subopcode the respective function is
-  * called which then creates the 'TLV' or 'descriptor'structure for the packet.
-  *
-  *
-  * This function will decides what type of the packet is to be created
-  * depending upon the opcode and the subopcode.
-  * And then call the create_tlv function to create the TLVs from the 
-  * filled data structure sent from the database for the packet.
-  *
-  * op         [IN] : opcode in the control header of packet.
-  * subop      [IN] : Subopcode
-  * data       [IN] : Data structure that is filled from the database.
-  *
-  * Returns vps_error.
+
+
+/** prepare_fdisc_acc_res
+  * 
   */
 vps_error
-create_packet(uint16_t op,
-              uint8_t subop,
-              void *data)
+prepare_fdisc_acc_res(uint8_t *msg_desc, uint32_t *ret_pos, req_entry_map *entry, fc_hdr *fc_header)
 {
+
+    vp_tlv tlv;
+    ctrl_hdr control_hdr;
+    mlx_tunnel_hdr tun_hdr;
+    uint8_t tunnel_flag;
+    uint32_t oxid_loc = 4 * DWORD;
+    uint8_t *desc_buff, *offset;
+    uint8_t *msg_desc_offset;
+    uint16_t temp_oxid;
+
+    vps_error err = VPS_SUCCESS;
+    vps_trace(VPS_ENTRYEXIT, "Entering prepare_fdisc_acc_res");
+
+    /*Set offset to start of FC frame*/
+    msg_desc_offset = msg_desc + *ret_pos - sizeof(fc_hdr);
+
+    /* Prepare Default tunnel */
+    memset(&tun_hdr, 0, sizeof(tun_hdr));
+    tunnel_flag = 1;
+
+    /* T10 Vender ID = "Mellanox" */
+    strcpy(tun_hdr.t10_vender_id, "MELLANOX");
+    /* E Flag is set to '0' as the packet is sent on the internal network*/
+    /* TODO: Fill the other tunnel default values */
+
+
+    /* Prepare the control header */
+    /* Prepare Default Control header */
+    memset(&control_hdr, 0, sizeof(control_hdr));
+
+    temp_oxid = htons(entry->oxid);
+    memcpy(msg_desc_offset + oxid_loc, &temp_oxid, sizeof(uint16_t));
+  
+
+    /* FLOGI Response control header */
+    control_hdr.opcode  = 2;
+    control_hdr.subcode = 1;
+    control_hdr.reserved = 0;
+    control_hdr.desc_list_length = 38;
+    control_hdr.flags = entry->ctrl_flags | SET_F;
+
+
+    /* Allocate memory to the buffer */
+    desc_buff = (uint8_t *)malloc(control_hdr.desc_list_length * DWORD);
+    offset = desc_buff;
     
+    /* TLV 7 : NODE NAME, len = 36 */
+    tlv.type   = 7;
+    tlv.length = 36;
+    create_tlv(msg_desc_offset, &tlv);
+    memcpy(offset, &tlv, 2);
+    offset += 2;
+    memcpy(offset, tlv.value, tlv.length * DWORD - 2);
+    offset += tlv.length * DWORD - 2;
+    free(tlv.value);
+
+    /* TLV 2 : MAC ADDRESS, len = 2 */
+    tlv.type   = 2;
+    tlv.length = 2;
+    create_tlv(entry->vhba_mac, &tlv);
+    memcpy(offset, &tlv, 2);
+    offset += 2;
+    memcpy(offset, tlv.value, tlv.length * DWORD - 2);
+    offset += tlv.length * DWORD - 2;
+    free(tlv.value);
+
+    send_packet(tunnel_flag, g_local_mac, entry->mac, g_bridge_enc_mac,
+                                    &tun_hdr, &control_hdr, desc_buff);
+
+        
+    free(desc_buff);
+out:
+    vps_trace(VPS_ENTRYEXIT, "Leaving prepare_fdisc_acc_res");
+    return err;
+
+}
+
+
+/** create_packet
+ *
+ * Working: Depending upon the type of packet that is to 
+ * be created as specified by the "VFM CORE Logic" i.e which response 
+ * to send for a particular request, the data structure required 
+ * is filled up from the database. The pointer to structure is passed to this
+ * function which is collected in 'data' and the opcode and Subopcode.
+ * Now depending upon the Opcode and Subopcode the respective function is
+ * called which then creates the 'TLV' or 'descriptor'structure for the packet.
+ *
+ *
+ * This function will decides what type of the packet is to be created
+ * depending upon the opcode and the subopcode.
+ * And then call the create_tlv function to create the TLVs from the 
+ * filled data structure sent from the database for the packet.
+ *
+ * op         [IN] : opcode in the control header of packet.
+ * subop      [IN] : Subopcode
+ * data       [IN] : Data structure that is filled from the database.
+ *
+ * Returns vps_error.
+ */
+    vps_error
+create_packet(uint16_t op,
+        uint8_t subop,
+        void *data)
+{
+
     vps_error err = VPS_SUCCESS;
     uint8_t tunnel_flag;
     uint32_t desc_len;
@@ -584,10 +698,9 @@ create_packet(uint16_t op,
         fcoe_vfm_vHBA_deregister(data, msg_desc);
         /*TODO Complete the whole function*/
     }
-    
+    /* vHBA FLOGI request -> VFM FDISC request */
     else if(op == 2 && subop == 1)
     {
-        prepare_fdisc_request(data);
 
     }
         

@@ -27,7 +27,6 @@
 #define MLX_CTRL_HDR_SUBCODE 0x02   /*Mellanox Control Header subopcode */
 #endif /* MELLANOX */
 
-#define MAC_ADDR_LEN   6            /* Mac address length  */
 #define FIP_ETH_TYPE   0x8914       /* Ether type for FIP packet*/
 #define EHT_HDR_LEN    20           /* Ethernet header lenght in bytes*/ 
 
@@ -61,12 +60,6 @@
 #define VFM_RES GET_PK_TYPE(0xFFFA, 0x1)
 #define CX_DISC GET_PK_TYPE(   0x1, 0x1)
 #define GW_ADV  GET_PK_TYPE(   0x1, 0x2)
-
-/*Get First byte */
-#define GET_FIRST_BYTE(dword) (uint8_t)((dword & 0xFF000000) >> 24)
-
-/*Get Last 3 bytes */
-#define GET_LAST_3_BYTES(dword) (dword & 0x00FFFFFF)
 
 
 /* Ethernet  header. */
@@ -108,12 +101,24 @@ typedef struct __fc_hdr{
     uint16_t seq_count;            /*Indicates the sequential order
                                       of frames within a sequence. 
                                       Start with 0000h */
-    uint16_t org_id;               /*Assigned by originator*/
+    uint16_t ox_id;                /*Assigned by originator*/
     uint16_t res_id;               /*Assigned by originator*/   
     uint32_t parameter;            /* set 00000000h*/ 
 }fc_hdr;
 
-
+typedef struct __fcoe_flogi_paylaod
+{
+    uint32_t lscc;
+    uint8_t hav;
+    uint8_t lav;
+    uint16_t b2bc;
+    uint16_t common;
+    uint16_t recv_data_size;
+    uint32_t R_A_TOV;
+    uint32_t E_D_TOV;
+    uint8_t g_wwnn[8];
+    uint8_t g_wwpn[8];
+}fcoe_flogi_paylaod;
 
 
 /* Standard Control Header structure.*/
@@ -295,19 +300,19 @@ vps_error get_tlv_value(vp_tlv *, void  *);
  */
 
 vps_error fcoe_conx_discovery(uint8_t *, fcoe_conx_vfm_adv *);
- 
+
 /** fcoe_bridgeX_discovery
-  * This function first fills the TLV from the buffer using the
-  * get_tlv function. It then fills the predefined data structures
-  * for the BridgeX Solicitation from the TLV.
-  * Sent from BridgeX(multicast) to VFM.
-  *
-  * mesg_desc (IN)    - It contains the packet received from the network.
-  * solicit   (OUT)   - Pointer to the preallocated bridgeX_solication 
-  *                     structure.
-  *   
-  *  Returns vps_error: 0 for success.
-  */
+ * This function first fills the TLV from the buffer using the
+ * get_tlv function. It then fills the predefined data structures
+ * for the BridgeX Solicitation from the TLV.
+ * Sent from BridgeX(multicast) to VFM.
+ *
+ * mesg_desc (IN)    - It contains the packet received from the network.
+ * solicit   (OUT)   - Pointer to the preallocated bridgeX_solication 
+ *                     structure.
+ *   
+ *  Returns vps_error: 0 for success.
+ */
 
 vps_error fcoe_bridgeX_discovery(uint8_t *, fcoe_bridge_vfm_adv *);
 
@@ -326,7 +331,7 @@ vps_error fcoe_bridgeX_discovery(uint8_t *, fcoe_bridge_vfm_adv *);
  *  Returns vps_error: 0 for success.
  *
  */
-    
+
 vps_error fcoe_vHBA_keep_alive(uint8_t *, fcoe_vHBA_alive *);
 
 
@@ -343,9 +348,9 @@ vps_error fcoe_vHBA_keep_alive(uint8_t *, fcoe_vHBA_alive *);
  *  Returns vps_error: 0 for success.
  *
  */
-    
+
 vps_error fcoe_vHBA_deregister(uint8_t *, fcoe_vHBA_dereg *);
-    
+
 
 /** create_packet
  *

@@ -15,14 +15,17 @@
 #include <vfm_fip.h>
 #include <db_access.h>
 #include <crc32_le.h>
+#include <map_util.h>
 
 extern sqlite3 *g_db;
 extern FILE *g_logfile;
+extern req_entry_map* g_req_map[REQ_ENTRY_MAP_LEN];
 
 uint8_t  g_local_mac[MAC_ADDR_LEN];
 uint32_t g_if_index;
 uint32_t g_if_mtu;
 uint8_t  g_if_name[10];
+/*TODO : Remove after SW GW able to advertise its GW ports*/
 
 /*
  * Pre-Initialization
@@ -41,6 +44,8 @@ vps_error pre_initialization(void * reserved)
 
     parse_configuration();
     configure_database();
+
+    memset(g_req_map, 0, sizeof(g_req_map));
 
     vps_trace(VPS_INFO, "Configuration setup");
     return err;
@@ -68,7 +73,7 @@ vps_error initialization(void *reserved)
         vps_trace(VPS_ERROR, "Unable to get local mac, interface index, mtu");
     }
 
-    vps_trace(VPS_INFO, "local_mac: %0.2X:%0.2X:%0.2X:%0.2X:%0.2X:%0.2X if_index: %d mtu: %d", 
+    vps_trace(VPS_INFO, "local_mac: %0.2X:%0.2X:%0.2X:%0.2X:%0.2X:%0.2X\n if_index: %d \n  mtu: %d",
         g_local_mac[0], g_local_mac[1], g_local_mac[2],
 		g_local_mac[3], g_local_mac[4], g_local_mac[5],
 		g_if_index, g_if_mtu);
@@ -182,8 +187,8 @@ int main(int argc, char* argv[])
     sleep(1);
 
     /* Sending VFM FLOGI */
+    vps_trace(VPS_ERROR, "--*** SENDING VFM FLOGI***--");
     create_vfm_flogi(); 
-    vps_trace(VPS_ERROR, "--*** SENT VFM FLOGI***--");
 
 
     /* TODO: Remove this after SWGW demo */

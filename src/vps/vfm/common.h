@@ -36,6 +36,12 @@ typedef uint32_t vps_error;
 #define VPS_DBERROR                     100
 #define VPS_DBERROR_INVALID             101
 #define VPS_DBERROR_INVALID_RESOURCE    102
+
+#define VPS_MAPERROR_MAP_FULL           200
+#define VPS_MAPERROR_NO_ENTRY           201
+
+
+
 /*
  * Dummy routine to get error value. It is recommended that we use this so as
  * to maintain uniformity later
@@ -49,6 +55,13 @@ typedef uint32_t vps_error;
 #define VPS_WARNING   2
 #define VPS_INFO      3
 #define VPS_ENTRYEXIT 4
+
+/* Mac address length  */
+#define MAC_ADDR_LEN   6            /* Mac address length  */
+
+
+#define TRUE  1
+#define FALSE 0
 
 /* Trace function */
 void vps_trace(int level, const char* format, ...);

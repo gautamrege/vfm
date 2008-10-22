@@ -1,9 +1,10 @@
 #include <net_util.h>
+#include <map_util.h>
 
 extern uint8_t g_local_mac[MAC_ADDR_LEN];
-extern uint8_t bridge_mac[MAC_ADDR_LEN];
+extern uint8_t g_bridge_mac[MAC_ADDR_LEN];
 extern uint32_t g_if_index;
-
+uint32_t g_gw_src_id;
 #define VLAN_TAG_POS 12                  /* byte wiseVLAN Tag Postion in \
                                             EN header */ 
 
@@ -16,6 +17,13 @@ extern uint32_t g_if_index;
 #define GW_ID_MASK       0X00FFFFFF /* gateway id size: 24 bits */
 #define VFM_ID_MASK      0X00FFFFFF /* vfm id size: 24 bits */
 #define SET_E            0x80       /* to set the tunnel hdr E flag */ 
+
+/*Get First byte */
+#define GET_FIRST_BYTE(dword) (uint8_t)((dword & 0xFF000000) >> 24)
+
+/*Get Last 3 bytes */
+#define GET_LAST_3_BYTES(dword) (dword & 0x00FFFFFF)
+
 
 
 /**
@@ -94,6 +102,140 @@ out:
 }
 
 /**
+ * Read fiber channel header .
+ * [IN]  *buff      : buffer read from socket. 
+ * [IN]  size       : Read number of bytes read from socket.
+ * [INOUT] *ret_pos : Number of bytes processed.
+ * [OUT] *fip_fc_hdr: FC header structure.   
+ * 
+ * Return : Error code.
+ *          FIP packet or not.
+ *          Incomplete packet.         
+ */
+vps_error
+read_fc_hdr(uint8_t *buff, 
+        uint32_t size, 
+        uint32_t *ret_pos, 
+        fc_hdr *fip_fc_hdr)
+{
+    vps_error err = VPS_SUCCESS;
+
+
+    vps_trace(VPS_ENTRYEXIT, "Entering read_fc_hdr");
+
+    /* If receive bytes count less then FC header size 
+     * then return.  
+     */
+    if((size - *ret_pos) < sizeof(fc_hdr))
+    {
+        vps_trace(VPS_INFO, "Incomplete packet");
+        err = VPS_ERROR_INCOMPLETE_PK;
+        goto out;
+    }
+
+    /*Fill header from buffer*/ 
+    memcpy(fip_fc_hdr, buff+ *ret_pos, sizeof(fc_hdr));
+   
+    /*Convert network to host byte order*/
+    fip_fc_hdr->rt_ctrl_dest_id = ntohl( fip_fc_hdr->rt_ctrl_dest_id);
+
+    fip_fc_hdr->src_id = ntohl(fip_fc_hdr->src_id) & 0x00FFFFFF;
+
+    fip_fc_hdr->type_frame_ctrl = ntohl(fip_fc_hdr->type_frame_ctrl);
+
+    fip_fc_hdr->seq_count =  ntohs(fip_fc_hdr->seq_count);
+
+    fip_fc_hdr->ox_id  = ntohs(fip_fc_hdr->ox_id);
+
+    fip_fc_hdr->res_id = ntohs(fip_fc_hdr->res_id);
+
+    fip_fc_hdr->parameter = ntohl(fip_fc_hdr->parameter);
+    
+    /*Increment offset of buffer*/
+    *ret_pos += sizeof(fc_hdr);
+    
+   out:
+     vps_trace(VPS_ENTRYEXIT, "Leaving read_fc.hdr");
+     return err;
+
+}
+
+/**
+ * parse FC packet
+ *  This method processes the FC packet.
+ *
+ * [IN]  *buff       : buffer read from socket. 
+ * [IN]  size        : Read number of bytes read from socket.
+ * [INOUT] *ret_pos    : Number of bytes processed.
+ * [IN] *tunnel_hdr : mellanox tunnel header structure.
+ *
+ * Return : error code.
+ *          incomplete packet.   
+ */
+vps_error
+process_fc_response(uint8_t *buff,
+                  uint32_t size,
+                  uint32_t *ret_pos,
+                  mlx_tunnel_hdr *tunnel_hdr)
+{
+
+    vps_error err = VPS_SUCCESS;
+    fc_hdr fc_header;   /* FC header  */
+    req_entry_map *entry;
+    vps_trace(VPS_ENTRYEXIT, "Entering process_fc_response");
+
+    /* Read the FC header and decide if its a request or a response */
+    read_fc_hdr(buff, size, ret_pos, &fc_header);
+
+    /* TODO */
+    /* Response processing */
+    /* Find the oxid from the FC header and lookup in the map. */
+    /* Process the response */
+
+    /*get entry from map*/ 
+    entry =  get_entry_from_map(fc_header.ox_id);
+
+
+    /*If map entry not exist then return */
+    if(entry == NULL)
+    {
+        vps_trace(VPS_ERROR, "Non VFM FC response");
+        err = VPS_MAPERROR_NO_ENTRY;
+        goto out;
+    }
+
+    /*If map entry for VFM flogi then Free map entry and return*/
+    if(entry->flag == 0x1)
+    {
+        vps_trace(VPS_INFO, "-- ** VFM FLOGI response ** --");
+        g_gw_src_id = fc_header.rt_ctrl_dest_id & 0x00FFFFFF;
+        remove_entry_from_map(fc_header.ox_id);
+        goto out;
+    }
+
+    /*Check for LS command code*/
+    switch(buff[*ret_pos])
+    {
+        case 0x02:              /* FLOGI/FDISK ACC response */
+            prepare_fdisc_acc_res(buff, ret_pos, entry, &fc_header);
+            vps_trace(VPS_ERROR, "--** Sent FLOGI response to ConnectX --**");
+            break;
+
+        case 0x01:             /* FLOGI/FDISK REJECT response */
+            break;
+
+    }
+
+    /*Free map entry*/
+    remove_entry_from_map(fc_header.ox_id);
+out:
+    
+    vps_trace(VPS_ENTRYEXIT, "Leaving process_fc_response");
+    return err;
+}
+
+
+/**
  * parse tunnel header
  * [IN]  *buff       : buffer read from socket. 
  * [IN]  size        : Read number of bytes read from socket.
@@ -165,9 +307,9 @@ out :
  */
 vps_error
 read_ctrl_hdr(uint8_t *buff, 
-        uint32_t size,
-        uint32_t *ret_pos, 
-        ctrl_hdr *fip_ctrl_hdr)
+              uint32_t size,
+              uint32_t *ret_pos, 
+              ctrl_hdr *fip_ctrl_hdr)
 {
     vps_error err = VPS_SUCCESS;
 
@@ -213,8 +355,8 @@ out:
   * Returns vps_error.
   */
 vps_error
-decide_packet(eth_hdr *fip_eth_hdr_fw, mlx_tunnel_hdr *t_hdr,
-		ctrl_hdr * c_hdr, uint8_t *desc_buff)
+decide_packet(eth_hdr *fip_eth_hdr_fw, mlx_tunnel_hdr *tunnel_hdr,
+		ctrl_hdr * control_hdr, uint8_t *desc_buff)
 {
 
     /*  Reference: 
@@ -235,10 +377,10 @@ decide_packet(eth_hdr *fip_eth_hdr_fw, mlx_tunnel_hdr *t_hdr,
     uint8_t multicast_mac[6];
 
     vps_trace(VPS_ENTRYEXIT, "Entering decide_packet");
-    switch(c_hdr->opcode)
+    switch(control_hdr->opcode)
     {
         case 1 :               /* Discovery Packet */
-            switch (c_hdr->subcode)
+            switch (control_hdr->subcode)
             {
                 case 1 :   /* ConnectX Solicitation */
                     vps_trace(VPS_ERROR, "--*** CONNECTX DISCOVERY RECEIVED ***--");
@@ -251,7 +393,7 @@ decide_packet(eth_hdr *fip_eth_hdr_fw, mlx_tunnel_hdr *t_hdr,
             }
             break;
         case 0xfffa:          /* BridgeX Advertisement */
-            switch (c_hdr->subcode)
+            switch (control_hdr->subcode)
             {
                 case 2:
                     /* TODO: remove this comment later on 
@@ -267,14 +409,14 @@ decide_packet(eth_hdr *fip_eth_hdr_fw, mlx_tunnel_hdr *t_hdr,
                     break;            
             }
 
-        case 2 :               /* FlOGI / FDISK etc */
-            switch (c_hdr->subcode)
+        case 2 :               /* FLOGI / FDISK etc */
+            switch (control_hdr->subcode)
             {
                 case 1 :  
                     vps_trace(VPS_ERROR, "--*** FLOGI REQUEST RECEIVED ***--");
-                    create_packet(2, 1, desc_buff);
 
-//                    prepare_fdisc_request(desc_buff);
+                    /* Convert Flogi to Fdisc and send */
+                    create_packet_ex(fip_eth_hdr_fw, tunnel_hdr, control_hdr, desc_buff);
 
                     vps_trace(VPS_ERROR, "--*** FDISC REQUEST SENT TO BRIDGE (E=1) ***--");
 
@@ -284,7 +426,7 @@ decide_packet(eth_hdr *fip_eth_hdr_fw, mlx_tunnel_hdr *t_hdr,
 
             break;
         case 3 :               /* Keep alive & Clear Link */
-            switch (c_hdr->subcode)
+            switch (control_hdr->subcode)
             {
                 case 1 :   /* ConnectX Keep Alive */
                     fcoe_vHBA_keep_alive(desc_buff, &alive);
@@ -300,6 +442,8 @@ decide_packet(eth_hdr *fip_eth_hdr_fw, mlx_tunnel_hdr *t_hdr,
     vps_trace(VPS_ENTRYEXIT, "Leaving decide_packet ");
     return err;
 }
+
+
 
 /**
  * send_gw_ad
@@ -319,6 +463,21 @@ send_gw_ad()
     decide_packet(NULL, NULL, &c_hdr, NULL);
 
 }
+
+
+/**
+ * Read FIP ethernet packet.
+ * Update database and send response.
+ * 
+ * [IN] *buff : Input buffer read from the network.
+ *
+ *
+ * Return : err
+ *          Invalid FIP packet.
+ */
+  
+
+
 
 /**
  * Read whole packet.
@@ -377,21 +536,34 @@ read_packet(int sd)
     }
 
 
-    /* 3. --IF tunnel header present  then read Forwarded packet ethernet heder --*/
-    if(tunnel_flag == TRUE)
+    /* 3. --IF tunnel header is not present, THERE IS PROBLEM --*/
+    if(tunnel_flag != TRUE)
     {
-        if(( err = read_eth_hdr(buff, recv_size, &ret_pos, &fip_eth_hdr_fw))
-                != VPS_SUCCESS) 
-        {
-            vps_trace(VPS_INFO, "Ignoring packet: %X", fip_eth_hdr.ether_type);
-            vps_trace(VPS_ERROR, " Read Packet : Ignore packet");
-            err = VPS_ERROR_IGNORE ;
-            goto out;
-        }
+        err = VPS_ERROR_IGNORE;
+        vps_trace(VPS_ERROR, "Not a Tunneled packet.. ignore");
+        goto out;
+    }
+
+    /* --If E=1, it means its an FC packet response.-- */
+    if ((tunnel_hdr.port_num & 0x80))
+    {
+        err = process_fc_response(buff , recv_size, &ret_pos, &tunnel_hdr);
+        goto out;
+    }
+
+    /* Parse Ethernet packet */
+    if(( err = read_eth_hdr(buff, recv_size, &ret_pos, &fip_eth_hdr_fw))
+            != VPS_SUCCESS) 
+    {
+        vps_trace(VPS_INFO, "Ignoring packet: %X", fip_eth_hdr.ether_type);
+        vps_trace(VPS_ERROR, " Read Packet : Ignore packet");
+        err = VPS_ERROR_IGNORE ;
+        goto out;
     }
 
     /* 4.-- read control header --*/ 
-    if(( err = read_ctrl_hdr(buff, recv_size, &ret_pos, &fip_ctrl_hdr))!= VPS_SUCCESS) 
+    if(( err = read_ctrl_hdr(buff, recv_size, &ret_pos, &fip_ctrl_hdr))
+            != VPS_SUCCESS) 
     {
         vps_trace(VPS_ERROR, "Socket reading error for control header");
         goto out;
@@ -403,7 +575,8 @@ read_packet(int sd)
 
     if((recv_size - ret_pos) >= fip_ctrl_hdr.desc_list_length * DWORD)
     {
-        memcpy(desc_buff, buff + ret_pos, fip_ctrl_hdr.desc_list_length * DWORD);
+        memcpy(desc_buff, buff + ret_pos, 
+               fip_ctrl_hdr.desc_list_length * DWORD);
         ret_pos = ret_pos + fip_ctrl_hdr.desc_list_length * DWORD;
     }
     else
@@ -419,7 +592,8 @@ read_packet(int sd)
      * parse the payload depending upon the type of the packet which 
      * can be found from the Opcode and the Subopcode in the control header.
      */
-     err =  decide_packet(&fip_eth_hdr_fw, &tunnel_hdr, &fip_ctrl_hdr, desc_buff);
+     err = decide_packet(&fip_eth_hdr_fw, &tunnel_hdr, 
+                         &fip_ctrl_hdr, desc_buff);
      if(err)
      {
          vps_trace(VPS_ERROR, "Error in descriptor parsing ");
@@ -437,11 +611,6 @@ read_packet(int sd)
      /*Copy en footer of packet*/
      memcpy(en_footer, buff + ret_pos, sizeof(en_footer));
      ret_pos += sizeof(en_footer);
-
-    /*TODO:  
-      -send to parse and dump to database.
-      -send response.
-     */
 
     free(desc_buff);
 out:       
@@ -484,6 +653,7 @@ start_sniffer(void *arg)
     };
 
     vps_trace(VPS_ENTRYEXIT, "Leaving start_sniffer");
+
     return NULL;
 }
 

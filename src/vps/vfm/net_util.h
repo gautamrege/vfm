@@ -12,8 +12,6 @@
 #define PACKET_FAMILY PF_PACKET             /* Packet family */
 #define PROTOCOL_TYPE htons(FIP_ETH_TYPE)   /* Packet type : FIP */
 
-#define TRUE  1
-#define FALSE 0
 
 int is_multicast_ether_addr(uint8_t *);
 

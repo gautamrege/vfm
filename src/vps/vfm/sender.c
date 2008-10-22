@@ -235,7 +235,7 @@ send_packet(uint8_t tunnel_flag,
     control_hdr->opcode = htons(control_hdr->opcode);
     control_hdr->desc_list_length = htons(control_hdr->desc_list_length);
     control_hdr->flags = htons(control_hdr->flags);
-    memcpy(buff + offset, control_hdr , sizeof(control_hdr));
+    memcpy(buff + offset, control_hdr , sizeof(ctrl_hdr));
 
     offset += sizeof(ctrl_hdr);
 

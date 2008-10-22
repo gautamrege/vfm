@@ -8,6 +8,7 @@ SRC=server.c \
     crc32_le.c \
     crc32_le_tab.c \
     ether_crc32.c \
+	map_util.c \
     vfm_fip.c
 TEST_SRC=db_test.c
 DEFS=-DMELLANOX
