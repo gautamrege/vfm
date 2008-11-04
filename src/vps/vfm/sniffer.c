@@ -50,7 +50,7 @@ read_eth_hdr(uint8_t *buff,
     /* If receive bytes count less then ehter header size 
      * then return.  
      */
-    if((size - *ret_pos) < EHT_HDR_LEN )
+    if((size - *ret_pos) < ETH_HDR_LEN )
     {
         vps_trace(VPS_INFO, "Incomplete packet");
         err = VPS_ERROR_INCOMPLETE_PK;
@@ -207,7 +207,15 @@ process_fc_response(uint8_t *buff,
     /*If map entry for VFM flogi then Free map entry and return*/
     if(entry->flag == 0x1)
     {
-        vps_trace(VPS_INFO, "-- ** VFM FLOGI response ** --");
+        if(buff[*ret_pos] == 0x01)
+        {
+            /* TODO: We should NOT exit. We need to continue processing as 
+             * there could be other gateways too :D
+             */
+            vps_trace(VPS_INFO, "-- ** VFM FLOGI(RJT).. Aborting!! ** --");
+            exit(1);
+        }
+        vps_trace(VPS_INFO, "-- ** VFM FLOGI(ACC) response ** --");
         g_gw_src_id = fc_header.rt_ctrl_dest_id & 0x00FFFFFF;
         remove_entry_from_map(fc_header.ox_id);
         goto out;
@@ -217,11 +225,13 @@ process_fc_response(uint8_t *buff,
     switch(buff[*ret_pos])
     {
         case 0x02:              /* FLOGI/FDISK ACC response */
-            prepare_fdisc_acc_res(buff, ret_pos, entry, &fc_header);
-            vps_trace(VPS_ERROR, "--** Sent FLOGI response to ConnectX --**");
+            prepare_fdisc_res(buff, ret_pos, entry, &fc_header, 0x01); /* 0x01 = LS ACC */
+            vps_trace(VPS_ERROR, "--** Sent FLOGI(ACC) response to ConnectX --**");
             break;
 
         case 0x01:             /* FLOGI/FDISK REJECT response */
+            prepare_fdisc_res(buff, ret_pos, entry, &fc_header, 0x00); /* 0x00 = LS RJT */
+            vps_trace(VPS_ERROR, "--** Sent FLOGI(RJT) response to ConnectX --**");
             break;
 
     }
@@ -374,7 +384,9 @@ decide_packet(eth_hdr *fip_eth_hdr_fw, mlx_tunnel_hdr *tunnel_hdr,
     fcoe_bridge_vfm_adv adv;   
     fcoe_vHBA_alive alive;
     fcoe_vHBA_dereg dereg;
-    uint8_t multicast_mac[6];
+
+    /*Multicast mac address define by FCoE standards */
+    uint8_t multicast_mac[MAC_ADDR_LEN] = {0x01, 0x10, 0x18, 0x01, 0x00, 0x01};
 
     vps_trace(VPS_ENTRYEXIT, "Entering decide_packet");
     switch(control_hdr->opcode)
@@ -387,7 +399,7 @@ decide_packet(eth_hdr *fip_eth_hdr_fw, mlx_tunnel_hdr *tunnel_hdr,
                     fcoe_conx_discovery(desc_buff, &solicit);
 
                     /*  Unicast Gateway Advertisement */    
-                    create_packet(1, 2, solicit.host_mac);
+                    create_packet(1, 2, &solicit);
                     vps_trace(VPS_ERROR, "--*** SENT UNICAST GW ADVERTISEMENT***--");
                     break;
             }
@@ -402,7 +414,8 @@ decide_packet(eth_hdr *fip_eth_hdr_fw, mlx_tunnel_hdr *tunnel_hdr,
 
 
                   /* Sending Broadcast  GW Advertisement */
-                    memset(multicast_mac, 0xFF, 6);
+                  /*  memset(multicast_mac, 0xFF, 6);*/
+
                     create_packet(1, 2, multicast_mac);
                     vps_trace(VPS_ERROR, "--*** SENT MULTICAST GW ADVERTISEMENT***--");
 
@@ -429,7 +442,11 @@ decide_packet(eth_hdr *fip_eth_hdr_fw, mlx_tunnel_hdr *tunnel_hdr,
             switch (control_hdr->subcode)
             {
                 case 1 :   /* ConnectX Keep Alive */
+                    vps_trace(VPS_ERROR, "--*** Host Keep Alive Arrived ***--");
                     fcoe_vHBA_keep_alive(desc_buff, &alive);
+
+                    create_packet(3, 1, &alive);
+                    vps_trace(VPS_ERROR, "--*** Sent Host Keep Alive Response ***--");
                     break;
 
                 case 2 :   /* ConnectX Clear Virtual Link */

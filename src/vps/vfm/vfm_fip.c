@@ -336,16 +336,16 @@ fcoe_vHBA_keep_alive(uint8_t *msg_desc, fcoe_vHBA_alive *alive)
     get_tlv_value(&data, &alive->host_mac);
     ptr += (data.length * sizeof(uint32_t));
     
-    /* Type = 4 */
+    /* Type = 4 /
     get_tlv(ptr, &data);
     get_tlv_value(&data, &alive->node_name);
     ptr += (data.length * sizeof(uint32_t));
     
-    /* Type = 6 */
+    /* Type = 6 /
     get_tlv(ptr, &data);
     get_tlv_value(&data, &alive->max_recv);
     ptr += (data.length * sizeof(uint32_t));
-    
+    */ 
     /* Type = 11*/
     get_tlv(ptr, &data);
     get_tlv_value(&data, &alive->hba);

@@ -28,7 +28,7 @@
 #endif /* MELLANOX */
 
 #define FIP_ETH_TYPE   0x8914       /* Ether type for FIP packet*/
-#define EHT_HDR_LEN    20           /* Ethernet header lenght in bytes*/ 
+#define ETH_HDR_LEN    20           /* Ethernet header lenght in bytes*/ 
 
 #define VLAN_TAG         0x8100     /* VLAN tag value */
 #define TUNNEL_HDR_TYPE  244        /* Tunnel header type vlaue */
@@ -398,7 +398,8 @@ vps_error send_packet(uint8_t tunnel_flag,
         uint8_t *bridge_mac,
         mlx_tunnel_hdr *tunnel_hdr,
         ctrl_hdr *control_hdr,
-        uint8_t *desc_buff);
+        uint8_t *desc_buff,
+        uint16_t max_recv);
 
 /*Create packet for sending
  *

@@ -21,10 +21,11 @@ uint8_t g_wwpn[8];
 #define SET_S  0x2
 #define SET_F  0x1
 
-#define SET_E            0x80       /* to set the tunnel hdr E flag */ 
+#define SET_E  0x80       /* to set the tunnel hdr E flag */ 
 
 /* Size of FLOGI/FDISC request*/
 #define FLOGI_SIZE 35
+#define FC_MAP 0x0EFC00
 
 
 
@@ -321,26 +322,19 @@ prepare_fcoe_vHBA_advertisement(ctrl_hdr *control_hdr, uint8_t **msg_desc)
      */
     gw_adv.priority = 45;                      /* Priority */
     /* FCF gateway mac address */
-    memset(gw_adv.fcf_gw_mac, 0 , MAC_ADDR_LEN);
-    gw_adv.fc_map = 123456;           /* FC-MAP TODO: 
-                                         Where does it come from */
-    memset(gw_adv.switch_name, 0 , NAME_LEN);  /* Switch Name */
-    memset(gw_adv.fabric_name, 0 , NAME_LEN);  /* Fabric name: */  
-    gw_adv.fka_adv_period = 50000; 
-  
     /* TODO: bridge_enc_mac is used ONLY for te demo to work around SW GW 
      * bug. Please change bridge_enc_mac to bridge_mac later */
     memcpy(gw_adv.fcf_gw_mac, g_bridge_enc_mac, MAC_ADDR_LEN);
-    gw_adv.fc_map = htonl(123456);             /* FC-MAP TODO: 
+    gw_adv.fc_map = htonl(FC_MAP);             /* FC-MAP TODO: 
                                                   Where does it come from */
     memset(gw_adv.switch_name, 0 , NAME_LEN);  /* Switch Name */
     memset(gw_adv.fabric_name, 0 , NAME_LEN);  /* Fabric name: */  
-    gw_adv.fka_adv_period = htonl(50000); 
+    gw_adv.fka_adv_period = htonl(50000);       /* FKA ADV PERIOD */ 
 
     /* Allocate memory for the descriptor list or Payload */ 
     *msg_desc = (uint8_t *)malloc(control_hdr->desc_list_length * DWORD);
     memset(*msg_desc, 0, control_hdr->desc_list_length * DWORD);
-   
+    
     fcoe_vHBA_advertisement(&gw_adv, *msg_desc);
     
     vps_trace(VPS_ENTRYEXIT, "Leaving prepare_fcoe_vHBA_advertisement");
@@ -362,7 +356,7 @@ prepare_fc_hdr(fc_hdr *fc_header)
     fc_header->seq_id = 0x0;
     fc_header->data_field_ctrl = 0x0;
     fc_header->seq_count = 0x0000;
-    fc_header->ox_id = htons(0x0001);
+    fc_header->ox_id = 0x0001;
     fc_header->res_id = htons(0xffff);
     fc_header->parameter = 0x12345678;
     
@@ -390,7 +384,7 @@ create_packet_ex(eth_hdr *fip_eth_hdr_fw, mlx_tunnel_hdr *tunnel_hdr, ctrl_hdr *
     uint32_t vhba_mac_loc   = FLOGI_SIZE * DWORD + 2;
 	uint16_t vfm_gen_oxid;
     uint8_t *offset = desc_buff;
-    uint32_t temp_src_id;
+    //uint32_t temp_src_id;  // TODO: Testing only
 	vps_error err = VPS_SUCCESS;
 	vps_trace(VPS_ENTRYEXIT, "Entering create_packet_ex");
 
@@ -412,14 +406,11 @@ create_packet_ex(eth_hdr *fip_eth_hdr_fw, mlx_tunnel_hdr *tunnel_hdr, ctrl_hdr *
 	/* Copy Header and payload */
 	memcpy(payload, offset , FLOGI_SIZE * DWORD);
 
+    /* TODO: For testing ONLY till FDISC response works -- START */
+    //temp_src_id = htonl(g_gw_src_id);
+    //memcpy(payload + DWORD, &temp_src_id, sizeof(uint32_t));
+    /* TODO: For testing ONLY till FDISC response works -- END */
 	
-    /* Copy the dest_id from the flogi response to the source_id of the 
-     * FDISC request. As this request is sent on behalf of the ConnectX
-     * by the VFM. 
-     */
-    //temp_src_id = htonl(0x00011500);
-    temp_src_id = htonl(g_gw_src_id);
-    memcpy(payload + DWORD, &temp_src_id, sizeof(uint32_t));
     /* Convert FLOGI to FDISC by changing the LS command code 0x04 to 0x51 
 	 * 6 DWORDS = FC HEADER , 29 DWORDS = FLOGI PAYLOAD, 
 	 * First byte of Payload = LS Command Code.
@@ -517,11 +508,16 @@ create_vfm_flogi()
 
 
 
-/** prepare_fdisc_acc_res
-  * 
+/** prepare_fdisc_res
+  * accept: 0x1 when FLOGI/FDISC is ACC
+  * accept: 0x0 when FLOGI/FDISC is RJT
   */
 vps_error
-prepare_fdisc_acc_res(uint8_t *msg_desc, uint32_t *ret_pos, req_entry_map *entry, fc_hdr *fc_header)
+prepare_fdisc_res(uint8_t *msg_desc, 
+                  uint32_t *ret_pos, 
+                  req_entry_map *entry, 
+                  fc_hdr *fc_header, 
+                  uint8_t accept)
 {
 
     vp_tlv tlv;
@@ -531,10 +527,19 @@ prepare_fdisc_acc_res(uint8_t *msg_desc, uint32_t *ret_pos, req_entry_map *entry
     uint32_t oxid_loc = 4 * DWORD;
     uint8_t *desc_buff, *offset;
     uint8_t *msg_desc_offset;
-    uint16_t temp_oxid;
+    uint16_t payload_len;
+    uint32_t fc_map_temp = htonl(FC_MAP);
+    uint8_t temp[MAC_ADDR_LEN];
+    uint32_t tmp_sid;
 
     vps_error err = VPS_SUCCESS;
-    vps_trace(VPS_ENTRYEXIT, "Entering prepare_fdisc_acc_res");
+    vps_trace(VPS_ENTRYEXIT, "Entering prepare_fdisc_res");
+
+    if(accept)
+        payload_len = 38; /* DWORDS: TLV7(len=36) + TLV2 (len=2) */
+    else
+        payload_len = 11; /* DWORDS: TLV7(len=9) + TLV2 (len=2) */
+    
 
     /*Set offset to start of FC frame*/
     msg_desc_offset = msg_desc + *ret_pos - sizeof(fc_hdr);
@@ -553,15 +558,14 @@ prepare_fdisc_acc_res(uint8_t *msg_desc, uint32_t *ret_pos, req_entry_map *entry
     /* Prepare Default Control header */
     memset(&control_hdr, 0, sizeof(control_hdr));
 
-    temp_oxid = htons(entry->oxid);
-    memcpy(msg_desc_offset + oxid_loc, &temp_oxid, sizeof(uint16_t));
+    memcpy(msg_desc_offset + oxid_loc, &(entry->oxid), sizeof(uint16_t));
   
 
     /* FLOGI Response control header */
     control_hdr.opcode  = 2;
     control_hdr.subcode = 1;
     control_hdr.reserved = 0;
-    control_hdr.desc_list_length = 38;
+    control_hdr.desc_list_length = payload_len;
     control_hdr.flags = entry->ctrl_flags | SET_F;
 
 
@@ -571,7 +575,7 @@ prepare_fdisc_acc_res(uint8_t *msg_desc, uint32_t *ret_pos, req_entry_map *entry
     
     /* TLV 7 : NODE NAME, len = 36 */
     tlv.type   = 7;
-    tlv.length = 36;
+    tlv.length = payload_len - 2; /* Ignore TLV2 length */
     create_tlv(msg_desc_offset, &tlv);
     memcpy(offset, &tlv, 2);
     offset += 2;
@@ -579,25 +583,43 @@ prepare_fdisc_acc_res(uint8_t *msg_desc, uint32_t *ret_pos, req_entry_map *entry
     offset += tlv.length * DWORD - 2;
     free(tlv.value);
 
+
+
     /* TLV 2 : MAC ADDRESS, len = 2 */
     tlv.type   = 2;
     tlv.length = 2;
-    create_tlv(entry->vhba_mac, &tlv);
+    if(control_hdr.flags && SET_FP)
+    {
+
+        /* Copy the FC MAP and the FC_ID i.e the dest_ID from the FC header
+         * to form the FPMA.
+         */
+        memcpy(temp, &fc_map_temp, 3 * sizeof(uint8_t));
+
+        /* Copy FC_ID ie the dest id */
+        tmp_sid = htonl(fc_header->rt_ctrl_dest_id << 8);
+        memcpy(temp + 3, &tmp_sid, 3 * sizeof(uint8_t));
+        create_tlv(temp, &tlv);
+    }
+    
+    else
+    {
+        create_tlv(entry->vhba_mac, &tlv);
+    }
     memcpy(offset, &tlv, 2);
     offset += 2;
     memcpy(offset, tlv.value, tlv.length * DWORD - 2);
     offset += tlv.length * DWORD - 2;
     free(tlv.value);
+    
 
     send_packet(tunnel_flag, g_local_mac, entry->mac, g_bridge_enc_mac,
-                                    &tun_hdr, &control_hdr, desc_buff);
+                                    &tun_hdr, &control_hdr, desc_buff, 0);
 
-        
     free(desc_buff);
 out:
-    vps_trace(VPS_ENTRYEXIT, "Leaving prepare_fdisc_acc_res");
+    vps_trace(VPS_ENTRYEXIT, "Leaving prepare_fdisc_res");
     return err;
-
 }
 
 
@@ -624,9 +646,7 @@ out:
  * Returns vps_error.
  */
     vps_error
-create_packet(uint16_t op,
-        uint8_t subop,
-        void *data)
+create_packet(uint16_t op, uint8_t subop, void *data)
 {
 
     vps_error err = VPS_SUCCESS;
@@ -663,7 +683,7 @@ create_packet(uint16_t op,
         control_hdr.flags |= SET_F;
         
         /* Copy Host MAC address which is sent in connectX Discovery*/
-        memcpy(conx_mac, data, 6 * sizeof(uint8_t));
+        memcpy(conx_mac, ((fcoe_conx_vfm_adv *)data)->host_mac, 6 * sizeof(uint8_t));
 
         if(!(is_multicast_ether_addr(conx_mac)))
         {      
@@ -674,13 +694,13 @@ create_packet(uint16_t op,
             control_hdr.flags |= SET_S;
         }
 
-        prepare_fcoe_vHBA_advertisement(&control_hdr, &msg_desc);
+        prepare_fcoe_vHBA_advertisement(&control_hdr, &msg_desc); 
         
         /* Call to the function which will take this payload and then send the
          * packet by putting the ethernet and tunnel header.
          */
         send_packet(tunnel_flag, g_local_mac, conx_mac, g_bridge_mac,
-                                                        &tun_hdr, &control_hdr, msg_desc);
+                                                        &tun_hdr, &control_hdr, msg_desc, ((fcoe_conx_vfm_adv *)data)->max_recv);
 
     } 
 
@@ -699,14 +719,37 @@ create_packet(uint16_t op,
         /*TODO Complete the whole function*/
     }
     /* vHBA FLOGI request -> VFM FDISC request */
-    else if(op == 2 && subop == 1)
+    else if(op == 3 && subop == 1)
     {
 
-    }
+        control_hdr.opcode  = 1;
+        control_hdr.subcode = 2;
+        control_hdr.reserved = 0;
+        control_hdr.desc_list_length = 13;
+        control_hdr.flags |= SET_FP;
+        control_hdr.flags |= SET_SP;
+        control_hdr.flags |= SET_F;
         
-    /** Call to the function which will take this payload and then send the 
-      * packet by putting the ethernet and tunnel header.
-      */
+        /* Copy Host MAC address which is sent in connectX Discovery*/
+        memcpy(conx_mac, ((fcoe_vHBA_alive*)data)->host_mac, 6 * sizeof(uint8_t));
+
+        if(!(is_multicast_ether_addr(conx_mac)))
+        {      
+            /* If and only if this is a unicast message to a conx
+             * then set A = 1 & S = 1.
+             */
+            control_hdr.flags |= SET_A;
+            control_hdr.flags |= SET_S;
+        }
+
+        prepare_fcoe_vHBA_advertisement(&control_hdr, &msg_desc); 
+        
+        /* Call to the function which will take this payload and then send the
+         * packet by putting the ethernet and tunnel header.
+         */
+        send_packet(tunnel_flag, g_local_mac, conx_mac, g_bridge_mac,
+                                                        &tun_hdr, &control_hdr, msg_desc, ((fcoe_vHBA_alive *)data)->max_recv);
+    }
 
     vps_trace(VPS_ENTRYEXIT, "Leaving create_packet ");
     return err;

@@ -185,7 +185,8 @@ send_packet(uint8_t tunnel_flag,
         uint8_t *bridge_mac,
         mlx_tunnel_hdr *tunnel_hdr,
         ctrl_hdr *control_hdr,
-        uint8_t *desc_buff)
+        uint8_t *desc_buff,
+        uint16_t max_recv)
 {
     vps_error err = VPS_SUCCESS;
 
@@ -195,10 +196,11 @@ send_packet(uint8_t tunnel_flag,
     uint32_t en_footer    = 0; 
     uint32_t en_footer_fw = 0;
     uint16_t desc_length  = control_hdr->desc_list_length * DWORD;
+    
 
-       
     vps_trace(VPS_ENTRYEXIT, "Entering make_packet");
-
+   
+     memset(buff, 0x0, sizeof(buff));
 
     /*-- 1.Add ethernet header.-- */
     /*fill ethernet haeader*/ 
@@ -244,6 +246,11 @@ send_packet(uint8_t tunnel_flag,
     memcpy(buff + offset, desc_buff , desc_length);
 
     offset += desc_length;
+
+
+    /* Padding the packet to the Max Receive Size */
+//    offset += (max_recv + (ETH_HDR_LEN - 4) + sizeof(mlx_tunnel_hdr) - (sizeof(uint32_t) +  offset)) ;
+
 
 
     /*--5.Add forward ethernet footer.--*/

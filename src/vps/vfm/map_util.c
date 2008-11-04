@@ -108,7 +108,7 @@ req_entry_map*
 get_entry_from_map(uint16_t vfm_gen_oxid)
 {
 
-    req_entry_map *entry; 
+    req_entry_map *entry = NULL; 
     
     vps_trace(VPS_ENTRYEXIT, "Entering get_entry_from_map");
 
@@ -122,12 +122,6 @@ get_entry_from_map(uint16_t vfm_gen_oxid)
         
       vps_trace(VPS_INFO, "Got map key %d value : %x",vfm_gen_oxid, g_req_map[vfm_gen_oxid]->oxid);
     }
-    else
-    {
-        entry = NULL;
-    }
-
-
 
     vps_trace(VPS_ENTRYEXIT, "Leaving get_entry_from_map");
     return entry;
