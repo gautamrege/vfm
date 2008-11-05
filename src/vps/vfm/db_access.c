@@ -192,10 +192,10 @@ add_bridge(vpsdb_resource *info)
 
         /* Max recv */
         sprintf(insert_bridge_query, "%s,%d", insert_bridge_query,
-		ptr->max_recv);
+        ptr->max_recv);
         /* TODO: Hard-code for now the model, vendor and fw_version */
         sprintf(insert_bridge_query, "%s,\"%s\",\"%s\",\"%s\"",
-		insert_bridge_query, "Mellanox", "ConnectX", "MT_version" );
+        insert_bridge_query, "Mellanox", "ConnectX", "MT_version" );
         strcat(insert_bridge_query, ");");
 
         vps_trace(VPS_INFO, "insert bridge query: %s", insert_bridge_query);
@@ -232,7 +232,7 @@ out:
  * only as a temporary storage structure.
  */
 int process_external_ports(void *data, int num_cols, char **values,
-			    char **cols)
+                char **cols)
 {
     vpsdb_resource *rsc = (vpsdb_resource*)data;
     uint16_t *external_ports = (uint16_t*)rsc->data;
@@ -254,14 +254,14 @@ int process_gateway(void *data, int num_cols, char **values, char **cols)
     vpsdb_gateway *gateway;
     uint8_t i;
     vps_trace(VPS_ENTRYEXIT, "Entering process_gateway. Count: %d",
-		rsc->count);
+        rsc->count);
 
     if(NULL == (rsc->data = realloc(rsc->data, 
                     sizeof(vpsdb_gateway) * (rsc->count + 1))))
     {
         /* The block could not be realloc'ed. This can cause serious problems
          * Hence we return with a db_error
-	 */
+     */
         vps_trace(VPS_ERROR, "Could not realloc memory: %d", rsc->count + 1);
         return 1; /* This will propogate with SQL_ABORT */
     }
@@ -316,9 +316,9 @@ int process_bridge(void *data, int num_cols, char **values, char **cols)
                     sizeof(vpsdb_bridge) * (rsc->count + 1))))
     {
         /*
-	 * The block could not be realloc'ed. This can cause serious problems
+     * The block could not be realloc'ed. This can cause serious problems
          * Hence we return with a db_error
-	 */
+     */
         vps_trace(VPS_ERROR, "Could not realloc memory: %d", rsc->count + 1);
         return 1; /* This will propogate with SQL_ABORT */
     }
@@ -503,7 +503,7 @@ populate_bridge_info(vpsdb_resource *rsc, const char* name)
         /* For each gateway, the external port status is updated in the func.*/
         populate_gateway_information(&gw_rsc, tmp_str);
         /*
-	 * Move data from the resource into the bridge. Pointer assignment
+     * Move data from the resource into the bridge. Pointer assignment
          * Now, the ownership of the gateway allocation is with the bridge
          * structure.
          */

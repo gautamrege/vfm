@@ -46,7 +46,7 @@ crc32_sb8_64_bit(
 u_int32_t
 crc32_copy(
     u_int32_t p_running_crc,
-	u_int8_t *dest,
+    u_int8_t *dest,
         const u_int8_t *p_buf,
         u_int32_t length);
 

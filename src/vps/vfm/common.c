@@ -93,8 +93,8 @@ parse_configuration()
 
 
        printf("Bridge  mac : %0.2X:%0.2X:%0.2X:%0.2X:%0.2X:%0.2X\n",
-	   g_bridge_mac[0], g_bridge_mac[1], g_bridge_mac[2],
-	   g_bridge_mac[3], g_bridge_mac[4], g_bridge_mac[5]);
+       g_bridge_mac[0], g_bridge_mac[1], g_bridge_mac[2],
+       g_bridge_mac[3], g_bridge_mac[4], g_bridge_mac[5]);
 
 
        fscanf(fp, "%s %s", type, g_if_name);
@@ -109,7 +109,7 @@ parse_configuration()
 
 
        printf("WWNN : %0.2X:%0.2X:%0.2X:%0.2X:%0.2X:%0.2X:%0.2X:%0.2X\n",
-	   g_wwnn[0], g_wwnn[1], g_wwnn[2],
+           g_wwnn[0], g_wwnn[1], g_wwnn[2],
            g_wwnn[3], g_wwnn[4], g_wwnn[5],
            g_wwnn[6], g_wwnn[7]);
 
@@ -118,7 +118,7 @@ parse_configuration()
 
 
        printf("WWPN: %0.2X:%0.2X:%0.2X:%0.2X:%0.2X:%0.2X:%0.2X:%0.2X\n",
-	   g_wwpn[0], g_wwpn[1], g_wwpn[2],
+           g_wwpn[0], g_wwpn[1], g_wwpn[2],
            g_wwpn[3], g_wwpn[4], g_wwpn[5],
            g_wwpn[6], g_wwpn[7]);
 

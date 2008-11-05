@@ -68,15 +68,15 @@ vps_error initialization(void *reserved)
 
     /*TODO:Get interface name from *reserved */
     if((err = get_inf_property(g_if_name, g_local_mac, &g_if_index,
-				&g_if_mtu)) != VPS_SUCCESS)
+                &g_if_mtu)) != VPS_SUCCESS)
     {
         vps_trace(VPS_ERROR, "Unable to get local mac, interface index, mtu");
     }
 
     vps_trace(VPS_INFO, "local_mac: %0.2X:%0.2X:%0.2X:%0.2X:%0.2X:%0.2X\n if_index: %d \n  mtu: %d",
         g_local_mac[0], g_local_mac[1], g_local_mac[2],
-		g_local_mac[3], g_local_mac[4], g_local_mac[5],
-		g_if_index, g_if_mtu);
+        g_local_mac[3], g_local_mac[4], g_local_mac[5],
+        g_if_index, g_if_mtu);
 
     vps_trace(VPS_ENTRYEXIT, "Exiting Initialization");
     return err;

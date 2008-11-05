@@ -38,7 +38,7 @@ send_buffer(uint8_t send_type,
     if(send_sd == -1)
     {
         if(VPS_SUCCESS != (err = open_socket(g_if_index, g_local_mac,
-						&send_sd)))
+                        &send_sd)))
         {
             vps_trace(VPS_ERROR, "Error in opening socket");
             goto out;
@@ -228,7 +228,7 @@ send_packet(uint8_t tunnel_flag,
         {
             /*fill ethernet haeader*/ 
             fill_ether_hdr(buff, conx_mac, g_bridge_enc_mac, &vlan_tag,
-			    &offset);
+                &offset);
         }
     }
 

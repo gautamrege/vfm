@@ -168,17 +168,17 @@ get_tlv_value(vp_tlv *tlv, void *data)
     
         case MLX_TLV_2 :
             /**TYPE :MLX SPECIFIC MSG DESCRIPTOR FOR Bridge Info
-			  * Len : 6, GW_num, Database ID (DB_ID), 
-			  * MAC of the last associated VFM, Gateway Info.
-			  */
+              * Len : 6, GW_num, Database ID (DB_ID), 
+              * MAC of the last associated VFM, Gateway Info.
+              */
             memcpy(data, tlv->value + sizeof(uint16_t), sizeof(mlx_bridgeX));
 
             /* Copy the bridge properties */
             bridgeX_ptr = (mlx_bridgeX*)data;
 
             bridgeX_ptr->gw_num = ntohs(bridgeX_ptr->gw_num);
-			bridgeX_ptr->gw_num &= 0xf000;
-			bridgeX_ptr->gw_num >>= 12;
+            bridgeX_ptr->gw_num &= 0xf000;
+            bridgeX_ptr->gw_num >>= 12;
            
 
             bridgeX_ptr->db_id = ntohs(bridgeX_ptr->db_id);
@@ -187,7 +187,7 @@ get_tlv_value(vp_tlv *tlv, void *data)
             bridgeX_ptr->gw_arr = (mlx_gateway *)malloc(bridgeX_ptr->gw_num *
                                                        sizeof(mlx_gateway));
             gateway_ptr = bridgeX_ptr->gw_arr;
-			
+            
             /* Set the gateway pointer from the tlv value */
             tmp_ptr = tlv->value + sizeof(uint16_t) + (3 * sizeof(DWORD));
 
@@ -196,12 +196,12 @@ get_tlv_value(vp_tlv *tlv, void *data)
             {
                 memcpy(gateway_ptr + i, tmp_ptr, sizeof(mlx_gateway));
                 gateway_ptr->gw_id = ntohs(gateway_ptr->gw_id);
-				gateway_ptr->ports_stats = ntohl(gateway_ptr->ports_stats);
+                gateway_ptr->ports_stats = ntohl(gateway_ptr->ports_stats);
 
                 /* Go to the next gateway data */
                 tmp_ptr += sizeof(mlx_gateway);
             }
-            break;	
+            break;  
     
     }
     /* TODO: For now we are freeing the value here. Ideally, we should pass an
@@ -279,7 +279,7 @@ fcoe_bridgeX_discovery(uint8_t *msg_desc, fcoe_bridge_vfm_adv *adv)
     
     uint32_t length = 0;
 
-	vp_tlv data;
+    vp_tlv data;
     uint8_t *ptr = msg_desc;
     
     /* Type = 2 */
@@ -475,8 +475,8 @@ display_alive(fcoe_vHBA_alive *alive)
     for(i=0; i< 8; i++)
     printf("%x", alive->node_name[i]);
     printf("\nMAX RECV%x", alive->max_recv);
-	
-	
+    
+    
     printf("\nvHBA PORT INFO :");
     printf("\nFCF MAC ADDRESS:");
     for(i=0; i< 6; i++)
@@ -486,7 +486,7 @@ display_alive(fcoe_vHBA_alive *alive)
     printf("\nPORT NAME");
     for(i=0; i< 8; i++)
     printf("%x", alive->hba.name[i]);
-	
+    
     return err;
 }
 
@@ -497,15 +497,15 @@ packet_process()
     int a;
     fcoe_bridge_vfm_adv adv;
     fcoe_conx_vfm_adv solicit;
-	fcoe_vHBA_alive alive;
+    fcoe_vHBA_alive alive;
     uint8_t msg[] = { 0x02, 0x02, 0xaa, 0xcc, 0xdd, 0xAA, 0xBB, 0xCC, 0x04, 
-				      0x03, 0xf0, 0xff, 0xff, 0xf0, 0xff, 0xff, 0xf0, 0xff,
-				      0xff, 0xf0, 0x06, 0x01, 0x03, 0x03, 0x0e, 0x06, 0x00,
-				      0x00, 0x10, 0x00, 0x99, 0x98, 0x00, 0x00, 0x12, 0x34,
-				      0xa0, 0xb0, 0xc0, 0xd0, 0x01, 0x7f, 0x0c, 0xff, 0x00, 
-				      0x00, 0x00, 0x03 };
+                      0x03, 0xf0, 0xff, 0xff, 0xf0, 0xff, 0xff, 0xf0, 0xff,
+                      0xff, 0xf0, 0x06, 0x01, 0x03, 0x03, 0x0e, 0x06, 0x00,
+                      0x00, 0x10, 0x00, 0x99, 0x98, 0x00, 0x00, 0x12, 0x34,
+                      0xa0, 0xb0, 0xc0, 0xd0, 0x01, 0x7f, 0x0c, 0xff, 0x00, 
+                      0x00, 0x00, 0x03 };
     
-	a = fcoe_conx_discovery(msg, &solicit);
+    a = fcoe_conx_discovery(msg, &solicit);
     a = display(&solicit);
     a = fcoe_bridgeX_discovery(msg, &adv);
     a = display1(&adv);

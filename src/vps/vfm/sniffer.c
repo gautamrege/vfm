@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) 2008  VirtualPlane Systems, Inc.
+ */
 #include <net_util.h>
 #include <map_util.h>
 
@@ -366,17 +369,17 @@ out:
   */
 vps_error
 decide_packet(eth_hdr *fip_eth_hdr_fw, mlx_tunnel_hdr *tunnel_hdr,
-		ctrl_hdr * control_hdr, uint8_t *desc_buff)
+        ctrl_hdr * control_hdr, uint8_t *desc_buff)
 {
 
     /*  Reference: 
-	Opcode = 0x1 Subcode = 0x1 ConnectX Solicitation Descriptor
-	Opcode = 0x1 Subcode = 0x2 BridgeX Gateway Advertisement Descripto
-	Opcode = 0x2 Subcode = 0x1 ConnectX Login/Logout Descriptor
-	Opcode = 0x2 Subcode = 0x1 BridgeX Login Response Descripto
-	Opcode = 0x3 Subcode = 0x1 ConnectX Keep Alive Descriptor – vHBA
-	over EN
-	Opcode = 0x3 Subcode = 0x2 ConnectX Clear Virtual Link Descriptor
+    Opcode = 0x1 Subcode = 0x1 ConnectX Solicitation Descriptor
+    Opcode = 0x1 Subcode = 0x2 BridgeX Gateway Advertisement Descripto
+    Opcode = 0x2 Subcode = 0x1 ConnectX Login/Logout Descriptor
+    Opcode = 0x2 Subcode = 0x1 BridgeX Login Response Descripto
+    Opcode = 0x3 Subcode = 0x1 ConnectX Keep Alive Descriptor – vHBA
+    over EN
+    Opcode = 0x3 Subcode = 0x2 ConnectX Clear Virtual Link Descriptor
     */  
     vps_error err = VPS_SUCCESS;
 
