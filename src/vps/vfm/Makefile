@@ -8,10 +8,11 @@ SRC=server.c \
     crc32_le.c \
     crc32_le_tab.c \
     ether_crc32.c \
-    map_util.c \
-    vfm_fip.c
+	map_util.c \
+    vfm_fip.c \
+    queue.c
 TEST_SRC=db_test.c
-DEFS=-DMELLANOX
+DEFS=-DMELLANOX -DB_TEST
 CFLAGS=-g
 LIBS=-lsqlite3 -lpthread
 INC=-I.
@@ -25,4 +26,5 @@ clean:
     
 net:
 	gcc -o net $(CFLAGS) $(DEFS) $(INC) net_util.c common.c -lsqlite3
+
 
