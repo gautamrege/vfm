@@ -649,7 +649,7 @@ process_fc_els_res(uint8_t *buff, uint32_t size, uint32_t *ret_pos,
         fc_header->type_frame_ctrl = htonl(fc_header->type_frame_ctrl);
         fc_header->seq_count = htons(fc_header->seq_count);
         fc_header->res_id = htons(fc_header->res_id);
-        fc_header->ox_id = htons(fc_header->oxid);
+        fc_header->ox_id = htons(fc_header->ox_id);
 
         /* Replace OX_ID */
         /* fc_header->ox_id = htons(entry->oxid); */
