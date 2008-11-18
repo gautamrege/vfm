@@ -13,6 +13,7 @@ extern uint32_t g_gw_src_id;
 
 uint8_t g_wwnn[8];
 uint8_t g_wwpn[8];
+uint8_t g_fc_map[3] = { 0x0e, 0xfc, 0x00};
 
 /* To set the specific Flags */
 #define SET_FP 0x8000
@@ -25,8 +26,6 @@ uint8_t g_wwpn[8];
 
 /* Size of FLOGI/FDISC request*/
 #define FLOGI_SIZE 35
-#define FC_MAP 0x0EFC00
-
 
 
 /**
@@ -347,7 +346,7 @@ prepare_fcoe_vHBA_advertisement(ctrl_hdr *control_hdr, uint8_t **msg_desc)
          * bug. Please change bridge_enc_mac to bridge_mac later
          */
         memcpy(gw_adv.fcf_gw_mac, g_bridge_enc_mac, MAC_ADDR_LEN);
-        gw_adv.fc_map = htonl(FC_MAP);
+        memcpy(gw_adv.fc_map, g_fc_map, sizeof(g_fc_map));
         /* Switch Name */
         memset(gw_adv.switch_name, 0 , NAME_LEN);
         /* Fabric name: */
@@ -406,8 +405,8 @@ create_packet_ex(eth_hdr *fip_eth_hdr_fw,
 {
         uint8_t *payload, *temp;
         req_entry_map entry;
-        uint32_t lscomd                 = 6 * DWORD;
-        uint32_t oxid_loc           = 4 * DWORD;
+        uint32_t lscomd         = 6 * DWORD;
+        uint32_t oxid_loc       = 4 * DWORD;
         uint32_t vhba_mac_loc   = FLOGI_SIZE * DWORD + 2;
         uint16_t vfm_gen_oxid;
         uint8_t *offset = desc_buff;
@@ -625,7 +624,7 @@ prepare_fdisc_res(uint8_t *msg_desc,
         uint8_t *desc_buff, *offset;
         uint8_t *msg_desc_offset;
         uint16_t payload_len;
-        uint32_t fc_map_temp = htonl(FC_MAP);
+        uint8_t fc_map_temp[3];
         uint8_t temp[MAC_ADDR_LEN];
         uint32_t tmp_sid;
 
@@ -690,7 +689,7 @@ prepare_fdisc_res(uint8_t *msg_desc,
                  * Copy the FC MAP and the FC_ID i.e the dest_ID from the
                  * FC header to form the FPMA.
                  */
-                memcpy(temp, &fc_map_temp, 3 * sizeof(uint8_t));
+                memcpy(temp, g_fc_map, 3 * sizeof(uint8_t));
 
                 /* Copy FC_ID ie the dest id */
                 tmp_sid = htonl(fc_header->rt_ctrl_dest_id << 8);
