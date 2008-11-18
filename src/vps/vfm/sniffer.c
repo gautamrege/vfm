@@ -186,27 +186,30 @@ process_fc_response(uint8_t *buff,
         vps_error err = VPS_SUCCESS;
         fc_hdr fc_header;   /* FC header  */
         req_entry_map *entry;
+        uint16_t ox_id;
+
         vps_trace(VPS_ENTRYEXIT, "Entering process_fc_response");
 
         /* Read the FC header and decide if its a request or a response */
         read_fc_hdr(buff, size, ret_pos, &fc_header);
 
-        /* TODO */
         /* Response processing */
         /* Find the oxid from the FC header and lookup in the map. */
         /* Process the response */
 
-        /*get entry from map*/
+        ox_id = fc_header.ox_id;
+
+        /* get entry from map*/
         entry =  get_entry_from_map(fc_header.ox_id);
 
-        /*If map entry not exist then return */
+        /* If map entry not exist then return */
         if (entry == NULL) {
-                vps_trace(VPS_ERROR, "Non VFM FC response");
-                err = VPS_MAPERROR_NO_ENTRY;
+                vps_trace(VPS_ERROR, "ELS request packet from FC.. reject!");
+                create_reject_els(fc_header);
                 goto out;
         }
 
-        /*If map entry for VFM flogi then Free map entry and return*/
+        /* If map entry for VFM flogi then Free map entry and return*/
         if (entry->flag == 0x1) {
                 if (buff[*ret_pos] == 0x01) {
                         /*
@@ -219,9 +222,18 @@ process_fc_response(uint8_t *buff,
                 }
                 vps_trace(VPS_INFO, "-- ** VFM FLOGI(ACC) response ** --");
                 g_gw_src_id = fc_header.rt_ctrl_dest_id & 0x00FFFFFF;
-                remove_entry_from_map(fc_header.ox_id);
+                remove_entry_from_map(ox_id);
                 goto out;
         }
+        else if (entry->flag == 0x03) {
+                /* process for plogi or other els response*/
+                process_fc_els_res(buff, size, ret_pos, tunnel_hdr, &fc_header,
+                                   entry);
+
+                remove_entry_from_map(ox_id);
+                        goto out;
+        }
+
 
         /*Check for LS command code*/
         switch (buff[*ret_pos]) {
@@ -242,7 +254,7 @@ process_fc_response(uint8_t *buff,
         }
 
         /*Free map entry*/
-        remove_entry_from_map(fc_header.ox_id);
+        remove_entry_from_map(ox_id);
 out:
 
         vps_trace(VPS_ENTRYEXIT, "Leaving process_fc_response");
@@ -360,9 +372,9 @@ out:
  * It would also send a response if required for the received packet.
  *
  * *fip_eth_hdr_fw  [IN] : Forwarded Ethernet header Structure.
- * *t_hdr                   [IN] : Tunnel Header Structure.
- * *c_hdr                   [IN] : Control header Structure.
- * *desc_buff           [IN] : The buffer that contains the payload.
+ * *t_hdr           [IN] : Tunnel Header Structure.
+ * *c_hdr           [IN] : Control header Structure.
+ * *desc_buff       [IN] : The buffer that contains the payload.
  *
  * Returns vps_error.
  */
@@ -488,6 +500,157 @@ send_gw_ad()
 
 }
 
+/*
+ * FC ELS request processing
+ *
+ * [IN]  *buff        : buffer read from socket.
+ * [IN]  size         : Read number of bytes read from socket.
+ * [OUT] *ret_pos     : Number of bytes processed.
+ * [IN]  *tunnel_hdr  : Tunnel header.
+ * [IN]  *fcoe_eth_hdr: Ethernet header with ether type = 8906(FCoE)
+ *
+ * Returns : error code
+ *                   Incomplete packet
+ */
+vps_error
+process_fc_els_req(uint8_t *buff, uint32_t size, uint32_t *ret_pos,
+                mlx_tunnel_hdr *tunnel_hdr,
+                eth_hdr *fcoe_eth_hdr)
+{
+
+        vps_error err = VPS_SUCCESS;
+        uint32_t fc_pk_len;
+        uint32_t oxid_loc = 4 * DWORD;
+        req_entry_map entry;
+        uint16_t vfm_gen_oxid;
+
+        vps_trace(VPS_ENTRYEXIT, "Entering process_fc_els_req");
+
+        /*
+         * Calulate FC payload length.
+         * Minus tunnel header len + FCoE header length(4 dword)
+         *  + 2 reserved dword
+         * 1 Dword sof + 1 Dword eof
+         */
+        fc_pk_len = tunnel_hdr->length * DWORD - sizeof(mlx_tunnel_hdr)
+                     - 4*DWORD - 4*DWORD;
+
+        tunnel_hdr->port_num =  tunnel_hdr->port_num | 0x80;
+
+        buff += *ret_pos + 3*DWORD;
+
+        memcpy(entry.mac, fcoe_eth_hdr->dhost_mac, MAC_ADDR_LEN);
+        memcpy(entry.vhba_mac, fcoe_eth_hdr->shost_mac, MAC_ADDR_LEN);
+
+        /* For other els packet map entry flag = 3 */
+        entry.flag = 0x03;
+
+        /* Map the entry to the index in the map list */
+        vfm_gen_oxid = htons(add_entry_to_map(&entry));
+
+        /* Copy the VFM_generated OXID in the FDISC payload */
+        memcpy(buff + oxid_loc, &vfm_gen_oxid, sizeof(uint16_t));
+
+        send_fc_packet(g_local_mac, g_bridge_mac, tunnel_hdr, buff, fc_pk_len);
+
+        vps_trace(VPS_ENTRYEXIT, "Leaving process_fc_els_req");
+        return err;
+}
+
+/*
+ * FC ELS response processing
+ *
+ * [IN]  *buff        : buffer read from socket.
+ * [IN]  size         : Frame size.
+ * [OUT] *ret_pos     : Number of bytes processed.
+ * [IN]  *tunnel_hdr  : Tunnel header.
+ * [IN]  *fc_hdr      : FC header.
+ * [IN]  *entry       : Map entry.
+ *
+ * Returns : error code
+ *                   Incomplete packet
+ */
+vps_error
+process_fc_els_res(uint8_t *buff, uint32_t size, uint32_t *ret_pos,
+                mlx_tunnel_hdr *tunnel_hdr, fc_hdr *fc_header,
+                req_entry_map *entry)
+{
+        vps_error err = VPS_SUCCESS;
+        uint32_t fc_pk_len;
+        uint8_t *fcoe_buff, *temp;
+
+        vps_trace(VPS_ENTRYEXIT, "Entering process_fc_els_res");
+
+        /* To send to ethernet plane make E flag =0 */
+        tunnel_hdr->port_num =  tunnel_hdr->port_num & 0x7F;
+
+        /* Calculate FC packet length */
+        fc_pk_len = size - *ret_pos;
+
+        /*
+         * Allocate memory for FCoE packet.
+         * FCoE header length + 3 DWORD reserved + FC packet length +reserved
+         */
+        fcoe_buff = (uint8_t*)malloc(4* DWORD + 3*DWORD + fc_pk_len + DWORD);
+        memset(fcoe_buff, 0x00, 4* DWORD + 3*DWORD + fc_pk_len + DWORD);
+
+        tunnel_hdr->length = (4* DWORD + 3*DWORD + fc_pk_len + DWORD +
+                             sizeof(mlx_tunnel_hdr))/DWORD;
+        temp = fcoe_buff;
+
+        /* Fill up FCoE header*/
+        memcpy(temp, entry->vhba_mac, MAC_ADDR_LEN);
+        temp += MAC_ADDR_LEN;
+        memcpy(temp, entry->mac, MAC_ADDR_LEN);
+        temp += MAC_ADDR_LEN;
+
+        /* Copy FCoE ether type = 0x8906 */
+        temp[0] = 0x89;
+        temp[1] = 0x06;
+
+        /* version */
+        temp[2] = 0x04;
+        temp += DWORD;
+
+        /* 2 DWORD reserved */
+        temp += 2*DWORD;
+        temp += 3;
+
+        /* SOF */
+        temp[0] = 0x2E;
+        temp++;
+
+        /* Process FC header */
+        fc_header->rt_ctrl_dest_id = htonl(fc_header->rt_ctrl_dest_id);
+        fc_header->src_id = htonl(fc_header->src_id);
+        fc_header->type_frame_ctrl = htonl(fc_header->type_frame_ctrl);
+        fc_header->seq_count = htons(fc_header->seq_count);
+        fc_header->res_id = htons(fc_header->res_id);
+
+        /* Replace OX_ID */
+        fc_header->ox_id = htons(entry->oxid);
+
+        /* Copy FC header */
+        memcpy(temp, fc_header, sizeof(fc_hdr));
+        temp += sizeof(fc_hdr);
+
+        /* Copy FC packet paylaod*/
+        memcpy(temp, buff, fc_pk_len - sizeof(fc_hdr));
+        temp += fc_pk_len;
+
+        /* EOF */
+        temp += 0x42;
+
+         /* To send the FC packet to host*/
+         send_fc_packet(g_local_mac, g_bridge_mac, tunnel_hdr,
+                        fcoe_buff, 4* DWORD + 3*DWORD + fc_pk_len + DWORD);
+
+        free(fcoe_buff);
+
+        vps_trace(VPS_ENTRYEXIT, "Leaving  process_fc_els_res");
+        return err;
+}
+
 /**
  * Read whole packet.
  * Update database and send response.
@@ -559,6 +722,15 @@ process_packet()
                                 fip_eth_hdr.ether_type);
                 vps_trace(VPS_ERROR, " Read Packet : Ignore packet");
                 err = VPS_ERROR_IGNORE;
+                goto out;
+        }
+        /*
+         *  If plogi or other ELS packet receive(exclude FLOGI/FDISC)
+         *  then process FCoE pay load.
+         */
+        if (fip_eth_hdr_fw.ether_type == FCOE_ETH_TYPE) {
+                err = process_fc_els_req(packet->data , recv_size,
+                                &ret_pos, &tunnel_hdr, &fip_eth_hdr_fw);
                 goto out;
         }
 

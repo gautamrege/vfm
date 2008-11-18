@@ -11,6 +11,7 @@
 #include <linux/if_packet.h>
 #include <net/ethernet.h>
 #include <sys/socket.h>
+#include <map_util.h>
 
 #ifdef MELLANOX
 #include <mlx_fip.h>
@@ -29,6 +30,8 @@
 
 #define FIP_ETH_TYPE   0x8914           /* Ether type for FIP packet*/
 #define ETH_HDR_LEN        20           /* Ethernet header lenght in bytes*/
+
+#define FCOE_ETH_TYPE   0x8906          /* Ether type for FCoE packet*/
 
 #define VLAN_TAG       0x8100           /* VLAN tag value */
 #define TUNNEL_HDR_TYPE  244            /* Tunnel header type vlaue */
@@ -220,7 +223,7 @@ typedef struct __fcoe_conx_vfm_adv{
 typedef struct __fcoe_vHBA_adv{
         uint8_t  priority;                  /* Priority */
         uint8_t  fcf_gw_mac[MAC_ADDR_LEN];  /* FCF gateway mac address */
-        uint8_t  fc_map[3];                 /* FC-MAP */
+        uint32_t fc_map;                    /* FC-MAP */
         uint8_t switch_name[NAME_LEN];      /* Switch Name */
         uint8_t fabric_name[NAME_LEN];      /* Fabric name */
         uint32_t fka_adv_period;            /* FKA_ADV_PERIOD */
@@ -437,5 +440,32 @@ vps_error send_fc_packet(
                 mlx_tunnel_hdr *tunnel_hdr,
                 uint8_t *desc_buff,
                 uint32_t desc_len);
+/*
+ * FC ELS response processing
+ *
+ * [IN]  *buff        : buffer read from socket.
+ * [IN]  size         : Frame size.
+ * [OUT] *ret_pos     : Number of bytes processed.
+ * [IN]  *tunnel_hdr  : Tunnel header.
+ * [IN]  *fc_hdr      : FC header.
+ * [IN]  *entry       : Map entry.
+ *
+ * Returns : error code
+ *                   Incomplete packet
+ */
+vps_error
+process_fc_els_res(uint8_t *buff, uint32_t size, uint32_t *ret_pos,
+                mlx_tunnel_hdr *tunnel_hdr, fc_hdr *fc_header,
+                req_entry_map *entry);
+
+/*
+ * ELS request rejct.(Only for come from FC plane for GW)
+ *
+ * [IN] fc_hdr : FC header for create LS Reject.
+ *
+ * Return : err
+ */
+vps_error
+create_reject_els(fc_hdr fc_header);
 
 #endif /* __VFM_FIP_H_ */
