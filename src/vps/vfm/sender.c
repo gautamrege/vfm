@@ -177,8 +177,9 @@ send_packet(uint8_t tunnel_flag,
         uint32_t padding          = 0;
         uint32_t vlan_tag         = 0;
         uint32_t en_footer        = 0;
-        uint32_t en_footer_fw = 0;
-        uint16_t desc_length  = control_hdr->desc_list_length * DWORD;
+        uint32_t en_footer_fw     = 0;
+        uint16_t desc_length      = control_hdr->desc_list_length * DWORD;
+        uint8_t  s_flag           = 0;
 
         vps_trace(VPS_ENTRYEXIT, "Entering make_packet");
 
@@ -213,6 +214,10 @@ send_packet(uint8_t tunnel_flag,
                 }
         }
 
+        /* check for solicit messages */
+        s_flag = (control_hdr->flags & 0x2);
+
+
         /*-- 3. Add control header --*/
         /*Control header*/
         control_hdr->opcode = htons(control_hdr->opcode);
@@ -229,21 +234,30 @@ send_packet(uint8_t tunnel_flag,
         offset += desc_length;
 
 
-        /* Padding the packet to the Max Receive Size */
-        max_recv = 1000; /* TEST */
-        padding = max_recv - desc_length - sizeof(uint16_t);
-        offset += padding;
+        /*
+         * Padding the packet to the Max Receive Size only for solicitions
+         * The padding is calculated as follows:
+         * padd = (max_recv - payload - Version(2 bytes) - sizeof control_hdr)
+         */
+        if (s_flag) {
+                max_recv = 1000; /* TEST */
+                padding = max_recv - desc_length -
+                        sizeof(uint16_t) - (2 * DWORD);
+                offset += padding;
+        }
 
-        /*--5.Add forward ethernet footer.--*/
+        /* --5.Add forward ethernet footer.--*/
         /*If tunnel flag true then Copy Footer for forword */
         if (tunnel_flag == TRUE) {
                 memcpy(buff + offset, &en_footer_fw , sizeof(uint32_t));
                 offset += sizeof(uint32_t);
         }
 
-        /*--7.Add ethernet footer.--*/
-        memcpy(buff + offset, &en_footer , sizeof(uint32_t));
-        offset += sizeof(uint32_t);
+        /* TODO:--7.Add ethernet footer.--*/
+        /*
+         * memcpy(buff + offset, &en_footer , sizeof(uint32_t));
+         * offset += sizeof(uint32_t);
+         */
 
         /*--8.send data by socket*/
         if ((err = send_buffer(MULTICAST, buff, offset))!= VPS_SUCCESS) {

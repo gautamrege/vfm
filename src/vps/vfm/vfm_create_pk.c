@@ -700,6 +700,10 @@ prepare_fdisc_res(uint8_t *msg_desc,
         free(tlv.value);
 
 
+        /*
+         * TODO The max_rec_size should be read from the database entry for the
+         * Host.
+         */
         send_packet(tunnel_flag, g_local_mac, entry->mac, g_bridge_enc_mac,
                         &tun_hdr, &control_hdr, desc_buff, 0);
 
