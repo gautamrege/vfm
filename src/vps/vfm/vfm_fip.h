@@ -223,7 +223,7 @@ typedef struct __fcoe_conx_vfm_adv{
 typedef struct __fcoe_vHBA_adv{
         uint8_t  priority;                  /* Priority */
         uint8_t  fcf_gw_mac[MAC_ADDR_LEN];  /* FCF gateway mac address */
-        uint32_t fc_map;                    /* FC-MAP */
+        uint8_t  fc_map[3];                 /* FC-MAP */
         uint8_t switch_name[NAME_LEN];      /* Switch Name */
         uint8_t fabric_name[NAME_LEN];      /* Fabric name */
         uint32_t fka_adv_period;            /* FKA_ADV_PERIOD */
