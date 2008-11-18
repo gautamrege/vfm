@@ -8,6 +8,7 @@
 extern uint8_t g_local_mac[MAC_ADDR_LEN];
 extern uint8_t g_bridge_mac[MAC_ADDR_LEN];
 extern uint32_t g_if_index;
+extern uint8_t g_fc_map[3];
 uint32_t g_gw_src_id;
 
 /* byte wise VLAN Tag Postion in  EN header */
@@ -193,21 +194,29 @@ process_fc_response(uint8_t *buff,
         /* Read the FC header and decide if its a request or a response */
         read_fc_hdr(buff, size, ret_pos, &fc_header);
 
+        /* IF fc request coming from FC plane reject it */
+        if (fc_header.rt_ctrl_dest_id & 0x22000000) {
+                vps_trace(VPS_ERROR, "ELS request packet from FC.. reject!");
+                create_reject_els(fc_header);
+                goto out;
+         }
         /* Response processing */
         /* Find the oxid from the FC header and lookup in the map. */
         /* Process the response */
+
+        if (fc_header.src_id != 0x00FFFFFE) {
+                /* process for els response*/
+                process_fc_els_res(buff, size, ret_pos, tunnel_hdr, &fc_header,
+                                   entry);
+                goto out;
+        }
 
         ox_id = fc_header.ox_id;
 
         /* get entry from map*/
         entry =  get_entry_from_map(fc_header.ox_id);
 
-        /* If map entry not exist then return */
-        if (entry == NULL) {
-                vps_trace(VPS_ERROR, "ELS request packet from FC.. reject!");
-                create_reject_els(fc_header);
-                goto out;
-        }
+        /* IMPORTANT: entry should NOT be NULL here */
 
         /* If map entry for VFM flogi then Free map entry and return*/
         if (entry->flag == 0x1) {
@@ -225,14 +234,16 @@ process_fc_response(uint8_t *buff,
                 remove_entry_from_map(ox_id);
                 goto out;
         }
-        else if (entry->flag == 0x03) {
-                /* process for plogi or other els response*/
-                process_fc_els_res(buff, size, ret_pos, tunnel_hdr, &fc_header,
-                                   entry);
-
-                remove_entry_from_map(ox_id);
-                        goto out;
-        }
+        /*
+         * else if (entry->flag == 0x03) {
+         *      process for plogi or other els response
+         *
+         *      process_fc_els_res(buff, size, ret_pos, tunnel_hdr, &fc_header,
+         *                          entry);
+         *      remove_entry_from_map(ox_id);
+         *               goto out;
+         * }
+         */
 
 
         /*Check for LS command code*/
@@ -529,27 +540,28 @@ process_fc_els_req(uint8_t *buff, uint32_t size, uint32_t *ret_pos,
         /*
          * Calulate FC payload length.
          * Minus tunnel header len + FCoE header length(4 dword)
-         *  + 2 reserved dword
-         * 1 Dword sof + 1 Dword eof
          */
-        fc_pk_len = tunnel_hdr->length * DWORD - sizeof(mlx_tunnel_hdr)
-                     - 4*DWORD - 4*DWORD;
+        fc_pk_len = tunnel_hdr->length * DWORD - sizeof(mlx_tunnel_hdr) -
+                     4*DWORD;
 
         tunnel_hdr->port_num =  tunnel_hdr->port_num | 0x80;
 
-        buff += *ret_pos + 3*DWORD;
+        /*Set buffer pointer at start of FC frame*/
+        buff += *ret_pos;
 
-        memcpy(entry.mac, fcoe_eth_hdr->dhost_mac, MAC_ADDR_LEN);
-        memcpy(entry.vhba_mac, fcoe_eth_hdr->shost_mac, MAC_ADDR_LEN);
+        /*
+         * memcpy(entry.mac, fcoe_eth_hdr->dhost_mac, MAC_ADDR_LEN);
+         * memcpy(entry.vhba_mac, fcoe_eth_hdr->shost_mac, MAC_ADDR_LEN);
+         */
 
         /* For other els packet map entry flag = 3 */
-        entry.flag = 0x03;
+        /* entry.flag = 0x03;*/
 
         /* Map the entry to the index in the map list */
-        vfm_gen_oxid = htons(add_entry_to_map(&entry));
+        /* vfm_gen_oxid = htons(add_entry_to_map(&entry)); */
 
         /* Copy the VFM_generated OXID in the FDISC payload */
-        memcpy(buff + oxid_loc, &vfm_gen_oxid, sizeof(uint16_t));
+        /* memcpy(buff + oxid_loc, &vfm_gen_oxid, sizeof(uint16_t));*/
 
         send_fc_packet(g_local_mac, g_bridge_mac, tunnel_hdr, buff, fc_pk_len);
 
@@ -578,6 +590,8 @@ process_fc_els_res(uint8_t *buff, uint32_t size, uint32_t *ret_pos,
         vps_error err = VPS_SUCCESS;
         uint32_t fc_pk_len;
         uint8_t *fcoe_buff, *temp;
+        uint32_t temp_did;
+        uint32_t length;
 
         vps_trace(VPS_ENTRYEXIT, "Entering process_fc_els_res");
 
@@ -589,19 +603,24 @@ process_fc_els_res(uint8_t *buff, uint32_t size, uint32_t *ret_pos,
 
         /*
          * Allocate memory for FCoE packet.
-         * FCoE header length + 3 DWORD reserved + FC packet length +reserved
+         * FCoE header length  + FC packet length +  reserved
          */
-        fcoe_buff = (uint8_t*)malloc(4* DWORD + 3*DWORD + fc_pk_len + DWORD);
-        memset(fcoe_buff, 0x00, 4* DWORD + 3*DWORD + fc_pk_len + DWORD);
+        length = 4*DWORD + fc_pk_len;
+        fcoe_buff = (uint8_t*)malloc(length);
+        memset(fcoe_buff, 0x00, length);
 
-        tunnel_hdr->length = (4* DWORD + 3*DWORD + fc_pk_len + DWORD +
-                             sizeof(mlx_tunnel_hdr))/DWORD;
+        tunnel_hdr->length = (length + sizeof(mlx_tunnel_hdr))/DWORD;
         temp = fcoe_buff;
 
         /* Fill up FCoE header*/
-        memcpy(temp, entry->vhba_mac, MAC_ADDR_LEN);
-        temp += MAC_ADDR_LEN;
-        memcpy(temp, entry->mac, MAC_ADDR_LEN);
+        memcpy(temp, g_fc_map, sizeof(g_fc_map));
+        temp +=3;
+
+        temp_did = htonl(fc_header->rt_ctrl_dest_id << 8);
+        memcpy(temp, &temp_did, 3);
+        temp += 3;
+
+        memcpy(temp, g_bridge_mac, MAC_ADDR_LEN);
         temp += MAC_ADDR_LEN;
 
         /* Copy FCoE ether type = 0x8906 */
@@ -613,12 +632,16 @@ process_fc_els_res(uint8_t *buff, uint32_t size, uint32_t *ret_pos,
         temp += DWORD;
 
         /* 2 DWORD reserved */
-        temp += 2*DWORD;
-        temp += 3;
+        /*
+         * temp += 2*DWORD;
+         * temp += 3;
+         */
 
         /* SOF */
-        temp[0] = 0x2E;
-        temp++;
+        /*
+         * temp[0] = 0x2E;
+         * temp++;
+         */
 
         /* Process FC header */
         fc_header->rt_ctrl_dest_id = htonl(fc_header->rt_ctrl_dest_id);
@@ -626,9 +649,10 @@ process_fc_els_res(uint8_t *buff, uint32_t size, uint32_t *ret_pos,
         fc_header->type_frame_ctrl = htonl(fc_header->type_frame_ctrl);
         fc_header->seq_count = htons(fc_header->seq_count);
         fc_header->res_id = htons(fc_header->res_id);
+        fc_header->ox_id = htons(fc_header->oxid);
 
         /* Replace OX_ID */
-        fc_header->ox_id = htons(entry->oxid);
+        /* fc_header->ox_id = htons(entry->oxid); */
 
         /* Copy FC header */
         memcpy(temp, fc_header, sizeof(fc_hdr));
@@ -639,11 +663,11 @@ process_fc_els_res(uint8_t *buff, uint32_t size, uint32_t *ret_pos,
         temp += fc_pk_len;
 
         /* EOF */
-        temp += 0x42;
+        /* temp[0] = 0x42;*/
 
-         /* To send the FC packet to host*/
-         send_fc_packet(g_local_mac, g_bridge_mac, tunnel_hdr,
-                        fcoe_buff, 4* DWORD + 3*DWORD + fc_pk_len + DWORD);
+        /* To send the FC packet to host*/
+        send_fc_packet(g_local_mac, g_bridge_mac, tunnel_hdr,
+                        fcoe_buff, length);
 
         free(fcoe_buff);
 
