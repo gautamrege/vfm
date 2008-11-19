@@ -93,12 +93,6 @@ read_eth_hdr(uint8_t *buff,
         /* Convert network byte order to host byte order */
         fip_eth_hdr->ether_type = ntohs(fip_eth_hdr->ether_type);
 
-        /* If packet is not FIP packet then retun ignore packet*/
-        if (fip_eth_hdr->ether_type != FIP_ETH_TYPE) {
-                vps_trace(VPS_INFO, "NOT FIP Packet ");
-                err = VPS_ERROR_IGNORE;
-        }
-
         /* Convert network byte order to host byte order */
         /* To get last nibble because version size is 1 nibble(4 bits)*/
         fip_eth_hdr->version = ntohs(fip_eth_hdr->version) & FIP_VERSION_MASK;

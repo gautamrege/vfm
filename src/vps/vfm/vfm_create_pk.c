@@ -412,6 +412,7 @@ create_packet_ex(eth_hdr *fip_eth_hdr_fw,
         uint32_t vhba_mac_loc   = FLOGI_SIZE * DWORD + 2;
         uint16_t vfm_gen_oxid;
         uint8_t *offset = desc_buff;
+
         vps_error err = VPS_SUCCESS;
         vps_trace(VPS_ENTRYEXIT, "Entering create_packet_ex");
 
