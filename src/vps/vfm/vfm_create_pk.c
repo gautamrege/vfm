@@ -564,6 +564,7 @@ create_reject_els(fc_hdr fc_header)
         fc_header.src_id = htonl(0x00FFFFFF & temp_fc);
         fc_header.type_frame_ctrl = htonl(0x01990000);
         fc_header.res_id = htons(fc_header.res_id);
+        fc_header.ox_id = htons(fc_header.ox_id);
 
         /* Create VFM PLOGI Reject (FC header + reject payload)*/
         msg_desc = (uint8_t *)malloc(8 * DWORD);

@@ -195,7 +195,7 @@ process_fc_response(uint8_t *buff,
         read_fc_hdr(buff, size, ret_pos, &fc_header);
 
         /* IF fc request coming from FC plane reject it */
-        if (fc_header.rt_ctrl_dest_id & 0x22000000) {
+        if ((fc_header.rt_ctrl_dest_id & 0xFF000000) == 0x22000000) {
                 vps_trace(VPS_ERROR, "ELS request packet from FC.. reject!");
                 create_reject_els(fc_header);
                 goto out;
