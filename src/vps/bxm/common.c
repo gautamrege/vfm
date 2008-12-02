@@ -14,6 +14,9 @@ int g_loglevel = 0;
 /* Database pointer */
 sqlite3 *g_db = NULL;
 
+extern int g_bxm_local;
+extern int g_bxm_remote;
+extern uint8_t g_bxm_protocol;
 extern uint8_t g_bridge_mac[6];
 extern uint8_t g_bridge_enc_mac[6];
 extern uint8_t g_if_name[10];
@@ -57,8 +60,9 @@ parse_address(const char *input_type,
                 out_buff[i] = buff[j]<<4 | buff[j+1];
 }
 
+
 /*
- * Parse configuration file.(vfm.config)
+ * Parse configuration file.(bxm.config)
  *
  * Returns : vps_err
  */
@@ -76,47 +80,91 @@ parse_configuration()
         FILE *fp;
         uint8_t type[30];
         uint8_t value[30];
-        uint8_t temp[30];
+        uint8_t temp[30], temp1[30];
 
-        if ((fp = fopen("vfm.config", "r"))!=NULL) {
-           fscanf(fp, "%s %s", type, value);
-           parse_address("gw_internal_mac", value, 6, g_bridge_enc_mac);
+        if ((fp = fopen("bxm.config", "r"))!=NULL) {
+                fscanf(fp, "%s %s", type, temp);
+                g_loglevel = atoi(temp);
+                printf("Log Level  : %d\n", g_loglevel);
 
-           printf("Bridge Internal mac: %0.2X:%0.2X:%0.2X:%0.2X:%0.2X:%0.2X\n",
-                           g_bridge_enc_mac[0], g_bridge_enc_mac[1],
-                           g_bridge_enc_mac[2], g_bridge_enc_mac[3],
-                           g_bridge_enc_mac[4], g_bridge_enc_mac[5]);
+                fscanf(fp, "%s %s %s", type, temp, temp1);
+                g_bxm_local = atoi(temp);
+                g_bxm_remote = atoi(temp1);
 
-           fscanf(fp, "%s %s", type, value);
-           parse_address("gw_mac", value, 6, g_bridge_mac);
+                if (g_bxm_local == 1) {
+                        printf(" BXM TYPE : Local  BXM \n ");
+                }
+                else if (g_bxm_local > 1 || g_bxm_local < 0) {
+                        printf(" BXM TYPE : Invalid Local BXM type\n ");
+                        exit(0);
+                }
 
-           printf("Bridge  mac : %0.2X:%0.2X:%0.2X:%0.2X:%0.2X:%0.2X\n",
-                           g_bridge_mac[0], g_bridge_mac[1], g_bridge_mac[2],
-                           g_bridge_mac[3], g_bridge_mac[4], g_bridge_mac[5]);
+                if (g_bxm_remote == 1) {
+                        printf(" BXM TYPE : Remote  BXM \n ");
+                }
+                else if ((g_bxm_remote > 1) || (g_bxm_local < 0)) {
+                        printf(" BXM TYPE : Invalid  BXM type\n ");
+                        exit(0);
+                }
 
-           fscanf(fp, "%s %s", type, g_if_name);
-           printf("VFM eth interface: %s\n", g_if_name);
+                if (g_bxm_remote == 1 &&  g_bxm_remote == 1) {
+                        printf(" BXM TYPE's : Local and remote BXM\n ");
+                }
 
-           fscanf(fp, "%s %s", type, temp);
-           g_loglevel = atoi(temp);
-           printf("Log Level  : %d\n", g_loglevel);
+                fscanf(fp, "%s %s", type, temp1);
+                g_bxm_protocol = atoi(temp1);
 
-           fscanf(fp, "%s %s", type, value);
-           parse_address("wwnn", value, 8, g_wwnn);
+                if (g_bxm_protocol == BXM_EN_PROTOCOL ) {
+                        printf("BXM Protocol Type: EN\n ");
+                        goto en_config;
+                }
+                else if (g_bxm_protocol == BXM_IB_PROTOCOL) {
+                        printf("BXM Protocol Type: IB \n");
+                        goto ib_config;
+                }
+                else {
+                        printf("BXM Protocol Type: Unknown \n");
+                        goto out;
+                }
+en_config:
+                fscanf(fp, "%s %s", type, value);
+                parse_address("gw_internal_mac", value, 6, g_bridge_enc_mac);
 
-           printf("WWNN : %0.2X:%0.2X:%0.2X:%0.2X:%0.2X:%0.2X:%0.2X:%0.2X\n",
-                           g_wwnn[0], g_wwnn[1], g_wwnn[2],
-                           g_wwnn[3], g_wwnn[4], g_wwnn[5],
-                           g_wwnn[6], g_wwnn[7]);
+                printf("Bridge Internal mac: %0.2X:%0.2X:%0.2X:%0.2X:%0.2X:%0.2X\n",
+                                g_bridge_enc_mac[0], g_bridge_enc_mac[1],
+                                g_bridge_enc_mac[2], g_bridge_enc_mac[3],
+                                g_bridge_enc_mac[4], g_bridge_enc_mac[5]);
 
-           fscanf(fp, "%s %s", type, value);
-           parse_address("wwpn", value, 8, g_wwpn);
+                fscanf(fp, "%s %s", type, value);
+                parse_address("gw_mac", value, 6, g_bridge_mac);
 
-           printf("WWPN: %0.2X:%0.2X:%0.2X:%0.2X:%0.2X:%0.2X:%0.2X:%0.2X\n",
-                           g_wwpn[0], g_wwpn[1], g_wwpn[2],
-                           g_wwpn[3], g_wwpn[4], g_wwpn[5],
-                           g_wwpn[6], g_wwpn[7]);
+                printf("Bridge  mac : %0.2X:%0.2X:%0.2X:%0.2X:%0.2X:%0.2X\n",
+                                g_bridge_mac[0], g_bridge_mac[1], g_bridge_mac[2],
+                                g_bridge_mac[3], g_bridge_mac[4], g_bridge_mac[5]);
 
+                fscanf(fp, "%s %s", type, g_if_name);
+                printf("VFM eth interface: %s\n", g_if_name);
+
+
+                fscanf(fp, "%s %s", type, value);
+                parse_address("wwnn", value, 8, g_wwnn);
+
+                printf("WWNN : %0.2X:%0.2X:%0.2X:%0.2X:%0.2X:%0.2X:%0.2X:%0.2X\n",
+                                g_wwnn[0], g_wwnn[1], g_wwnn[2],
+                                g_wwnn[3], g_wwnn[4], g_wwnn[5],
+                                g_wwnn[6], g_wwnn[7]);
+
+                fscanf(fp, "%s %s", type, value);
+                parse_address("wwpn", value, 8, g_wwpn);
+
+                printf("WWPN: %0.2X:%0.2X:%0.2X:%0.2X:%0.2X:%0.2X:%0.2X:%0.2X\n",
+                                g_wwpn[0], g_wwpn[1], g_wwpn[2],
+                                g_wwpn[3], g_wwpn[4], g_wwpn[5],
+                                g_wwpn[6], g_wwpn[7]);
+
+
+ib_config : /* read IB configuration*/
+               printf("IB config");
         }
         else {
                 /* For now, hard-code the global config */
@@ -126,6 +174,7 @@ parse_configuration()
                 g_logfile = fopen(LOGFILE, "a");
         }
 
+out :
         return err;
 }
 

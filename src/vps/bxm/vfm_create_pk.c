@@ -5,6 +5,7 @@
 #include<stdint.h>
 #include<net_util.h>
 #include<map_util.h>
+#include<bxm_iboe.h>
 
 extern uint8_t g_local_mac[MAC_ADDR_LEN];
 extern uint8_t g_bridge_enc_mac[MAC_ADDR_LEN];
@@ -128,6 +129,11 @@ create_tlv(void *data, vp_tlv *tlv)
                         memcpy(tlv->value + sizeof(uint16_t), data, DWORD);
                         break;
 
+                case TLV_13:
+                        /* VENDOR ID : MELLANOX IBOE*/
+                        memcpy(tlv->value + sizeof(uint16_t), data, length);
+                        break;
+
                 case MLX_TLV_1:
                         /*
                          * MELLANOX SPECIFIC TLV for Associating VFM to BridgeX
@@ -137,6 +143,20 @@ create_tlv(void *data, vp_tlv *tlv)
                          */
                         memcpy(tlv->value + sizeof(uint16_t), data, 5 * DWORD);
                         break;
+
+                case MLX_TLV_240:
+                        /*
+                         * MELLANOX SPECIFIC TLV, for EoIB, storing the GW INFO
+                         */
+                        memcpy(tlv->value + sizeof(uint16_t), data, length);
+                        break;
+                case MLX_TLV_241:
+                        /*
+                         * MELLANOX SPECIFIC TLV, for EoIB, storing the GW INFO
+                         */
+                        memcpy(tlv->value + sizeof(uint16_t), data, length);
+                        break;
+
 
         }
 
@@ -160,7 +180,7 @@ create_tlv(void *data, vp_tlv *tlv)
  *  Returns vps_error: 0 for success.
  *
  */
-        vps_error
+vps_error
 fcoe_vHBA_advertisement(fcoe_vHBA_adv *adv, uint8_t *msg_desc)
 {
 

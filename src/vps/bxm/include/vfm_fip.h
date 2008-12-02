@@ -39,6 +39,16 @@
 #define DWORD               4           /* 1 dword = 4 byte */
 #define NAME_LEN            8           /* 8 bytes */
 
+/* To set the specific Flags */
+#define SET_FP 0x8000
+#define SET_SP 0x4000
+#define SET_A  0x4
+#define SET_S  0x2
+#define SET_F  0x1
+
+#define SET_E  0x80           /* to set the tunnel hdr E flag */
+
+
 #define TLV_1                     1
 #define TLV_2                     2
 #define TLV_3                     3
@@ -51,12 +61,15 @@
 #define TLV_10                   10
 #define TLV_11                   11
 #define TLV_12                   12
+#define TLV_13                   13
 
 /* MELLANOX SPECIFIC TLV's */
 /* Table 9: VFM Solicitation Descriptor  for BridgeX */
 #define MLX_TLV_1                101
 /* Table 5: BridgeX Discovery Advertisement Descriptor */
 #define MLX_TLV_2                102
+#define MLX_TLV_240              240
+#define MLX_TLV_241              241
 
 #define GET_PK_TYPE(op, subop) ((uint32_t)(op) << 8 | (subop)) & 0x00ffffff
 
@@ -279,6 +292,7 @@ typedef struct __vHBA_ctx
 
 /* Sniffer thread */
 void * start_sniffer(void * arg);
+void * start_lbc_sniffer(void * arg);
 
 /*Processor thread*/
 void * start_processor(void *arg);

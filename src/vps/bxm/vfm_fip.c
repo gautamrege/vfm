@@ -5,6 +5,7 @@
 #include<stdint.h>
 #include<common.h>
 #include<vfm_fip.h>
+#include<bxm_iboe.h>
 
 /*
  * get_tlv
@@ -186,6 +187,11 @@ get_tlv_value(vp_tlv *tlv, void *data)
                         memcpy(data, &tmp_dword, sizeof(uint32_t));
                         break;
 
+                case TLV_13 :
+                        memcpy(data, tlv->value + sizeof(uint16_t),
+                                                  NAME_LEN);
+                        break;
+                        
                 case MLX_TLV_2 :
                         /*
                          * TYPE :MLX SPECIFIC MSG DESCRIPTOR FOR Bridge Info
@@ -227,6 +233,17 @@ get_tlv_value(vp_tlv *tlv, void *data)
                                 tmp_ptr += sizeof(mlx_gateway);
                         }
                         break;
+                case MLX_TLV_240:
+                        memcpy(data, tlv->value + sizeof(uint16_t),
+                                        sizeof(mlx_spec_tlv_240));
+                        ((mlx_spec_tlv_240*)data)->lid = 
+                                ntohs(((mlx_spec_tlv_240*)data)->lid);
+                        ((mlx_spec_tlv_240*)data)->qpn = 
+                                ntohl(((mlx_spec_tlv_240*)data)->qpn);
+                        ((mlx_spec_tlv_240*)data)->sl_gw_port_id = 
+                           ntohs(((mlx_spec_tlv_240*)data)->sl_gw_port_id);
+                        break;
+                        
 
         }
         /*

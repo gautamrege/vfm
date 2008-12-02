@@ -19,27 +19,26 @@
 typedef uint32_t vps_error;
 
 /** ERROR CODES **/
-#define VPS_SUCCESS                         0
+#define VPS_SUCCESS                     0
 
-#define VPS_ERROR_DB_INIT           1
+#define VPS_ERROR_DB_INIT               1
 #define VPS_ERROR_IGNORE                2
-#define VPS_ERROR_SOCK_OPEN         3
-#define VPS_ERROR_SOCK_BIND         4
+#define VPS_ERROR_SOCK_OPEN             3
+#define VPS_ERROR_SOCK_BIND             4
 #define VPS_ERROR_READ                  5
 #define VPS_ERROR_TUNNEL                6
-#define VPS_ERROR_INCOMPLETE_PK 7
-#define VPS_ERROR_GET_MAC           8
-#define VPS_ERROR_GET_IFINDEX   9
-#define VPS_ERROR_GET_MTU           10
-#define VPS_ERROR_SEND_PK           11
+#define VPS_ERROR_INCOMPLETE_PK         7
+#define VPS_ERROR_GET_MAC               8
+#define VPS_ERROR_GET_IFINDEX           9
+#define VPS_ERROR_GET_MTU               10
+#define VPS_ERROR_SEND_PK               11
 
-#define VPS_DBERROR                                         100
-#define VPS_DBERROR_INVALID                         101
-#define VPS_DBERROR_INVALID_RESOURCE        102
+#define VPS_DBERROR                     100
+#define VPS_DBERROR_INVALID             101
+#define VPS_DBERROR_INVALID_RESOURCE    102
 
-#define VPS_MAPERROR_MAP_FULL                   200
-#define VPS_MAPERROR_NO_ENTRY                   201
-
+#define VPS_MAPERROR_MAP_FULL           200
+#define VPS_MAPERROR_NO_ENTRY           201
 
 
 /*
@@ -51,13 +50,17 @@ typedef uint32_t vps_error;
 
 /* TRACE LOGS */
 #define VPS_NO_LOGS   0
-#define VPS_ERROR         1
+#define VPS_ERROR     1
 #define VPS_WARNING   2
-#define VPS_INFO          3
+#define VPS_INFO      3
 #define VPS_ENTRYEXIT 4
 
+/* BXM listen Protocol type */
+#define BXM_EN_PROTOCOL 0       /* EN protoclol */
+#define BXM_IB_PROTOCOL 1       /* IB protoclol */
+
 /* Mac address length  */
-#define MAC_ADDR_LEN   6                        /* Mac address length  */
+#define MAC_ADDR_LEN   6        /* Mac address length  */
 
 
 #define TRUE  1

@@ -4,6 +4,7 @@
 #include <net_util.h>
 #include <map_util.h>
 #include <queue.h>
+#include <bxm_iboe.h>
 
 extern uint8_t g_local_mac[MAC_ADDR_LEN];
 extern uint8_t g_bridge_mac[MAC_ADDR_LEN];
@@ -677,6 +678,49 @@ process_fc_els_res(uint8_t *buff, uint32_t size, uint32_t *ret_pos,
  *                  Invalid packet.
  */
 vps_error
+process_lbc_packet()
+{
+        uint32_t length;
+        uint8_t *packet;
+        uint32_t offset = 0;
+        eoib_conx_vfm_adv solicit;
+        ctrl_hdr  fip_ctrl_hdr;
+        vps_error err = VPS_SUCCESS;
+
+        vps_trace(VPS_ENTRYEXIT, "Entering read_packet");
+
+        /* BridgeX API call */
+        packet = bx_recv(&length);
+       
+        /* Read control header from the packet */
+        read_ctrl_hdr(packet, length, &offset, &fip_ctrl_hdr);
+       
+        /* Solicit message from host */
+        if (fip_ctrl_hdr.opcode == 0xFFF9 && 
+                        fip_ctrl_hdr.subcode == 0x01) {
+
+                 vps_trace(VPS_INFO, "Host solicit reserved");         
+                /* Process Solicit message payloaad */
+                eoib_conx_discovery(packet + offset, &solicit);
+
+                /* Send uinicast GW advertisement */
+                bxm_send_uincast_gw_adv(&solicit);
+                vps_trace(VPS_INFO, "Unicast GW Advertisement sent");         
+        }
+
+out:
+        vps_trace(VPS_ENTRYEXIT, "Leaving read_packet");
+        return err;
+}
+
+/**
+ * Read whole packet.
+ * Update database and send response.
+ *
+ * Return : err
+ *                  Invalid packet.
+ */
+vps_error
 process_packet()
 {
         vps_error err = VPS_SUCCESS;
@@ -847,6 +891,21 @@ start_sniffer(void *arg)
 
         vps_trace(VPS_ENTRYEXIT, "Leaving start_sniffer");
         return NULL;
+}
+
+/*
+ * Packet processor thread.
+ */
+void *
+start_lbc_sniffer(void *arg)
+{
+        vps_trace(VPS_ENTRYEXIT, "Entering start_lbc_sniffer");
+
+        while (1) {
+                process_lbc_packet();
+        };
+
+        vps_trace(VPS_ENTRYEXIT, "Leaving start_lbc_sniffer");
 }
 
 /*

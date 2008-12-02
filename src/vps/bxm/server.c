@@ -17,16 +17,24 @@
 #include <crc32_le.h>
 #include <map_util.h>
 #include <queue.h>
+#include <bxm_ib.h>
 
 extern sqlite3 *g_db;
 extern FILE *g_logfile;
 extern req_entry_map* g_req_map[REQ_ENTRY_MAP_LEN];
 
+
+int  g_bxm_local;
+int  g_bxm_remote;
+uint8_t  g_bxm_protocol;
 /*TODO : Remove after SW GW able to advertise its GW ports*/
 uint8_t  g_local_mac[MAC_ADDR_LEN];
 uint32_t g_if_index;
 uint32_t g_if_mtu;
 uint8_t  g_if_name[10];
+
+/* For IB  */
+bxm_init_info_packet init_info_pack;
 
 /*
  * Pre-Initialization
@@ -67,19 +75,30 @@ vps_error initialization(void *reserved)
         vps_error err  = VPS_SUCCESS;
         vps_trace(VPS_ENTRYEXIT, "Entering Initialization");
 
-        /*TODO:Get interface name from *reserved */
-        if ((err = get_inf_property(g_if_name, g_local_mac, &g_if_index,
-                                &g_if_mtu)) != VPS_SUCCESS) {
-                vps_trace(VPS_ERROR,
+        if(g_bxm_protocol == BXM_EN_PROTOCOL)
+        {
+                /*TODO:Get interface name from *reserved */
+                if ((err = get_inf_property(g_if_name, g_local_mac, 
+                &g_if_index, &g_if_mtu)) != VPS_SUCCESS) {
+                        vps_trace(VPS_ERROR,
                           "Unable to get local mac, interface index, mtu");
+                }
+
+                vps_trace(VPS_INFO, 
+                            "local_mac: %0.2X:%0.2X:%0.2X:%0.2X:%0.2X:%0.2X\n"
+                                "if_index: %d \n  mtu: %d",
+                                g_local_mac[0], g_local_mac[1], g_local_mac[2],
+                                g_local_mac[3], g_local_mac[4], g_local_mac[5],
+                                g_if_index, g_if_mtu);
         }
+        else if (g_bxm_protocol == BXM_IB_PROTOCOL) {
+                /* Call BridgeX API init()*/
+                bx_init(&init_info_pack);
+                vps_trace(VPS_INFO,"SLID %d : ", init_info_pack.lid);
+                vps_trace(VPS_INFO,"SQP %d : ", init_info_pack.qp);
 
-        vps_trace(VPS_INFO, "local_mac: %0.2X:%0.2X:%0.2X:%0.2X:%0.2X:%0.2X\n"
-                        "if_index: %d \n  mtu: %d",
-                        g_local_mac[0], g_local_mac[1], g_local_mac[2],
-                        g_local_mac[3], g_local_mac[4], g_local_mac[5],
-                        g_if_index, g_if_mtu);
 
+        }
         vps_trace(VPS_ENTRYEXIT, "Exiting Initialization");
         return err;
 }
@@ -160,6 +179,7 @@ main(int argc, char* argv[])
 {
         vps_error err = VPS_SUCCESS;
         pthread_t sniffer_tid;
+        pthread_t lbc_sniffer_tid;
         pthread_t process_packet_tid1;
         pthread_t process_packet_tid2;
 
@@ -191,27 +211,44 @@ main(int argc, char* argv[])
         get_all_gw();                 /* Get all GW information */
         exit(0);
 #endif
-        /*Start packet processing thread*/
+        /* Start packet processing thread */
         pthread_create(&process_packet_tid1, NULL, start_processor, NULL);
         pthread_create(&process_packet_tid2, NULL, start_processor, NULL);
 
-        /* Loop indefinitely checking for shutdown flag */
-        pthread_create(&sniffer_tid, NULL, start_sniffer, NULL);
+        if (g_bxm_remote == 1 && g_bxm_protocol == BXM_EN_PROTOCOL) {
 
-        /* Sleep for 1 second, for sniffer to start properly */
-        sleep(1);
+                /* Loop indefinitely checking for shutdown flag */
+                pthread_create(&sniffer_tid, NULL, start_sniffer, NULL);
 
-        /* Sending VFM FLOGI */
-        vps_trace(VPS_ERROR, "--*** SENDING VFM FLOGI***--");
-        create_vfm_flogi();
+                /* Sleep for 1 second, for sniffer to start properly */
+                sleep(1);
 
-        /* TODO: Remove this after SWGW demo */
-        /* Send gateway Advertisement */
-        send_gw_ad();
+                /* Sending VFM FLOGI */
+                vps_trace(VPS_ERROR, "--*** SENDING VFM FLOGI***--");
+                create_vfm_flogi();
+
+                /* TODO: Remove this after SWGW demo */
+                /* Send gateway Advertisement */
+                send_gw_ad();
+
+        }
+        else if (g_bxm_local == 1 && g_bxm_protocol == BXM_IB_PROTOCOL) {
+               
+                /* Send GW advertisement */ 
+                bxm_send_gw_adv();
+                
+                /* Start Processor thread. */
+                pthread_create(&lbc_sniffer_tid, NULL, start_lbc_sniffer, 
+                                                                      NULL);
+
+        }
 
 #ifdef TEST
         packet_process();
 #endif /* TEST */
+        while (1) {
+                sleep(60000);
+        }
 
         /* Pre-Shutdown Process */
         pre_shutdown(&sniffer_tid);

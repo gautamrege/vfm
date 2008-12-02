@@ -1,0 +1,10 @@
+Note regarding external code
+============================
+
+To enable testing prior to BridgeX availability, this directory includes some
+code which approximately simulates a subset of BridgeX behavior.
+
+'ext' code is considered throwaway code.  It includes code borrowed from open
+source examples, and is meant for use only in limited test scenarios.
+Therefore, all 'ext' code is not subject to code review or the quality
+standards of VPS.

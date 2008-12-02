@@ -1,5 +1,5 @@
 /*
- *  copyright (c) 2008  VirtualPlane Systems, Inc.
+ *  Copyright (c) 2008  VirtualPlane Systems, Inc.
  */
 
 #include<queue.h>
