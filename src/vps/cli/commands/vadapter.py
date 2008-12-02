@@ -266,7 +266,7 @@ def _parse_edit_or_add_argv(output, argv, valid_args, syntax = None):
 #
 def edit(argv):
     """
-       [edit] vadapter <vadapter-name> properties [<general-attrs>]
+       [edit] vadapter <vadapter-name> [<general-attrs>]
        protocol [EN <en-attrs>] | [FC <fc-attrs>]
 
        general-attrs: [vfabric <vfabric-id>]
@@ -285,7 +285,7 @@ def edit(argv):
       
     """
     output = lib.output.CLIoutput("vadapter")
-    valid_list = ['vfabric', 'init_type', 'io_module_id', 'properties'
+    valid_list = ['vfabric', 'init_type', 'io_module_id', 
                   'mac', 'promiscuous', 'protocol', 'silent_listner', 'vlan' ,'wwnn',
                   'wwpn','status']
 
@@ -327,7 +327,7 @@ def _add_vadapter_protcol(output, argv, arg_dict, syntax = None):
 
 def _add_vadapter_database(output, argv, arg_dict, syntax = None):
     """
-       [add] vadapter <vadapter-name> properties [<general-atts>]
+       [add] vadapter <vadapter-name> [<general-atts>]
        [EN <en-attrs>] | [FC <fc-attrs>]
 
        general-attrs: [vfabric <vfabric-id>]
@@ -348,7 +348,7 @@ def _add_vadapter_database(output, argv, arg_dict, syntax = None):
 
 def _add_vadapter_en_prop(output, argv, arg_dict):
     """
-       [edit | add ] vadapter <vadapter-name> properties [<general-atts>]
+       [edit | add ] vadapter <vadapter-name> [<general-atts>]
        [EN <en-attrs>] | [FC <fc-attrs>]
 
        en-attrs:      [mac <mac-addr>]
@@ -416,7 +416,7 @@ def isMAC(s, ibmac=0):
 
 def _add_vadapter_fc_prop(output, argv, arg_dict):
     """
-       [edit | add] vadapter <vadapter-name> properties [<general-atts>]
+       [edit | add] vadapter <vadapter-name> [<general-atts>]
        [EN <en-attrs>] | [FC <fc-attrs>]
 
        fc-attrs:   [wwpn <world-wide-port-name>] 
@@ -466,7 +466,7 @@ def _check_status_value(arg_dict, mode):
 
 def add(argv):
     """
-       [add ] vadapter <vadapter-name> properties [<general-atts>]
+       [add ] vadapter <vadapter-name> [<general-atts>]
        protocol [EN <en-attrs>] | [FC <fc-attrs>]
 
        general-attrs: [vfabric <vfabric-id>]

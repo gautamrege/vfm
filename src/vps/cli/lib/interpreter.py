@@ -375,16 +375,14 @@ class Interpreter(cmd.Cmd):
              modifier, cmd, command_name = \
                               command_ref.cmdToPlugin(tokens, currentmode)
 
-             if command_name == 'exit' or command_name == 'quit' or command_name == 'end':
+             if command_name == 'exit':
                  return self.__invokeExit(modifier, cmd, command_name, tokens)
              elif command_name == 'set':
                  return self.__invokeSet(modifier, cmd, command_name, tokens)
              elif command_name == 'enable':
                  return self.__invokeLoginExec()
-             elif command_name == 'disable':
+             elif command_name == 'end':
                  return self.__invokeDisable()
- 	     elif command_name == 'Set':
-		 return self.__invokeSet()
 
              if len(tokens) == 1 and command == "show" \
                            and "config" in currentmode :

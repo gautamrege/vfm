@@ -9,7 +9,7 @@ import os
 import re
 import sqlite
 
-path = 'cli/src/vps/cli'
+path = 'src/vps/cli'
 if path not in sys.path:
      sys.path.append(path) 
     
@@ -82,7 +82,8 @@ class Database(object):
           try:
               conn = self._connect()
           except:
-              print 'Cant Connect to the Database.Please copy "bxm.db" at /usr/local/vps/bxm'
+              print 'Can\'t Connect to the Database. Please copy "bxm.db" at \
+                            /usr/local/vps/bxm'
               return 'Null' 
           cursor = self._createCursor(conn)
           cursor.execute(cmd)

@@ -1,0 +1,75 @@
+#
+# Copyright (c) 2008 VirtualPlane
+# 
+
+Directory Structure of CLI source code:
+
+Main Directory: "/src/vps/cli"  
+       This dir contains two files "vps_cli.py" and "command_ref.py". 
+       The main function is in vps_cli.py which takes the arguments to 
+       invoke CLI in debug or XML mode. The command_ref.py file contains the 
+       dictionary for the commands and the files that implement these commands
+       The commands are in a folder named "commands".
+
+Sub Folder:
+          1. commands
+	  2. lib
+
+       "commands" folder contains all the commands which will be invoked 
+	by the __import__ function in the lib/interpreter.py. 
+        
+	"lib" folder contains all the library files which are used by the
+        commands file to invoke and check functions.    
+
+How to run:
+	Run CLI automatically when logged in using SSH:
+        -----------------------------------------------
+	
+	Step 1: Create an user account for example "admin".
+	Step 2: Create public and private keys for the user to enable security
+		and a safe ssh session.
+        Step 3: Copy the CLI source code to the machine from the repository 
+		on which you created the user.
+	Step 4: Steps to enable CLI prompt on login :
+		Step 1: Create a shell script e.g. 'vps_cli.sh' in "/bin".
+		Step 2: Add a following line in the script:
+			"python <path-to-repository>/src/vps/cli/vps_cli.py"
+		Step 3: Give execute permissions to the script for the admin
+			user.
+		Step 2:	Open /etc/passwd as root. e.g. "vim /etc/passwd"
+		Step 3: Search for the 'admin' user in the file.
+		Step 4: Change the user line "/bin/bash" or any other shell,
+			 with "/bin/vps_cli.sh"
+		Step 5: Login into the machine with that user. 
+	 
+	Run CLI manually:
+	-----------------
+	This mode is for debugging and testing purpose:
+
+	Step 1. cd /src/vps/cli
+	Step 2. ./vps_cli.py
+
+	The user should be logged into the CLI with this prompt :
+	BridgeX Manager Version 0.0.1
+	BXM> 
+
+	Type 'help' or '?' for the list and a desciption all commands.
+	NOTE: Not all commands listed in 'help' are implemented.
+ 
+Database setup:
+	Till the CLI is integrated with the main process, we have created a
+	dummy database for debugging and testing purpose. The dummy db file is
+	checked into the source. Please look for 'bxm.db' in 'src/vps/cli' dir.
+ 
+	For running the CLI manually please copy "bxm.db" to you local machine
+	at "/usr/local/vps/bxm". Please create the path if it does not exist.
+
+	Example:	
+	Step 1. cd /usr/local
+	Step 2. mkdir -p vps/bxm
+	Step 3. cp <path-to-git-repos>/src/vps/cli/bxm.db /usr/local/vps/bxm
+
+	Note : You should be a root user to do manupulations in the database.		
+Sample Commands:
+
+

@@ -15,7 +15,7 @@ if path not in sys.path:
 import lib.db.db
 import lib.constants
 
-MODIFIER = 'add_more'
+MODIFIER = ''
 
 """
 _COMMAND_EDIT_REF = \
@@ -180,10 +180,10 @@ def get_gateway_sub_mode():
               counter += 1
     MOD_GATEWAY = sub_mode
 
-get_bridge_sub_mode()
-get_iomodule_sub_mode()
-get_gateway_sub_mode()
-get_vadapter_sub_mode()
+#get_bridge_sub_mode()
+#get_iomodule_sub_mode()
+#get_gateway_sub_mode()
+#get_vadapter_sub_mode()
  
 SUB_CMD_MOD = ""
 

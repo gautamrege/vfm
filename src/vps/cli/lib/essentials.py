@@ -92,6 +92,38 @@ def check_condition(actions, argv):
         if each_action[0].startswith(argv[1].lower()):
            return each_action 
 
+# Check if a parameter is a number object: isNumberType
+def isNumberType(parameter):
+        """Return 1 if the input parameter is an integer, long, or float."""
+
+        return (type(parameter) in [IntType, LongType, FloatType])
+
+
+# Check if a parameter is a string object: isStringType
+def isStringType(parameter):
+        """Return 1 if the input parameter is a string."""
+
+        return (type(parameter) in StringTypes)
+
+
+# Evaluate string: isNumber
+def isNumber(s):
+        """Returns true if string s is a number."""
+
+        try: long(s)
+        except: return 0
+        return 1
+
+
+# Evaluate string: isDigitString
+def isDigitString(s):
+        """Returns true if string s is comprised entirely of digits."""
+
+        for char in s:
+                if char not in string.digits: return 0
+        return 1
+
+
 
 def confirmation_required(asking, reply_list = [ "no", "yes"], \
                              if_interrupt = 0, case_sensitive = 0):

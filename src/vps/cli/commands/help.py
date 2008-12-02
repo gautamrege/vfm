@@ -217,41 +217,29 @@ _EDIT_HELP_TEXT = \
 '''
 Commands
 ------------------------------------------------------------------------------
-edit admin                        Edit an administrator
-edit clock                        Edit the current time and date
-edit dns                          Edit DNS configuration information
-edit hostname                     Edit the hostname
-edit interface                    Edit an interface
 edit ip                           Edit IP configuration information
 edit vadapter                     Edit vNIC and vHBA configuration
+edit vfabric                      Edit virtual fabric configuration
 '''
 
 _ADD_HELP_TEXT = \
 '''
 Commands
 ------------------------------------------------------------------------------
-add admin                        Add a new administrator
-add dns                          Add DNS configuration information
 add ip                           Add IP configuration information
 add vadapter                     Add vNIC and vHBA configuration
+add vfabric                      Add virtual fabric configuration
 '''
 
 _SHOW_HELP_TEXT = \
 '''
 Commands
 ------------------------------------------------------------------------------
-show admin                      Show administrators
-show arp                        Show the contents of the ARP cache
-show clock                      Show the current time and date
-show dns                        Show DNS configuration information
 show help                       Show command descriptions
 show hostname                   Show the host name
-show interface                  Show Interface configuration
 show ip                         Show IP configuration
-show license                    Display the End User License Agreement
-show log                        Show the contents of the specified log
-show software                   Show the software version
 show vadapter                   Show vNIC and vHBA configuration 
+show vfabric 			Show virtual fabric configuration 
 show gateway                    Show gateway information
 show iomodule                   Show converge network adapter configuration 
 show bridge                     Show multifabric bridge device configuration
@@ -261,44 +249,31 @@ _NO_HELP_TEXT = \
 '''
 Commands
 ------------------------------------------------------------------------------
-no admin                        Clear an administrator
-no arp                          Clear ARP entries
-no dns                          Clear DNS configuration information
 no ip                           Clear IP configuration
 no vadapter                     Clear vNIC and vHBA configuration
+no vfabric 			Clear virtual fabric configuration
 '''
 
 _CLEAR_HELP_TEXT = \
 '''
 Commands
 ------------------------------------------------------------------------------
-clear admin                     Clear an administrator
-clear arp                       Clear ARP entries
-clear dns                       Clear DNS configuration information
 clear ip                        Clear IP configuration
+clear vadapter                  Clear vNIC and vHBA configuration
+clear vfabric 			Clear virtual fabricconfiguration
 '''
 
 _ALL_COMMANDS_DICT = \
 {
     'admin'             : 'Manage Virtual Fabric Manager administration accounts',
     'add'               : 'Add a new object',
-    'arp'               : 'Show or clear ARP entries',
-    'backup'            : 'Backup configurations to remote site',
-    'clock'             : 'Change the current time and date',
-    'dns'               : 'Configure DNS',
     'edit'              : 'Edit the configuration of an existing object',
     'exit'              : 'Exit from the CLI session',
+    'end'               : 'End the edit config terminal session',
     'halt'              : 'Halt the system',
     'help'              : 'Show this help screen',
     'hostname'          : 'Configure hostname',
-    'interface'         : 'Configure interface',
     'ip'                : 'Configure ip',
-    'license'           : 'Display the End User License Agreement',
-    'log'               : 'Show the contents of the specified log',
-    'ping'              : 'Ping host',
-    'quit'              : 'Exit from the CLI session',
-    'reboot'            : 'Reboot the system',
-    'restore'           : 'Restore configuration from remote site',
     'save'              : 'Save configuration or diagnostic information ' \
                           'for support',
     'show'              : 'Show commands. Use "help show" for more info',
@@ -312,9 +287,9 @@ _ALL_COMMANDS_DICT = \
 }
 
 _GENERAL_HELP = """
-Type a prefix followed by command to set, edit, clear, or show its values. For
-example:
-  > show hostname
+
+Type 'help' or '?' to get a list of commands in that category.
+
 Prefixes
 ------------------------------------------------------------------------------
 add                             Add a new object
@@ -323,16 +298,9 @@ clear                           Remove an object or attribute
 no                              Same as 'clear' command
 show                            Show commands. Use 'help show' for more info
 
-Type a command to change its values. For example:
-  > hostname bugs
-
-Type 'help' followed by a command name to get help on that command.
-Type 'help' followed by a category to get a list of commands in that category.
-Categories
+Commands:
 ------------------------------------------------------------------------------
 commands                        Lists all commands
-system                          BXM System configuration 
-network                         Network parameters
 gateway                         Gateway configuration
 bridge                          Multifabric bridge device configuration
 iomodule                        Converge Network Adapter Configuration
@@ -343,11 +311,6 @@ vadapter                        vNIC and vHBA configuration
 # Build the categorized help dictionary
 #
 _HELP_CATEGORY = {}
-_HELP_CATEGORY["system"] = \
-    ["admin", "backup", "clock", "halt", "help", "license", "log",
-     "reboot","restore", "save","service", "software"]
-_HELP_CATEGORY["network"] = \
-    ["arp", "dns", "hostname", "interface", "ip","ping"]
 _HELP_CATEGORY["CLI"] = \
     ["add", "clear", "echo", "exit", "no", "quit", "show"]
 _HELP_CATEGORY["commands"] = _ALL_COMMANDS_DICT.keys()
@@ -360,4 +323,4 @@ _HELP_CATEGORY["vadapter"] = \
 _HELP_CATEGORY["bridge"] = \
     ["show"]
 _HELP_CATEGORY["vfabric"] = \
-    ["show"]
+    ["show", "edit", "no", "clear", "add"]
