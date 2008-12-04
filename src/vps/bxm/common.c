@@ -16,6 +16,7 @@ sqlite3 *g_db = NULL;
 
 extern int g_bxm_local;
 extern int g_bxm_remote;
+extern uint32_t g_fcoe_t11;
 extern uint8_t g_bxm_protocol;
 extern uint8_t g_bridge_mac[6];
 extern uint8_t g_bridge_enc_mac[6];
@@ -161,6 +162,9 @@ en_config:
                                 g_wwpn[0], g_wwpn[1], g_wwpn[2],
                                 g_wwpn[3], g_wwpn[4], g_wwpn[5],
                                 g_wwpn[6], g_wwpn[7]);
+
+                fscanf(fp, "%s %s", type, temp);
+                g_fcoe_t11 = atoi(temp);
 
 
 ib_config : /* read IB configuration*/

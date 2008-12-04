@@ -11,6 +11,7 @@ extern uint8_t g_bridge_mac[MAC_ADDR_LEN];
 extern uint32_t g_if_index;
 extern uint8_t g_fc_map[3];
 uint32_t g_gw_src_id;
+uint32_t g_fcoe_t11;
 
 /* byte wise VLAN Tag Postion in  EN header */
 #define VLAN_TAG_POS 12
@@ -18,6 +19,13 @@ uint32_t g_gw_src_id;
 /* Get vlan tag */
 #define GET_VLAN_TAG(buff) (uint16_t)(buff[VLAN_TAG_POS] << 8 | \
                 buff[VLAN_TAG_POS+1])
+
+#define FCOE_VER 0
+#define FCOE_SOF 0xe
+#define FCOE_EOF 0x42
+
+#define FCOE_ENCAPS_LEN_SOF(len) \
+         ((FCOE_VER << 14) | ((len & 0x3ff) << 4) | (FCOE_SOF & 0xf))
 
 #define FIP_VERSION_MASK     0XF000         /* vesion size: 4 bits */
 #define GW_ID_MASK           0X00FFFFFF     /* gateway id size: 24 bits */
@@ -33,6 +41,9 @@ uint32_t g_gw_src_id;
 /*LOCAL or REMOTE vmf*/
 #define LOCLA_VFM  0
 #define REMOTE_VFM 1
+#define FCOE_HDR_SIZE 4*DWORD
+#define OPEN_FCOE_HDR_SIZE 7*DWORD
+#define OPEN_FCOE_RESERVED 3*DWORD
 
 /*
  * Read ethernet header and check for FIP packet.
@@ -190,8 +201,8 @@ process_fc_response(uint8_t *buff,
         read_fc_hdr(buff, size, ret_pos, &fc_header);
 
         /* IF fc request coming from FC plane reject it */
-        if ((fc_header.rt_ctrl_dest_id & 0xFF000000) == 0x22000000) {
-                vps_trace(VPS_ERROR, "ELS request packet from FC.. reject!");
+         if(g_gw_src_id == (fc_header.rt_ctrl_dest_id & 0x00FFFFFF)) {
+                vps_trace(VPS_ERROR, "ELS request packet from FC to SWGW");
                 create_reject_els(fc_header);
                 goto out;
          }
@@ -583,10 +594,9 @@ process_fc_els_res(uint8_t *buff, uint32_t size, uint32_t *ret_pos,
                 req_entry_map *entry)
 {
         vps_error err = VPS_SUCCESS;
-        uint32_t fc_pk_len;
-        uint8_t *fcoe_buff, *temp;
-        uint32_t temp_did;
-        uint32_t length;
+        uint32_t fc_pk_len, length, temp_did, crc;
+        uint8_t *fcoe_buff, *temp, *fc_pack_offset;
+        uint16_t len, fcoe_plen;
 
         vps_trace(VPS_ENTRYEXIT, "Entering process_fc_els_res");
 
@@ -595,12 +605,18 @@ process_fc_els_res(uint8_t *buff, uint32_t size, uint32_t *ret_pos,
 
         /* Calculate FC packet length */
         fc_pk_len = size - *ret_pos;
+        len = sizeof(fc_hdr) + fc_pk_len;
 
         /*
          * Allocate memory for FCoE packet.
-         * FCoE header length  + FC packet length +  reserved
+         * FCoE header length  + FC packet length + CRC + EOF
          */
-        length = 4*DWORD + fc_pk_len;
+        if (g_fcoe_t11)
+                length = (OPEN_FCOE_HDR_SIZE + len + DWORD +
+                                sizeof(uint8_t));
+        else
+                length = (FCOE_HDR_SIZE + len + DWORD + sizeof(uint8_t));
+
         fcoe_buff = (uint8_t*)malloc(length);
         memset(fcoe_buff, 0x00, length);
 
@@ -621,22 +637,20 @@ process_fc_els_res(uint8_t *buff, uint32_t size, uint32_t *ret_pos,
         /* Copy FCoE ether type = 0x8906 */
         temp[0] = 0x89;
         temp[1] = 0x06;
+        temp += sizeof(uint16_t);
 
-        /* version */
-        temp[2] = 0x04;
-        temp += DWORD;
+        /* version Length  SOF */
+        fcoe_plen = htons(FCOE_ENCAPS_LEN_SOF((len + DWORD)/DWORD));
 
-        /* 2 DWORD reserved */
-        /*
-         * temp += 2*DWORD;
-         * temp += 3;
-         */
-
-        /* SOF */
-        /*
-         * temp[0] = 0x2E;
-         * temp++;
-         */
+        if (g_fcoe_t11) {
+                temp += OPEN_FCOE_RESERVED - sizeof(uint8_t);
+                temp[0] = 0x2e;
+                temp += sizeof(uint8_t);
+        }
+        else {
+                memcpy(temp, &fcoe_plen, sizeof(uint16_t));
+                temp += sizeof(uint16_t);
+        }
 
         /* Process FC header */
         fc_header->rt_ctrl_dest_id = htonl(fc_header->rt_ctrl_dest_id);
@@ -649,23 +663,37 @@ process_fc_els_res(uint8_t *buff, uint32_t size, uint32_t *ret_pos,
         /* Replace OX_ID */
         /* fc_header->ox_id = htons(entry->oxid); */
 
+        /* Pointing to the start of FC payload */
+        fc_pack_offset = temp;
+
         /* Copy FC header */
         memcpy(temp, fc_header, sizeof(fc_hdr));
         temp += sizeof(fc_hdr);
 
         /* Copy FC packet paylaod*/
-        memcpy(temp, buff, fc_pk_len - sizeof(fc_hdr));
+        memcpy(temp, (buff + *ret_pos), fc_pk_len);
         temp += fc_pk_len;
 
+        /*--5. Calculate CRC */
+        crc = ~0;
+        crc = ~ether_crc32_le(fc_pack_offset, len);
+        memcpy(temp, &crc , sizeof(uint32_t));
+        temp += sizeof(uint32_t);
+
         /* EOF */
-        /* temp[0] = 0x42;*/
+        temp[0] = FCOE_EOF;
 
         /* To send the FC packet to host*/
         send_fc_packet(g_local_mac, g_bridge_mac, tunnel_hdr,
                         fcoe_buff, length);
 
-        free(fcoe_buff);
+        if ((fc_header->rt_ctrl_dest_id & 0xFF000000) == 0x22000000)
+                vps_trace(VPS_ERROR, "**-- ELS REQUEST SENT TO HOST--**");
 
+        else
+                vps_trace(VPS_ERROR, "**-- ELS RESPONSE SENT TO HOST--**");
+
+        free(fcoe_buff);
         vps_trace(VPS_ENTRYEXIT, "Leaving  process_fc_els_res");
         return err;
 }
