@@ -482,7 +482,7 @@ int bx_init(struct init_info_packet * info)
                 return 1;
         }
 
-        rc = ibv_query_gid(ctx->context, ctx->port, 0, info->sgid);
+        rc = ibv_query_gid(ctx->context, ctx->port, 0, (union ibv_gid*)info->sgid);
         if (rc) {
                 fprintf(stderr, "\nfailed to query GID table of ib \
                 port %d with index %d\n", ctx->port, 0);
@@ -536,9 +536,9 @@ int bx_send(void *packet)
 
 
 /* BXM calls this function to receive an IB packet */
-void * bx_recv(uint32_t *length)
+uint8_t * bx_recv(uint32_t *length)
 {
-	void * packet = NULL;
+	uint8_t * packet = NULL;
 	enib_debug("Enter: bx_recv");
 	do
 	{
@@ -595,6 +595,7 @@ void * bx_recv(uint32_t *length)
 	}		
   } while(1);
 		
+        return NULL;
 }
 
 static void get_mlid_from_mad(

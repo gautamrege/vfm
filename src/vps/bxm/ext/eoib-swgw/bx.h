@@ -119,6 +119,11 @@ enum subn_adm_method_t {
         SUBN_ADM_METHOD_DELETE = 0x15
 };
 
+/*
+ * TODO: dummy bx_recv
+ */
+uint8_t* bx_recv(uint32_t*);
+
 
 /* Set this flag to get debug messages */
 #define ENIB_DBG_FLAG

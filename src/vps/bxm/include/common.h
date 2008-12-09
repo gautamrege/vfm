@@ -55,10 +55,6 @@ typedef uint32_t vps_error;
 #define VPS_INFO      3
 #define VPS_ENTRYEXIT 4
 
-/* BXM listen Protocol type */
-#define BXM_EN_PROTOCOL 0       /* EN protoclol */
-#define BXM_IB_PROTOCOL 1       /* IB protoclol */
-
 /* Mac address length  */
 #define MAC_ADDR_LEN   6        /* Mac address length  */
 
@@ -68,5 +64,6 @@ typedef uint32_t vps_error;
 
 /* Trace function */
 void vps_trace(int level, const char* format, ...);
+
 
 #endif /* __VPS_COMMON_H__ */

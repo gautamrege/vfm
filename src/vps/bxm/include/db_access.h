@@ -5,14 +5,17 @@
 #define __DB_ACCESS_H__
 
 #include <common.h>
+#include <bxmapi_common.h>
 
 #define VPS_DB_ALL             0x1
 #define VPS_DB_BRIDGE          0x2
 #define VPS_DB_GATEWAY         0x3
-#define VPS_DB_HOST            0x4
+#define VPS_DB_IO_MODULE       0x4
 #define VPS_DB_CNA             0x5
 #define VPS_DB_VHBA            0x6
 #define VPS_DB_VNIC            0x7
+#define VPS_DB_VADAPTER        0x8
+#define VPS_DB_VFABRIC         0x9
 
 /*
  * This file is used as the database access layer for sqlite.
@@ -96,17 +99,17 @@ typedef struct _vpsdb_vHBA {
         uint32_t fka_adv_period;
 }vpsdb_vHBA;
 
-typedef struct _vpsdb_cna {
-        uint8_t mac[6];         /* Mac address of the CNA */
-        uint32_t max_recv;      /* Max receive data payload */
-}vpsdb_cna;
-
-typedef struct _vpsdb_host {
+typedef struct _vpsdb_io_module_t {
         char name[8];
-
-        uint32_t num_cna;
-        vpsdb_cna *cna;
-}vpsdb_host;
+        uint32_t type;
+        uint8_t mac[6];         /* Mac address of the CNA */
+        uint8_t guid[8];
+        uint32_t num_vhba;
+        uint32_t num_vnic;
+        uint32_t slot;
+        uint32_t port;
+        uint32_t supported_speed;
+}vpsdb_io_module_t;
 
 /*
  * vpsdb_resource

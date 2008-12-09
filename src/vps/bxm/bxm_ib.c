@@ -5,7 +5,7 @@
  */
 #include<bxm_ib.h>
 #include<ext/eoib-swgw/bx.h>
-#include<queue.h>
+#include<bxm_queue.h>
 
 #define GRH_PLUS_BTH_LEN 16  /* DWORDS */
 

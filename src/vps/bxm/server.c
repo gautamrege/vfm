@@ -16,8 +16,8 @@
 #include <db_access.h>
 #include <crc32_le.h>
 #include <map_util.h>
-#include <queue.h>
 #include <bxm_ib.h>
+#include <config.h>
 
 extern sqlite3 *g_db;
 extern FILE *g_logfile;
@@ -94,8 +94,18 @@ vps_error initialization(void *reserved)
         else if (g_bxm_protocol == BXM_IB_PROTOCOL) {
                 /* Call BridgeX API init()*/
                 bx_init(&init_info_pack);
-                vps_trace(VPS_INFO,"SLID %d : ", init_info_pack.lid);
-                vps_trace(VPS_INFO,"SQP %d : ", init_info_pack.qp);
+                vps_trace(VPS_INFO,"SLID : %d", init_info_pack.lid);
+                vps_trace(VPS_INFO,"SQP  : %d", init_info_pack.qp);
+                vps_trace(VPS_INFO,"SGID : %0.2X:%0.2X:%0.2X:%0.2X:%0.2X:\
+                %0.2X: %0.2X:%0.2X",
+                init_info_pack.gid[0] ,init_info_pack.gid[1],
+                init_info_pack.gid[2], init_info_pack.gid[3], 
+                init_info_pack.gid[4], init_info_pack.gid[5],
+                init_info_pack.gid[6], init_info_pack.gid[7]);
+
+                if (init_info_pack.lid == 0){
+                        vps_trace(VPS_ERROR,"SLID is Zero");
+                }
 
 
         }
@@ -182,6 +192,7 @@ main(int argc, char* argv[])
         pthread_t lbc_sniffer_tid;
         pthread_t process_packet_tid1;
         pthread_t process_packet_tid2;
+        pthread_t cli_listener_tid;
 
         /* Process Command line options */
         parse_options(argc, argv);
@@ -207,13 +218,15 @@ main(int argc, char* argv[])
 
 #ifdef DB_TEST
         test_update_bridge(); /* update bridge to DB */
-        get_bridge_info();        /* Get all Bridge information */
-        get_all_gw();                 /* Get all GW information */
+        get_bridge_info();    /* Get all Bridge information */
+        get_all_gw();         /* Get all GW information */
         exit(0);
 #endif
         /* Start packet processing thread */
         pthread_create(&process_packet_tid1, NULL, start_processor, NULL);
         pthread_create(&process_packet_tid2, NULL, start_processor, NULL);
+        pthread_create(&cli_listener_tid, NULL, cli_listener, NULL);
+
 
         if (g_bxm_remote == 1 && g_bxm_protocol == BXM_EN_PROTOCOL) {
 
@@ -252,9 +265,11 @@ main(int argc, char* argv[])
 
         /* Pre-Shutdown Process */
         pre_shutdown(&sniffer_tid);
+        pthread_join(lbc_sniffer_tid, NULL);
 
         pthread_join(process_packet_tid1, NULL);
         pthread_join(process_packet_tid2, NULL);
+        pthread_join(cli_listener_tid, NULL);
         /* Shutdown Process */
 out:
         return err;

@@ -3,8 +3,9 @@
  */
 #include <net_util.h>
 #include <map_util.h>
-#include <queue.h>
+#include <bxm_queue.h>
 #include <bxm_iboe.h>
+#include <bx.h>
 
 extern uint8_t g_local_mac[MAC_ADDR_LEN];
 extern uint8_t g_bridge_mac[MAC_ADDR_LEN];
@@ -39,8 +40,9 @@ uint32_t g_fcoe_t11;
 #define GET_LAST_3_BYTES(dword) (dword & 0x00FFFFFF)
 
 /*LOCAL or REMOTE vmf*/
-#define LOCLA_VFM  0
-#define REMOTE_VFM 1
+#define LOCAL_BXM  0
+#define REMOTE_BXM 1
+
 #define FCOE_HDR_SIZE 4*DWORD
 #define OPEN_FCOE_HDR_SIZE 7*DWORD
 #define OPEN_FCOE_RESERVED 3*DWORD
@@ -741,19 +743,21 @@ out:
         return err;
 }
 
+
 /**
  * Read whole packet.
  * Update database and send response.
  *
  * Return : err
  *                  Invalid packet.
+ *         
  */
 vps_error
 process_packet()
 {
         vps_error err = VPS_SUCCESS;
 
-        struct fip_packet *packet = NULL;
+        bxm_task *task = NULL;
 
         uint8_t *desc_buff;
         uint8_t tunnel_flag = FALSE;
@@ -769,13 +773,23 @@ process_packet()
 
         vps_trace(VPS_ENTRYEXIT, "Entering read_packet");
 
-        /*-- 0.Read packet from queue - blocking call --*/
-        packet = (struct fip_packet*)get_packet_from_queue();
+        /*-- 0.Read task from queue - blocking call --*/
+        task = (bxm_task *)get_task_from_queue();
 
-        recv_size = packet->size;
+        /* TODO : Process local BXM packet.
+         * If local BXM for FCoE return 
+         */
+        if(task->bxm_type == LOCAL_BXM)
+        {
+           vps_trace(VPS_INFO, "Local BXM type ");
+           err = VPS_ERROR_IGNORE;
+           goto out;
+        }
+
+        recv_size = task->size;
 
         /*-- 1.read ethernet header --*/
-        if ((err = read_eth_hdr(packet->data, recv_size, &ret_pos,
+        if ((err = read_eth_hdr(task->data, recv_size, &ret_pos,
                                         &fip_eth_hdr)) != VPS_SUCCESS) {
                 vps_trace(VPS_INFO, "Ignoring packet: %X",
                                 fip_eth_hdr.ether_type);
@@ -785,7 +799,7 @@ process_packet()
         }
 
         /*-- 2. Read tunnel header --*/
-        if ((err = read_tunnel_hdr(packet->data, recv_size, &ret_pos,
+        if ((err = read_tunnel_hdr(task->data, recv_size, &ret_pos,
                                 &tunnel_flag, &tunnel_hdr)) != VPS_SUCCESS) {
                 vps_trace(VPS_ERROR, "read_tunnel_hdr returned: %d", err);
                 goto out;
@@ -800,13 +814,13 @@ process_packet()
 
         /* --If E=1, it means its an FC packet response.-- */
         if ((tunnel_hdr.port_num & 0x80)) {
-                err = process_fc_response(packet->data , recv_size,
+                err = process_fc_response(task->data , recv_size,
                                 &ret_pos, &tunnel_hdr);
                 goto out;
         }
 
         /* Parse Ethernet packet */
-        if ((err = read_eth_hdr(packet->data, recv_size, &ret_pos,
+        if ((err = read_eth_hdr(task->data, recv_size, &ret_pos,
                                 &fip_eth_hdr_fw)) != VPS_SUCCESS) {
                 vps_trace(VPS_INFO, "Ignoring packet: %X",
                                 fip_eth_hdr.ether_type);
@@ -819,32 +833,22 @@ process_packet()
          *  then process FCoE pay load.
          */
         if (fip_eth_hdr_fw.ether_type == FCOE_ETH_TYPE) {
-                err = process_fc_els_req(packet->data , recv_size,
+                err = process_fc_els_req(task->data , recv_size,
                                 &ret_pos, &tunnel_hdr, &fip_eth_hdr_fw);
                 goto out;
         }
 
         /* 4.-- read control header --*/
-        if ((err = read_ctrl_hdr(packet->data, recv_size, &ret_pos,
+        if ((err = read_ctrl_hdr(task->data, recv_size, &ret_pos,
                                 &fip_ctrl_hdr)) != VPS_SUCCESS) {
                 vps_trace(VPS_ERROR, "Socket read error for control header");
                 goto out;
         }
 
         /* 5.-- read discriptor list. --*/
-        /* allocate memory for descriptor list */
-        desc_buff = (uint8_t *)malloc(fip_ctrl_hdr.desc_list_length * DWORD);
-
-        if ((recv_size - ret_pos) >= fip_ctrl_hdr.desc_list_length * DWORD) {
-                memcpy(desc_buff, packet->data + ret_pos,
-                           fip_ctrl_hdr.desc_list_length * DWORD);
-                ret_pos = ret_pos + fip_ctrl_hdr.desc_list_length * DWORD;
-        }
-        else {
+        if ((recv_size - ret_pos) < fip_ctrl_hdr.desc_list_length * DWORD) {
                 vps_trace(VPS_ERROR, "Incomplete packet");
                 err = VPS_ERROR_INCOMPLETE_PK;
-                /* If error then free buffer allocated for descriptor list*/
-                free(desc_buff);
                 goto out;
         }
 
@@ -854,7 +858,7 @@ process_packet()
          * be found from the Opcode and the Subopcode in the control header.
          */
          err = decide_packet(&fip_eth_hdr_fw, &tunnel_hdr,
-                                                 &fip_ctrl_hdr, desc_buff);
+                                        &fip_ctrl_hdr, task->data + ret_pos);
          if (err) {
                  vps_trace(VPS_ERROR, "Error in descriptor parsing ");
          }
@@ -862,24 +866,27 @@ process_packet()
          /*-- 6. Copy en footer */
          /*If tunnel header present then copy en footer of forwarded packet*/
          if (tunnel_flag == TRUE) {
-                 memcpy(en_footer_fw, packet->data + ret_pos,
+                 memcpy(en_footer_fw, task->data + ret_pos,
                                  sizeof(en_footer_fw));
                  ret_pos += sizeof(en_footer_fw);
          }
 
          /*Copy en footer of packet*/
-         memcpy(en_footer, packet->data + ret_pos, sizeof(en_footer));
+         memcpy(en_footer, task->data + ret_pos, sizeof(en_footer));
          ret_pos += sizeof(en_footer);
 
-        /*Free desc buffer and packet , packet data */
-        free(desc_buff);
-        free(packet->data);
-        free(packet);
 
 out:
+        /*Free desc buffer and packet , packet data */
+        free(task->data);
+        free(task);
         vps_trace(VPS_ENTRYEXIT, "Leaving read_packet");
         return err;
 }
+
+
+
+
 
 
 /*
@@ -913,7 +920,8 @@ start_sniffer(void *arg)
         while (1) {
                 /*-- Read data from socket and add packet to queue--*/
                 if ((recv_size = recv(sd, buff, sizeof(buff), 0)) >  0) {
-                        add_packet_to_queue(buff, recv_size, REMOTE_VFM);
+                        add_task_to_queue(buff, recv_size, FIP_TASK,
+                                                               REMOTE_BXM);
                 }
         };
 

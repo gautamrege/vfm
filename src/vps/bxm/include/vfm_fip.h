@@ -289,6 +289,16 @@ typedef struct __vHBA_ctx
         uint8_t  gateway_mac[MAC_ADDR_LEN]; /* MAC address of the Gateway */
 }vHBA_ctx;
 
+typedef struct __req_action
+{
+	ctrl_hdr control_hdr;    /* Type of packet, Flag setting */
+	uint8_t host_mac[6];     /* DEST */
+	uint8_t gw_mac[6];       /* SRC */
+	uint8_t mode;            /* LBC = 0 or RBC = 1 */
+	uint32_t max_recv;       /* MAX_RECV */
+}req_action;
+
+
 
 /* Sniffer thread */
 void * start_sniffer(void * arg);
@@ -296,6 +306,9 @@ void * start_lbc_sniffer(void * arg);
 
 /*Processor thread*/
 void * start_processor(void *arg);
+
+/*Processor thread*/
+void * cli_listener(void *arg);
 
 /*
  * get_tlv
