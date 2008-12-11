@@ -67,6 +67,13 @@
 #define TLV_GATEWAY_ATTR        0x13
 #define TLV_VFABRIC_ATTR_BITMASK 0x14
 #define TLV_VFABRIC_ATTR         0x15
+
+/* Define the data types to generate the query */
+#define Q_UINT8                 0x01
+#define Q_UINT32                0x02
+#define Q_UINT64                0x03
+
+
 /*
  * Control header structure for the BXM_API messages for the api
  * implementation.
@@ -97,7 +104,7 @@ typedef struct __api_tlv {
  * Contains the buffer, and the length.
  */
 typedef struct __res_packet {
-        uint8_t *data;
+        void *data;
         int size;
 
 }res_packet;

@@ -39,6 +39,8 @@ process_client_request(void *argv)
                         else
                                 return NULL;
                 }
+                free(pack.data);
+                pack.size = 0;
         }
         vps_trace(VPS_ENTRYEXIT, "Leaving process_client_request");
 }

@@ -52,9 +52,8 @@ pre_initialization(void * reserved)
 {
         vps_error err  = VPS_SUCCESS;
 
-        parse_configuration();
+        read_config();
         configure_database();
-
         memset(g_req_map, 0, sizeof(g_req_map));
         vps_trace(VPS_INFO, "Configuration setup");
         return err;

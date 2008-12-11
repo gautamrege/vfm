@@ -61,11 +61,12 @@ bxm_bd_select_inventory (bxm_bd_attr_t * attr,
 
 
         /* TYPE = TLV_BD_ATTR, bxm_bd_attr_t */
-        create_api_tlv(TLV_BD_ATTR, sizeof(bxm_bd_attr_t), attr, offset);
+        create_api_tlv(TLV_BD_ATTR, sizeof(bxm_bd_attr_t), attr, &offset);
+
 
         /* TYPE =TLV_BIT_MASK , bxm_bd_attr_bitmask_t */
         create_api_tlv(TLV_BIT_MASK, sizeof(bxm_bd_attr_bitmask_t),
-                        &bitmask, offset);
+                        &bitmask, &offset);
 
 
         display(message, mesg_len);
@@ -79,10 +80,8 @@ bxm_bd_select_inventory (bxm_bd_attr_t * attr,
                 goto out;
         }
 
-        printf("\n Unmarshalling the response... \n");
         err = unmarshall_response(pack.data, pack.size, &op_pack);
 
-        printf("\n Unmarshalled the response... \n");
 out:
         return err;
 
@@ -141,10 +140,10 @@ bxm_bd_query_general_attr(bxm_bd_guid_t bridge_guid,
 
         /* TYPE = TLV_GUID, bxm_vadapter_attr_t */
         create_api_tlv(TLV_GUID, sizeof(bxm_bd_guid_t), &bridge_guid,
-                                                                  offset);
+                                                                  &offset);
         /* TYPE =TLV_BIT_MASK , bxm_bd_attr_bitmask_t */
         create_api_tlv(TLV_BIT_MASK, sizeof(bxm_bd_attr_bitmask_t),
-                        &bitmask, offset);
+                        &bitmask, &offset);
 
 
         display(message, mesg_len);

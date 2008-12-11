@@ -31,6 +31,7 @@ read_api_ctrl_hdr(uint8_t *buff,
         *ret_pos = *ret_pos + sizeof(bxmapi_ctrl_hdr);
 
 /*        vps_trace(VPS_ENTRYEXIT, "Leaving read_api_ctrl_hdr");*/
+        return err;
 }
 
 /*
@@ -58,8 +59,7 @@ get_api_tlv (uint8_t *buff, uint32_t *ret_pos, void * op_arg)
         ptr += sizeof(tlv.length);
 
         memcpy(op_arg, ptr, tlv.length);
-        printf("\nTYPE : %d \t LEN: %d, VALUE: %x ", tlv.type,
-                        tlv.length, *((uint8_t *)op_arg));
+        display(op_arg, tlv.length);
         *ret_pos += (sizeof(tlv.type) + sizeof(tlv.length) + tlv.length);
 
         /*vps_trace(VPS_ENTRYEXIT, "Leaving get_api_tlv");*/
@@ -90,7 +90,7 @@ create_ctrl_hdr(uint8_t mod, uint8_t opcode, uint32_t len,
  * Not needed for creating the tlv's.
  */
 bxm_error_t
-create_api_tlv(uint8_t type, uint32_t len, void *value, uint8_t *offset)
+create_api_tlv(uint8_t type, uint32_t len, void *value, uint8_t **offset)
 {
         api_tlv tlv;
         bxm_error_t err = VPS_SUCCESS;
@@ -99,9 +99,9 @@ create_api_tlv(uint8_t type, uint32_t len, void *value, uint8_t *offset)
 
         tlv.type = type;
         tlv.length = len;
-        memcpy(offset, &tlv, 2);
-        memcpy(offset + 2, value, tlv.length);
-        offset +=(tlv.length + 2);
+        memcpy(*offset, &tlv, 2);
+        memcpy(*offset + 2, value, tlv.length);
+        *offset +=(tlv.length + 2);
 
 /*        vps_trace(VPS_ENTRYEXIT, "Leaving create_api_tlv");*/
         return err;
@@ -119,4 +119,43 @@ display(uint8_t *buff, uint32_t size) {
                 printf("0x%x,", buff[i]);
         printf("\n");
 }
+
+/*
+ * This function is to generate the query for accessing the data.
+ * 'WHERE' clause is not included in this query.
+ */
+
+void
+add_query_parameters(char* buff, int count, const char* db_field,
+                                  void* attr_field, uint8_t data_type)
+{
+        if (count > 0) {
+                if (data_type == Q_UINT8) {
+                        sprintf(buff, " %s and %s = \"%s\"", buff, db_field,
+                                                     *(uint8_t *)attr_field);
+                }
+                if (data_type == Q_UINT32) {
+                        sprintf(buff, " %s and %s = %d", buff, db_field,
+                                                    *(uint32_t *)attr_field);
+                }
+                if (data_type == Q_UINT8) {
+                        sprintf(buff, " %s and %s = %ld", buff, db_field,
+                                                    *(uint64_t *)attr_field);
+                }
+        }
+        else
+                if (data_type == Q_UINT8) {
+                        sprintf(buff, " %s = \"%s\"", db_field,
+                                                    *(uint8_t *)attr_field);
+                }
+                if (data_type == Q_UINT32) {
+                        sprintf(buff, " %s = %d", db_field,
+                                                    *(uint32_t *)attr_field);
+                }
+                if (data_type == Q_UINT8) {
+                        sprintf(buff, " %s = %ld", db_field,
+                                                    *(uint64_t *)attr_field);
+                }
+}
+
 /*#endif */

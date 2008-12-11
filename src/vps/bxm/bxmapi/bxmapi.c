@@ -54,7 +54,6 @@ unmarshall_response(void *buff, uint32_t size, res_packet *pack)
                         break;
         }
 
-        display(pack->data, pack->size);
 out:
         return err;
 

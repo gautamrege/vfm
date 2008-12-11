@@ -20,7 +20,7 @@ bxmapi:
 	gcc -shared -o lib$(BXMAPI).so $(CFLAGS) $(DEFS) $(INC) $(LIBS) $(SRC)
 
 test: bxmapi
-	gcc -o cli unittestbxmapi_test.c -L. -lbxmapi $(CFLAGS) $(DEFS) $(INC)
+	gcc -o cli unittest/bxmapi_test.c -L. -lbxmapi $(CFLAGS) $(DEFS) $(INC)
 
 clean:
 	rm -f lib$(BXMAPI).so cli client

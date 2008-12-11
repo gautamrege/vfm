@@ -33,22 +33,6 @@ extern uint8_t g_wwpn[8];
  *
  * Returns : vps_err
  */
-vps_error
-parse_configuration()
-{
-        /*
-         * Read a config file and populate the globals.
-         * (Gautam) I agrued over having a global data struct instead of simple
-         * globals because of simplicity.
-         */
-
-        vps_error err = VPS_SUCCESS;
-
-        read_config();
-
-        return err;
-}
-
 /*
  * Configure database.
  *

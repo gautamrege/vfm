@@ -773,10 +773,12 @@ process_bridge(void *data, int num_cols, char **values, char **cols)
                         bridge->_bd_guid = atoi(values[i]);
                 else if (strcmp(cols[i], "bxm_guid") == 0)
                         bridge->_bxm_guid = atoi(values[i]);
-                else if (strcmp(cols[i], "desc") == 0)
-                        bridge->desc = values[i];
-                else if (strcmp(cols[i], "firmware_version") == 0)
-                        bridge->_firmware_version = values[i];
+                else if (strcmp(cols[i], "desc") == 0) {
+                        memcpy(bridge->desc, values[i], 64);
+                }
+                else if (strcmp(cols[i], "firmware_version") == 0) {
+                        memcpy(bridge->_firmware_version, values[i], 64);
+                }
         }
 
         /* After the data is correctly populated, increment the bridge count */
@@ -884,7 +886,7 @@ populate_gateway_module_information(vpsdb_resource *rsc, const char* name)
                                                                         query);
         /* Get the bridges */
         if (VPS_SUCCESS != (err = vpsdb_read(query,
-                            process_gateway_module, 
+                            process_gateway_module,
                             /* gateway call back function */
                             rsc))) {
                 vps_trace(VPS_ERROR, "Could not get gateway information");
@@ -931,10 +933,10 @@ populate_bridge_info(vpsdb_resource *rsc, const char *where_clause)
 
                 /* 'name' parameter should be a NULL terminated string */
                 memset(tmp_str, 0, sizeof(tmp_str));
-               
+
                 memcpy(tmp_str, &bridge->_bd_guid,
                                         sizeof(bridge->_bd_guid));
-                
+
                 sprintf(tmp_str,"%d",bridge->_bd_guid);
                 /*
                  * For each gateway, the external port status is updated
@@ -1022,7 +1024,7 @@ add_io_module(vpsdb_resource *info)
 				insert_io_module_query, tmp);
 
 		/* Type */
-		sprintf(insert_io_module_query, "%s, %d", 
+		sprintf(insert_io_module_query, "%s, %d",
 				insert_io_module_query, ptr->type);
 
 		/* Mac address */

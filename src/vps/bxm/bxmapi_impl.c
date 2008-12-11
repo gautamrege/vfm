@@ -397,12 +397,12 @@ unmarshall_request(void *buff, uint32_t size, res_packet * pack)
                                 case BXM_QUERY_INVENTORY:
                                         process_bxm_bd_select_inventory(buff,
                                                         &ret_pos, &op_data);
-                                        bxm_bridge__marshall_response(&op_data,
+                                        bxm_bridge_marshall_response(&op_data,
                                                         &ctrl_hdr, pack, 2);
                                 case BXM_QUERY:
                                         process_bxm_bd_query_general_attr(buff,
                                                         &ret_pos, &op_data);
-                                        bxm_bridge__marshall_response(&op_data,
+                                        bxm_bridge_marshall_response(&op_data,
                                                         &ctrl_hdr, pack, 1);
                         }
                         break;

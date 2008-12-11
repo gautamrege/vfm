@@ -160,7 +160,7 @@ typedef struct
     /**
      * @brief A user defined description of the BridgeX device.
      */
-    char *desc;
+    char desc[64];
 
     /**
      * @brief The state of the Bridge device
@@ -203,7 +203,7 @@ typedef struct
      * the physical configuration of the bridge device when the bridge device
      * object is created.
      */
-    char *_firmware_version;
+    char _firmware_version[64];
 
     /**
      * @brief Time since last keepalive from the BridgeX device.

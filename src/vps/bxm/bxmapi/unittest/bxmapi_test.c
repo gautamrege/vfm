@@ -36,10 +36,23 @@ int main()
         bxm_bd_attr_bitmask_t bitmask;
         int num; 
         bxm_bd_attr_t *result[10];
+        bxm_bd_attr_t *result_bd_id;
+        
+
         memset(&bitmask, 0, sizeof(bxm_bd_attr_bitmask_t));
         memset(&attr, 0, sizeof(bxm_bd_attr_t));
-       
         
+        
+        bitmask.guid = 1;
+        bxm_bd_guid_t bd_id  = 122344;
+
+        bxm_bd_query_general_attr(bd_id, bitmask, result_bd_id);
+        bxm_bd_query_general_attr(bd_id, bitmask, result_bd_id);
+        bxm_bd_query_general_attr(bd_id, bitmask, result_bd_id);
+        bxm_bd_query_general_attr(bd_id, bitmask, result_bd_id);
+        bxm_bd_query_general_attr(bd_id, bitmask, result_bd_id);
+       
+       /* 
                 bxm_bd_select_inventory(&attr, bitmask, &num, result);
 
                 sleep(2);
@@ -55,7 +68,7 @@ int main()
                 bxm_bd_select_inventory(&attr, bitmask, &num, result);
                 bxm_bd_select_inventory(&attr, bitmask, &num, result);
                 bxm_bd_select_inventory(&attr, bitmask, &num, result);
-        
+        */
 
 }
 
