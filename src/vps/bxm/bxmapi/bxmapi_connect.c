@@ -23,16 +23,18 @@ process_request(uint32_t sockfd, uint8_t* ip_data, uint32_t ip_length,
         pack->size = 0;
         uint8_t op_data[BUFFER_SIZE];
 
+        memset(op_data, 0, BUFFER_SIZE);
         bxm_error_t err = BXM_SUCCESS;
 
         /*
          * Send the request to the client.
          */
-        if (send(sockfd, ip_data , ip_length, 0) <= 0) {
+        if (send(sockfd, ip_data, ip_length, 0) <= 0) {
                 err = BXM_ERROR_SENDING;
                 return err;
         }
         printf("\n sending data....\n");
+	free(ip_data);
         /* recieve the message from server */
         if ((pack->size = recv(sockfd, op_data, BUFFER_SIZE, 0)) < 0) {
                 err = BXM_ERROR_RECEIVE;
@@ -40,8 +42,8 @@ process_request(uint32_t sockfd, uint8_t* ip_data, uint32_t ip_length,
                 return err;
         }
 
-       printf("\n Pack size %d\n", pack->size);
-       pack->data = op_data;
+       pack->data = malloc(pack->size);
+       memcpy(pack->data, op_data, pack->size);
 
        return err;
 }

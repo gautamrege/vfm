@@ -221,14 +221,14 @@ typedef struct
      * @note This is a mandotory field. A user cannot create the vadapter
      * without specifying a unique name for the vadapter.
      */
-    char *name;
+    char name[64];
 
     /**
      * @brief A user defined description of the virtual IO adapter.
      *
      * @note This is a optional field. 
      */
-    char *desc;
+    char desc[64];
 
     /**
      * @brief User defined protocol of the virtual adapter.

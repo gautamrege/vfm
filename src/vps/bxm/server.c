@@ -13,7 +13,6 @@
  */
 #include <common.h>
 #include <vfm_fip.h>
-#include <db_access.h>
 #include <crc32_le.h>
 #include <map_util.h>
 #include <bxm_ib.h>
@@ -91,6 +90,7 @@ vps_error initialization(void *reserved)
                                 g_if_index, g_if_mtu);
         }
         else if (g_bxm_protocol == BXM_IB_PROTOCOL) {
+#ifdef VFM_EOIB
                 /* Call BridgeX API init()*/
                 bx_init(&init_info_pack);
                 vps_trace(VPS_INFO,"SLID : %d", init_info_pack.lid);
@@ -105,8 +105,7 @@ vps_error initialization(void *reserved)
                 if (init_info_pack.lid == 0){
                         vps_trace(VPS_ERROR,"SLID is Zero");
                 }
-
-
+#endif
         }
         vps_trace(VPS_ENTRYEXIT, "Exiting Initialization");
         return err;
@@ -245,13 +244,14 @@ main(int argc, char* argv[])
 
         }
         else if (g_bxm_local == 1 && g_bxm_protocol == BXM_IB_PROTOCOL) {
-               
+#ifdef VFM_EOIB
                 /* Send GW advertisement */ 
                 bxm_send_gw_adv();
                 
                 /* Start Processor thread. */
                 pthread_create(&lbc_sniffer_tid, NULL, start_lbc_sniffer, 
                                                                       NULL);
+#endif
 
         }
 

@@ -29,7 +29,6 @@ process_client_request(void *argv)
                         vps_trace(VPS_INFO, "Client Message : %s \n" , buff);
                 else
                         return NULL;
-                sleep(5);
                 /*API Call */
                 unmarshall_request(buff, recv_size, &pack);
 
@@ -39,8 +38,12 @@ process_client_request(void *argv)
                         else
                                 return NULL;
                 }
-                free(pack.data);
-                pack.size = 0;
+
+		vps_trace(VPS_INFO, "SIZE :%d", pack.size);
+		display(pack.data, pack.size);
+		//free(pack.data);
+		pack.size = 0;
+                recv_size = 0;
         }
         vps_trace(VPS_ENTRYEXIT, "Leaving process_client_request");
 }

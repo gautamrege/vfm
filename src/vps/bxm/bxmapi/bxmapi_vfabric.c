@@ -28,7 +28,7 @@ bxm_vfabric_create(char *   name,
         bxm_error_t err = BXM_SUCCESS;
 
         mesg_len = (sizeof(bxmapi_ctrl_hdr) + sizeof(bxm_protocol_t) +
-                        strlen(name) + strlen(desc) + 2 * no_of_args);
+                        2 * NAME_SIZE + 2 * no_of_args);
 
         memset(&ctrl_hdr , 0, sizeof(bxmapi_ctrl_hdr));
 
@@ -36,22 +36,21 @@ bxm_vfabric_create(char *   name,
                         mesg_len, &ctrl_hdr);
 
         message = (uint8_t *)malloc(mesg_len);
+        memset(message , 0, mesg_len);
         offset = message;
 
         memcpy(offset, &ctrl_hdr, sizeof(bxmapi_ctrl_hdr));
         offset += sizeof(bxmapi_ctrl_hdr);
 
         /* TYPE = 2, name  */
-        create_api_tlv(TLV_CHAR, strlen(name),
-                        name, offset);
+        create_api_tlv(TLV_CHAR, NAME_SIZE, name, &offset);
 
         /* TYPE = 2 , desc */
-        create_api_tlv(TLV_CHAR, strlen(desc),
-                        desc, offset);
+        create_api_tlv(TLV_CHAR, NAME_SIZE, desc, &offset);
 
         /* TYPE = 1 , bxm_protocol_t */
         create_api_tlv(TLV_INT, sizeof(bxm_protocol_t),
-                        &(protocol), offset);
+                        &(protocol), &offset);
 
 
         /* TODO: Call the function to send the packet to server */
@@ -65,21 +64,25 @@ bxm_vfabric_create(char *   name,
                 return err;
         err = unmarshall_response(pack.data, pack.size, &op_pack);
 
+        *vfabric_id = *(bxm_vfabric_id_t *)op_pack.data;
+        free(op_pack.data);
+        free(pack.data);
+
         return err;
 }
 
 /*
- *
- *
- * Edit properties of a vfabric.
+ * Edit properties of a vfabric. 
  * Parameters:
- * [in] vfabric_id  The vfabric Id of the vfabric to change the attributes of.
- * [in] bitmask   Specifies a bitmask value of the specific properties of the
- * object to be updated. This bitmask flag should be bit-AND'ed against order
- * of attributes in the struct bxm_vfabric_attr_t.
- * [in]   attr   Pointer to the structure containing the attrs of the vfabric
- * that should be changed.
- * Returns:
+ * [in]   vfabric_id   The vfabric Id of the vfabric to change the attributes
+ *                     of. 
+ * [in]   bitmask      Specifies a bitmask value of the specific properties of
+ *                     the object to be updated. This bitmask flag should be
+ *                     bit-AND'ed against order of attributes in the struct
+ *                     bxm_vfabric_attr_t. 
+ * [in]   attr         Pointer to the structure containing the attrs of the
+ *                     vfabric that should be changed.
+ *
  * Returns 0 on success, or an error code on failure.
  */
 bxm_error_t
@@ -108,6 +111,7 @@ bxm_vfabric_edit_general_attr(bxm_vfabric_id_t vfabric_id,
                 return err;
 
         message = (uint8_t *)malloc(mesg_len);
+        memset(message , 0, mesg_len);
         offset = message;
 
         memcpy(offset, &ctrl_hdr, sizeof(bxmapi_ctrl_hdr));
@@ -115,16 +119,16 @@ bxm_vfabric_edit_general_attr(bxm_vfabric_id_t vfabric_id,
 
         /* TYPE = 1 , vfabric_id */
         create_api_tlv(TLV_INT, sizeof(bxm_vfabric_id_t), &vfabric_id,
-                        offset);
+                        &offset);
 
         /* TYPE =TLV_BIT_MASK , bxm_protocol_t */
 
         create_api_tlv(TLV_VFABRIC_ATTR_BITMASK,
-                        sizeof(bxm_vfabric_attr_bitmask_t), bitmask, offset);
+                        sizeof(bxm_vfabric_attr_bitmask_t), bitmask, &offset);
 
         /* TYPE = TLV_VADP_ATTR, bxm_vfabric_attr_t */
         create_api_tlv(TLV_VFABRIC_ATTR, sizeof(bxm_vfabric_attr_t),
-                        attr, offset);
+                        attr, &offset);
 
 
         display(message, mesg_len);
@@ -138,6 +142,8 @@ bxm_vfabric_edit_general_attr(bxm_vfabric_id_t vfabric_id,
 
         err = unmarshall_response(pack.data, pack.size, &op_pack);
 
+        err = *(bxm_error_t *)(op_pack.data);
+        free(op_pack.data);
         return err;
 
 
@@ -181,6 +187,7 @@ bxm_vfabric_online(bxm_vfabric_id_t vfabric_id)
                 return err;
 
         message = (uint8_t *)malloc(mesg_len);
+        memset(message , 0, mesg_len);
         offset = message;
 
         memcpy(offset, &ctrl_hdr, sizeof(bxmapi_ctrl_hdr));
@@ -189,8 +196,9 @@ bxm_vfabric_online(bxm_vfabric_id_t vfabric_id)
 
         /* TYPE = 1 , vfabric_id */
         create_api_tlv(TLV_INT, sizeof(bxm_vfabric_id_t), &vfabric_id,
-                        offset);
+                        &offset);
 
+        display(message, mesg_len);
         err = create_connection(&sock_fd);
         if (err)
                 return err;

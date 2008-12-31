@@ -40,12 +40,12 @@ typedef struct
      * the gateway API. The index is queried from the Bridge device
      * configuration when the gateway object is created.
      */
-    char *_physical_index;
+    char _physical_index[8];
 
     /**
      * @brief A user defined description of the Gateway.
      */
-    char *desc;
+    char desc[8];
 
     /**
      * @brief The ID of the Gateway module.

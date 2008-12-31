@@ -48,6 +48,9 @@
 
 #define SET_E  0x80           /* to set the tunnel hdr E flag */
 
+#define GW_ADV     0
+#define KEEP_ALIVE 1
+#define INIT_VHBA  3
 
 #define TLV_1                     1
 #define TLV_2                     2
@@ -77,7 +80,6 @@
 #define BX_DISC GET_PK_TYPE(0xFFFA, 0x2)
 #define VFM_RES GET_PK_TYPE(0xFFFA, 0x1)
 #define CX_DISC GET_PK_TYPE(0x1, 0x1)
-#define GW_ADV  GET_PK_TYPE(0x1, 0x2)
 
 
 /* Ethernet  header. */
@@ -156,6 +158,14 @@ typedef struct __ctrl_hdr {
         uint16_t desc_list_length;
         uint16_t flags;                /* FP:1, SP:1, flags:11, A:1, S:1, F:1*/
 }ctrl_hdr;
+
+#ifdef OPEN_FCOE
+typedef struct __tlv5_fabric
+{
+     uint8_t fc_map[3];
+     uint8_t fabric_name[8];
+}tlv5_fabric;
+#endif
 
 #ifdef MELLANOX
 /*
@@ -236,10 +246,15 @@ typedef struct __fcoe_conx_vfm_adv{
 typedef struct __fcoe_vHBA_adv{
         uint8_t  priority;                  /* Priority */
         uint8_t  fcf_gw_mac[MAC_ADDR_LEN];  /* FCF gateway mac address */
-        uint8_t  fc_map[3];                 /* FC-MAP */
+#ifdef OPEN_FCOE 
+        uint8_t switch_name[NAME_LEN];      /* Switch Name */
+        tlv5_fabric tlv_5;                  /* TLV5- FC_MAP & Fabric Name */
+#else	
+	uint8_t  fc_map[3];                 /* FC-MAP */
         uint8_t switch_name[NAME_LEN];      /* Switch Name */
         uint8_t fabric_name[NAME_LEN];      /* Fabric name */
-        uint32_t fka_adv_period;            /* FKA_ADV_PERIOD */
+#endif
+	uint32_t fka_adv_period;            /* FKA_ADV_PERIOD */
 }fcoe_vHBA_adv;
 
 /* --- ConnectX vHBA keep Alive Descriptor (Ref: Table 44) --- **/

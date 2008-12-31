@@ -239,12 +239,12 @@ send_packet(uint8_t tunnel_flag,
          * The padding is calculated as follows:
          * padd = (max_recv - payload - Version(2 bytes) - sizeof control_hdr)
          */
-        if (s_flag) {
-                max_recv = 1000; /* TEST */
+        /* if (s_flag) {
+                max_recv = 1000; * TEST *
                 padding = max_recv - desc_length -
                         sizeof(uint16_t) - (2 * DWORD);
                 offset += padding;
-        }
+        }*/
 
         /* --5.Add forward ethernet footer.--*/
         /*If tunnel flag true then Copy Footer for forword */

@@ -16,7 +16,6 @@ uint8_t g_wwnn[8];
 uint8_t g_wwpn[8];
 uint8_t g_fc_map[3] = { 0x0e, 0xfc, 0x00};
 
-
 /* To set the specific Flags */
 #define SET_FP 0x8000
 #define SET_SP 0x4000
@@ -29,9 +28,7 @@ uint8_t g_fc_map[3] = { 0x0e, 0xfc, 0x00};
 /* Size of FLOGI/FDISC request*/
 #define FLOGI_SIZE 35
 
-
-
-/**
+/*
  * create_tlv
  * This function fills the TLV i.e the Type, length, value structure
  *
@@ -97,7 +94,8 @@ create_tlv(void *data, vp_tlv *tlv)
                          */
                         memcpy(tlv->value + sizeof(uint16_t), data, 2 * DWORD);
                         break;
-                case TLV_5 :
+#ifndef OPEN_FCOE
+		case TLV_5 : 
                         /*
                          * TYPE :5 FABRIC NAME(64 bits)
                          * The lower 64 bits contain the FABRIC NAME value.
@@ -107,6 +105,12 @@ create_tlv(void *data, vp_tlv *tlv)
                          */
                         memcpy(tlv->value + sizeof(uint16_t), data, 2 * DWORD);
                         break;
+#else       
+                case TLV_5 :
+
+                        memcpy(tlv->value + 3 * sizeof(uint8_t), data, length);
+                        break;
+#endif			
                 case TLV_6 :
                         /*
                          * TYPE :6 MAX RECEIVE SIZE (16 bits)
@@ -191,13 +195,6 @@ fcoe_vHBA_advertisement(fcoe_vHBA_adv *adv, uint8_t *msg_desc)
 
         vps_trace(VPS_ENTRYEXIT, "Entering fcoe_vHBA_advertisement");
 
-        /*
-         * TODO : Write code for creating the FIP packet by reading the values
-         * from the database and filling up the packet structure to send
-         * it from the VFM to the host.
-         */
-
-
         /* TLV 1 : Priority , len = 1 */
         tlv.type   = 1;
         tlv.length = 1;
@@ -218,7 +215,30 @@ fcoe_vHBA_advertisement(fcoe_vHBA_adv *adv, uint8_t *msg_desc)
         offset += tlv.length * DWORD - 2;
         free(tlv.value);
 
-        /* TLV 3 : FC_MAP , len = 2 */
+#ifdef OPEN_FCOE
+        /* TLV 4 : SWITCH NAME , len = 3 */
+        tlv.type   = 4;
+        tlv.length = 3;
+        create_tlv(adv->switch_name, &tlv);
+        memcpy(offset, &tlv, 2);
+        offset += 2;
+        memcpy(offset, tlv.value, tlv.length * DWORD - 2);
+        offset += tlv.length * DWORD - 2;
+        free(tlv.value);
+
+        /* TLV 5 : FC_MAP & FABRIC NAME , len = 4 */
+        tlv.type   = 5;
+        tlv.length = 4;
+        //memcpy(&fabric.fc_map, adv->fc_map, 3);
+        //memcpy(&fabric.name, adv->fabric_name, 8);
+        create_tlv(&adv->tlv_5, &tlv);
+        memcpy(offset, &tlv, 2);
+        offset += 2;
+        memcpy(offset, tlv.value, tlv.length * DWORD - 2);
+        offset += tlv.length * DWORD - 2;
+        free(tlv.value);
+#else
+	/* TLV 3 : FC_MAP , len = 2 */
         tlv.type   = 3;
         tlv.length = 2;
         create_tlv(&adv->fc_map, &tlv);
@@ -247,7 +267,7 @@ fcoe_vHBA_advertisement(fcoe_vHBA_adv *adv, uint8_t *msg_desc)
         memcpy(offset, tlv.value, tlv.length * DWORD - 2);
         offset += tlv.length * DWORD - 2;
         free(tlv.value);
-
+#endif
 
         /* TLV 12: FKA_ADVERTISEMENT PERIOD , len = 2 */
         tlv.type   = 12;
@@ -368,12 +388,21 @@ prepare_fcoe_vHBA_advertisement(ctrl_hdr *control_hdr, uint8_t **msg_desc)
          * bug. Please change bridge_enc_mac to bridge_mac later
          */
         memcpy(gw_adv.fcf_gw_mac, g_bridge_enc_mac, MAC_ADDR_LEN);
+#ifdef OPEN_FCOE
+        /* Switch Name */
+        memcpy(gw_adv.switch_name, g_wwnn, NAME_LEN);
+	/* TLV 5 for open FCoE*/
+        memcpy(gw_adv.tlv_5.fc_map, g_fc_map, sizeof(g_fc_map));
+        memcpy(gw_adv.tlv_5.fabric_name, g_wwpn , NAME_LEN);
+#else
         memcpy(gw_adv.fc_map, g_fc_map, sizeof(g_fc_map));
         /* Switch Name */
-        memset(gw_adv.switch_name, 0 , NAME_LEN);
+        memcpy(gw_adv.switch_name, g_wwnn, NAME_LEN);
         /* Fabric name: */
-        memset(gw_adv.fabric_name, 0 , NAME_LEN);
-        gw_adv.fka_adv_period = htonl(50000);
+        memcpy(gw_adv.fabric_name, g_wwpn , NAME_LEN);
+#endif
+     
+	gw_adv.fka_adv_period = htonl(50000);
 
         /* Allocate memory for the descriptor list or Payload */
         *msg_desc = (uint8_t *)malloc(control_hdr->desc_list_length * DWORD);
@@ -427,8 +456,8 @@ create_packet_ex(eth_hdr *fip_eth_hdr_fw,
 {
         uint8_t *payload, *temp;
         req_entry_map entry;
-        uint32_t lscomd                 = 6 * DWORD;
-        uint32_t oxid_loc           = 4 * DWORD;
+        uint32_t lscomd         = 6 * DWORD;
+        uint32_t oxid_loc       = 4 * DWORD;
         uint32_t vhba_mac_loc   = FLOGI_SIZE * DWORD + 2;
         uint16_t vfm_gen_oxid;
         uint8_t *offset = desc_buff;
@@ -443,7 +472,7 @@ create_packet_ex(eth_hdr *fip_eth_hdr_fw,
         tunnel_hdr->port_num |= SET_E;
 
         /* T10 Vender ID = "Mellanox" */
-        strcpy(tunnel_hdr->t10_vender_id, "MELLANOX");
+        strcpy(tunnel_hdr->t10_vender_id, "vpsystem");
 
         /* prepare FC Header and Payload */
         payload = (uint8_t *)malloc(FLOGI_SIZE * DWORD);
@@ -507,7 +536,7 @@ create_vfm_flogi()
 
         tun_hdr.port_num |= SET_E;
         /* T10 Vender ID = "Mellanox" */
-        strcpy(tun_hdr.t10_vender_id, "MELLANOX");
+        strcpy(tun_hdr.t10_vender_id, "vpsystem");
 
 
         /* Create VFM FLOGI Request */
@@ -662,7 +691,7 @@ prepare_fdisc_res(uint8_t *msg_desc,
         tunnel_flag = 1;
 
         /* T10 Vender ID = "Mellanox" */
-        strcpy(tun_hdr.t10_vender_id, "MELLANOX");
+        strcpy(tun_hdr.t10_vender_id, "vpsystem");
         /* E Flag is set to '0' as the packet is sent on the internal network*/
         /* TODO: Fill the other tunnel default values */
 
@@ -676,7 +705,7 @@ prepare_fdisc_res(uint8_t *msg_desc,
 
         /* FLOGI Response control header */
         control_hdr.opcode  = 2;
-        control_hdr.subcode = 1;
+        control_hdr.subcode = 2;
         control_hdr.reserved = 0;
         control_hdr.desc_list_length = payload_len;
         control_hdr.flags = entry->ctrl_flags | SET_F;
@@ -777,7 +806,7 @@ create_packet(uint16_t op, uint8_t subop, void *data)
         memset(&tun_hdr, 0, sizeof(tun_hdr));
         tunnel_flag = 1;
         /* T10 Vender ID = "Mellanox" */
-        strcpy(tun_hdr.t10_vender_id, "MELLANOX");
+        strcpy(tun_hdr.t10_vender_id, "vpsystem");
         /* TODO: Fill the other tunnel default values */
 
 
@@ -789,7 +818,7 @@ create_packet(uint16_t op, uint8_t subop, void *data)
                 control_hdr.opcode  = 1;
                 control_hdr.subcode = 2;
                 control_hdr.reserved = 0;
-                control_hdr.desc_list_length = 13;
+                control_hdr.desc_list_length = 12;
                 control_hdr.flags |= SET_FP;
                 control_hdr.flags |= SET_SP;
                 control_hdr.flags |= SET_F;

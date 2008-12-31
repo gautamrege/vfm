@@ -42,7 +42,7 @@ read_api_ctrl_hdr(uint8_t *buff,
  * allocation.
  */
 bxm_error_t
-get_api_tlv (uint8_t *buff, uint32_t *ret_pos, void * op_arg)
+get_api_tlv(uint8_t *buff, uint32_t *ret_pos, void * op_arg)
 {
         uint8_t *ptr = buff + *ret_pos;
         api_tlv tlv;
@@ -59,7 +59,8 @@ get_api_tlv (uint8_t *buff, uint32_t *ret_pos, void * op_arg)
         ptr += sizeof(tlv.length);
 
         memcpy(op_arg, ptr, tlv.length);
-        display(op_arg, tlv.length);
+        //printf("\nTYPE : %d \t LEN: %d, VALUE: %x ", tlv.type,
+          //              tlv.length, *((uint8_t *)op_arg));
         *ret_pos += (sizeof(tlv.type) + sizeof(tlv.length) + tlv.length);
 
         /*vps_trace(VPS_ENTRYEXIT, "Leaving get_api_tlv");*/
@@ -86,8 +87,9 @@ create_ctrl_hdr(uint8_t mod, uint8_t opcode, uint32_t len,
 }
 
 /*
- * TODO Create TLVs.. NOT USING IT PRESENTLY..
- * Not needed for creating the tlv's.
+ * Create TLVs.
+ * NOTE : Pass the address of the offset to create_tlv to increment the
+ *        offset.
  */
 bxm_error_t
 create_api_tlv(uint8_t type, uint32_t len, void *value, uint8_t **offset)
@@ -112,13 +114,24 @@ create_api_tlv(uint8_t type, uint32_t len, void *value, uint8_t **offset)
 /* This Function just displays the buff */
 display(uint8_t *buff, uint32_t size) {
 
-        uint32_t i;
+        uint32_t i, j = 0;
 
+	if (size) {
         printf("\n*** NEW MESAGE ***\n");
-        for (i = 0; i< size; i++)
-                printf("0x%x,", buff[i]);
-        printf("\n");
+        for (i = 0; i< size; i++) {
+		if(i > j + 15) {
+			printf("\n");
+			j = i;
+		}
+                printf(" 0x%0.2x", buff[i]);
+	
+	}
+	printf("\n");
+	}
+	else
+		return 0;
 }
+/*#endif */
 
 /*
  * This function is to generate the query for accessing the data.
@@ -130,32 +143,63 @@ add_query_parameters(char* buff, int count, const char* db_field,
                                   void* attr_field, uint8_t data_type)
 {
         if (count > 0) {
-                if (data_type == Q_UINT8) {
+                if (data_type == Q_UINT8)
                         sprintf(buff, " %s and %s = \"%s\"", buff, db_field,
-                                                     *(uint8_t *)attr_field);
-                }
-                if (data_type == Q_UINT32) {
+                                                     (uint8_t *)attr_field);
+                if (data_type == Q_UINT32)
                         sprintf(buff, " %s and %s = %d", buff, db_field,
                                                     *(uint32_t *)attr_field);
-                }
-                if (data_type == Q_UINT8) {
+                if (data_type == Q_UINT64)
                         sprintf(buff, " %s and %s = %ld", buff, db_field,
                                                     *(uint64_t *)attr_field);
-                }
+
         }
-        else
-                if (data_type == Q_UINT8) {
+        else {
+                if (data_type == Q_UINT8)
                         sprintf(buff, " %s = \"%s\"", db_field,
-                                                    *(uint8_t *)attr_field);
-                }
-                if (data_type == Q_UINT32) {
+                                                    (uint8_t *)attr_field);
+                if (data_type == Q_UINT32)
                         sprintf(buff, " %s = %d", db_field,
                                                     *(uint32_t *)attr_field);
-                }
-                if (data_type == Q_UINT8) {
+                if (data_type == Q_UINT64)
                         sprintf(buff, " %s = %ld", db_field,
                                                     *(uint64_t *)attr_field);
-                }
+}
 }
 
+/* 
+ * This function is to generate the query for accessing the data.
+ * 'WHERE' clause is not included in this query.
+ */
+
+void
+add_update_query_parameters(char* buff, int count, const char* db_field,
+                                  void* attr_field, uint8_t data_type)
+{
+	buff = buff + strlen(buff);
+        if (count > 0) {
+
+                if (data_type == Q_UINT8)
+                        sprintf(buff, " %s , %s = '%s'", buff, db_field,
+                                        (uint8_t *)attr_field);
+                if (data_type == Q_UINT32)
+                        sprintf(buff, " %s , %s = %d", buff, db_field,
+                                        *(uint32_t *)attr_field);
+                if (data_type == Q_UINT64)
+                        sprintf(buff, " %s , %s = %ld", buff, db_field,
+                                        *(uint64_t *)attr_field);
+
+        }
+        else {
+                if (data_type == Q_UINT8)
+                        sprintf(buff, " %s = '%s'", db_field,
+                                        (uint8_t *)attr_field);
+                if (data_type == Q_UINT32)
+                        sprintf(buff, " %s = %d", db_field,
+                                        *(uint32_t *)attr_field);
+                if (data_type == Q_UINT64)
+                        sprintf(buff, " %s = %ld", db_field,
+                                        *(uint64_t *)attr_field);
+	}
+}
 /*#endif */

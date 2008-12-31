@@ -85,6 +85,7 @@ remove_entry_from_map(uint16_t vfm_gen_oxid)
         /*Index For given oxid not null then free  */
         if (g_req_map[vfm_gen_oxid] !=  NULL) {
            free(g_req_map[vfm_gen_oxid]);
+           g_req_map[vfm_gen_oxid] = NULL;
            vfm_oxid_index = vfm_gen_oxid;
         }
         pthread_mutex_unlock(&map_mutex);

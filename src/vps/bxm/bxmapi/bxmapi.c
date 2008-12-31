@@ -32,16 +32,23 @@ unmarshall_response(void *buff, uint32_t size, res_packet *pack)
          */
         switch (ctrl_hdr.opcode) {
                 case BXM_CREATE:
+                        pack->data = malloc(sizeof(uint32_t));
+                        pack->size = sizeof(uint32_t);
                         err = get_api_tlv(buff, &ret_pos, pack->data);
                         if (err)
                                 goto out;
                         break;
                 case BXM_EDIT:
+                case BXM_EDIT_PROTOCOL_ATTR:
+                        pack->data = malloc(sizeof(uint32_t));
+                        pack->size = sizeof(uint32_t);
                         err = get_api_tlv(buff, &ret_pos, pack->data);
                         if (err)
                                 goto out;
+                        break;
                 case BXM_QUERY_INVENTORY:
                         err = get_api_tlv(buff, &ret_pos, pack->size);
+                        pack->data = malloc(sizeof(pack->size));
                         err = get_api_tlv(buff, &ret_pos, pack->data);
                         break;
                 case BXM_DESTROY:
@@ -54,8 +61,8 @@ unmarshall_response(void *buff, uint32_t size, res_packet *pack)
                         break;
         }
 
+        display(pack->data, pack->size);
 out:
         return err;
 
 }
-

@@ -48,8 +48,8 @@ configure_database()
         /* This will create the database if its does not exist */
         rc = sqlite3_open(SQLITE3_DB, &g_db);
         if (rc) {
+                printf("Can't open database: %s\n", SQLITE3_DB);
                 vps_trace(VPS_ERROR, "Can't open database: %s", SQLITE3_DB);
-                sqlite3_close(g_db);
                 err = VPS_ERROR_DB_INIT;
         }
 

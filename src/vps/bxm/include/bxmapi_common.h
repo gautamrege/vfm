@@ -13,7 +13,7 @@
 #include <bxm_error.h>
 #include <bxm_vadapter.h>
 #include <bxm_vfabric.h>
-#include <db_access.h>
+#include <vfmdb.h>
 #include <bxm_bridge_device.h>
 /*
  * TODO: Header files to be included later
@@ -52,7 +52,7 @@
 #define BXM_QUERY_INVENTORY     0x4
 #define BXM_DESTROY             0x5
 #define BXM_ONLINE              0x6
-
+#define BXM_EDIT_PROTOCOL_ATTR  0x7
 #define BXM_VA_ACTIVATE         0x11
 
 /* Defining the TLV's */
@@ -74,6 +74,7 @@
 #define Q_UINT64                0x03
 
 
+#define NAME_SIZE  sizeof(char[64])              
 /*
  * Control header structure for the BXM_API messages for the api
  * implementation.

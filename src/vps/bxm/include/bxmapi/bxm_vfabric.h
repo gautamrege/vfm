@@ -28,13 +28,6 @@
 typedef uint32_t bxm_ctx_table_id_t;
 
 /**
- * @brief A gateway id. This is a unique identifier for a gateway.
- * This id is unique within a BXM context and is derived from the physical
- * bridge device.
- */
-typedef uint32_t bxm_gw_id_t;
-
-/**
  * @brief A structure for the Ethernet properties specific to a vFabric. 
  */
 typedef struct
@@ -146,14 +139,14 @@ typedef struct
      * @note This is a mandotory field. A user cannot create the vfabric
      * without specifying a unique name for the vfabric.
      */
-    char *name;
+    char name[64];
 
     /**
      * @brief User defined description for virtual fabric.
      * 
      * @note This is a optional field.
      */
-    char *desc;
+    char desc[64];
 
     /**
      * @brief User defined protocol of the virtual fabric.

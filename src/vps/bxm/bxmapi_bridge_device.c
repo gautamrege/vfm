@@ -3,7 +3,7 @@
  */
 
 #include <bxmapi_common.h>
-#include <db_access.h>
+#include <vfmdb.h>
 #include <common.h>
 
 /*

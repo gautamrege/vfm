@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2008  VirtualPlane Systems, Inc.
  */
-#include <db_access.h>
+#include <vfmdb.h>
 /* The sqlite database pointer */
 extern sqlite3 *g_db;
 
@@ -59,379 +59,6 @@ vpsdb_read(const char* query,
                       "SQL query SUCCESS: Retrieved %d objects:", rsc->count);
 
         vps_trace(VPS_ENTRYEXIT, "Leaving vspdb_read");
-        return err;
-}
-
-int
-generate_vadapter_id(void *data,
-                int num_cols,
-                char **values,
-                char **cols)
-{
-        /* For now we are using a simple auto-increment */
-        if (values[0])
-                *((bxm_vadapter_id_t*)data) = atoi(values[0]) + 1;
-        else
-                *((bxm_vadapter_id_t*)data) = 1;
-
-        return 0;
-}
-
-/*
- * Query: insert into bxm_vadapter_attr_t (id, name, desc, init_type,
- *        protocol) values(...);
- */
-vps_error
-add_vadapter(vpsdb_resource *info)
-{
-        vps_error err = VPS_SUCCESS;
-        bxm_vadapter_attr_t *vadapter = (bxm_vadapter_attr_t*)(info->data);
-        bxm_vadapter_id_t id;
-        vpsdb_resource rsc;
-
-        uint32_t i;
-
-        char table[32];
-        char mac[7];
-        char wwnn[9];
-        char wwpn[9];
-        char vlan[64];
-        char get_max_query[128] = "select max(id) from bxm_vadapter_attr;";
-        char insert_query[1024] = "insert into bxm_vadapter_attr (id, name, "
-                           "desc, init_type, protocol) values (";
-
-        rsc.data = &id;
-        vps_trace(VPS_ENTRYEXIT, "Entering add_vadapter");
-
-        /* Prepare the query for vadapter add */
-        if (VPS_SUCCESS != (err = vpsdb_read(get_max_query,
-                              generate_vadapter_id, /* call back function */
-                              &rsc))) {
-                vps_trace(VPS_ERROR, "Could not get max vadapter id");
-                err = VPS_DBERROR;
-                goto out;
-        }
-
-        /* Insert the vadapter into the table */
-        sprintf(insert_query, "%s%d, '%s', '%s', %d, %d);", insert_query, id,
-                        vadapter->name, vadapter->desc, vadapter->init_type,
-                        vadapter->protocol);
-        if (VPS_SUCCESS != (err = vpsdb_update(insert_query))) {
-                vps_trace(VPS_ERROR, "Error adding vadapter to datbase");
-                goto out;
-        }
-
-        /*
-         * Depending on the protocol=EN/IB, make an vadapter entry into
-         * the bxm_vadapter_en_attr or bxm_vadapter_fc_attr tables
-         */
-        if (vadapter->protocol == BXM_PROTOCOL_EN) {
-                memset(mac, 0, sizeof(mac));
-                memcpy(mac, vadapter->en_attr.mac, 6);
-
-                /* TODO: Fix vlan when we get num_vlans */
-                /* In case vlans are specified  */
-                /*
-                 * if (vadapter->en_attr.vlan) {
-                 *       memset(vlan, 0, sizeof(vlan));
-                 *      for (i = 0; i < 64; i++) {
-                 *              sprintf(vlan, "%s,%d", vlan,
-                 *                              vadapter->en_attr.vlan);
-                 *      }
-                 * }
-                 */
-
-                sprintf(insert_query,
-                        "insert into %s values(%d, '%s', %d, %d, '%s');",
-                        "bxm_vadapter_en_attr", id, mac,
-                        vadapter->en_attr.promiscuous_mode,
-                        vadapter->en_attr.silent_listener, vlan);
-        }
-        else if (vadapter->protocol == BXM_PROTOCOL_FC) {
-                memset(wwnn, 0, sizeof(wwnn));
-                memcpy(wwnn, &(vadapter->fc_attr.wwnn), 8);
-
-                memset(wwpn, 0, sizeof(wwpn));
-                memcpy(wwpn, &(vadapter->fc_attr.wwpn), 6);
-
-                sprintf(insert_query,
-                        "insert into %s values(%d, '%s', '%s', %d, %d, %d);",
-                        "bxm_vadapter_fc_attr", id, wwnn, wwpn,
-                        vadapter->fc_attr.fcid, vadapter->fc_attr.spma,
-                        vadapter->fc_attr.fpma);
-        }
-        if (VPS_SUCCESS != (err = vpsdb_update(insert_query))) {
-                vps_trace(VPS_ERROR, "Error adding vadapter to sub-able");
-                goto out;
-        }
-out:
-        vps_trace(VPS_ENTRYEXIT, "Leaving add_vadapter");
-        return err;
-}
-
-/*
- * The database will update all the attributes which are not null in the
- * database.
- */
-vps_error
-edit_vadapter(vpsdb_resource *info)
-{
-        vps_error err = VPS_SUCCESS;
-        bxm_vadapter_attr_t *vadapter = (bxm_vadapter_attr_t*)info->data;
-        bxm_vadapter_id_t id;
-        uint32_t i;
-
-        char table[32];
-        char mac[7];
-        char wwnn[9];
-        char wwpn[9];
-        char vlan[64];
-        char query[1024] = "udpate into bxm_vadapter_attr";
-
-        vps_trace(VPS_ENTRYEXIT, "Entering edit_vadapter");
-
-        /* Update the vadapter into the table */
-        sprintf(query, "%s set name='%s', desc='%s', init_type=%s, protocol=%d"
-                       " where id=%d;", query, vadapter->name, vadapter->desc,
-                       vadapter->init_type, vadapter->protocol,
-                       vadapter->_vadapter_id);
-        if (VPS_SUCCESS != (err = vpsdb_update(query))) {
-                vps_trace(VPS_ERROR, "Error updating vadapter to datbase");
-                goto out;
-        }
-
-        /*
-         * Depending on the protocol=EN/IB, update the vadapter entry into
-         * the bxm_vadapter_en_attr or bxm_vadapter_fc_attr tables
-         */
-        if (vadapter->protocol == BXM_PROTOCOL_EN) {
-                memset(mac, 0, sizeof(mac));
-                memcpy(mac, vadapter->en_attr.mac, 6);
-
-                /* TODO: Fix vlan when we get num_vlans */
-                /* In case vlans are specified  */
-                /*
-                 * if (vadapter->en_attr.vlan) {
-                 *       memset(vlan, 0, sizeof(vlan));
-                 *      for (i = 0; i < 64; i++) {
-                 *              sprintf(vlan, "%s,%d", vlan,
-                 *                              vadapter->en_attr.vlan);
-                 *      }
-                 * }
-                 */
-
-                sprintf(query,
-                        "update %s set mac='%s', promiscous=%d, "
-                        "silent_listener=%d, vlan='%s' where vadapter_id=%d);",
-                        "bxm_vadapter_en_attr", mac,
-                        vadapter->en_attr.promiscuous_mode,
-                        vadapter->en_attr.silent_listener, vlan, id);
-        }
-        else if (vadapter->protocol == BXM_PROTOCOL_FC) {
-                memset(wwnn, 0, sizeof(wwnn));
-                memcpy(wwnn, &(vadapter->fc_attr.wwnn), 8);
-
-                memset(wwpn, 0, sizeof(wwpn));
-                memcpy(wwpn, &(vadapter->fc_attr.wwpn), 6);
-
-                sprintf(query,
-                        "update %s set wwnn='%s', wwpn='%s', fcid=%d, "
-                        "spma=%d, fpma=%d where vadapter_id=%d);",
-                        "bxm_vadapter_fc_attr", wwnn, wwpn,
-                        vadapter->fc_attr.fcid, vadapter->fc_attr.spma,
-                        vadapter->fc_attr.fpma, id);
-        }
-        if (VPS_SUCCESS != (err = vpsdb_update(query))) {
-                vps_trace(VPS_ERROR, "Error updating vadapter sub-able");
-                goto out;
-        }
-
-out:
-        vps_trace(VPS_ENTRYEXIT, "Leaving edit_vadapter");
-        return err;
-}
-
-/*
- * This routine is called ONCE for each record from the result set - Gateways
- */
-int
-process_vadapter(void *data, int num_cols, char **values, char **cols)
-{
-        vpsdb_resource *rsc = (vpsdb_resource*)data;
-        bxm_vadapter_attr_t *vadapter;
-        uint8_t i;
-        vps_trace(VPS_ENTRYEXIT, "Entering process_vadapter. Count: %d",
-                rsc->count);
-
-        if (NULL == (rsc->data = realloc(rsc->data,
-                     sizeof(bxm_vadapter_attr_t) * (rsc->count + 1)))) {
-                /*
-                 * The block could not be realloc'ed. This can cause serious
-                 * problems. Hence we return with a db_error
-                 */
-                vps_trace(VPS_ERROR, "Could not realloc memory: %d",
-                                rsc->count + 1);
-                return 1; /* This will propogate with SQL_ABORT */
-        }
-
-        /* Go the the bridge array offset */
-        vadapter = rsc->data + (sizeof(bxm_vadapter_attr_t) * rsc->count);
-
-        /* Fill the bridge structure */
-        for (i = 0; i < num_cols; i++) {
-                if (strcmp(cols[i], "id") == 0)
-                        vadapter->_vadapter_id = atoi(values[i]);
-                else if (strcmp(cols[i], "io_module_id") == 0) {
-                        if(values[i]) /* Foreign keys may be NULL */
-                                vadapter->io_module_id = atoi(values[i]);
-                }
-                else if (strcmp(cols[i], "vfabric_id") == 0) {
-                        if(values[i]) /* Foreign keys may be NULL */
-                                vadapter->vfabric_id = atoi(values[i]);
-                }
-                else if (strcmp(cols[i], "name") == 0) {
-                        vadapter->name = malloc(64);
-                        memset(vadapter->name, 0, 64);
-                        strcpy(vadapter->name, values[i]);
-                }
-                else if (strcmp(cols[i], "desc") == 0) {
-                        vadapter->desc = malloc(64);
-                        memset(vadapter->desc, 0, 64);
-                        strcpy(vadapter->desc, values[i]);
-                }
-                else if (strcmp(cols[i], "init_type") == 0)
-                        vadapter->init_type = atoi(values[i]);
-                else if (strcmp(cols[i], "protocol") == 0)
-                        vadapter->protocol = atoi(values[i]);
-        }
-        /* After the data is correctly populated, increment the bridge count */
-        rsc->count++;
-        vps_trace(VPS_INFO, "Vadapter successfully read");
-        vps_trace(VPS_ENTRYEXIT, "Leaving process_vadapter");
-        return 0;
-}
-
-int
-process_vadapter_en(void *data, int num_cols, char **values, char **cols)
-{
-        uint32_t i;
-        bxm_vadapter_attr_t *vadapter = (bxm_vadapter_attr_t*)data;
-
-        /* Fill the bridge structure */
-        for (i = 0; i < num_cols; i++) {
-                if (strcmp(cols[i], "mac") == 0)
-                        memcpy(vadapter->en_attr.mac, values[i], 6);
-                else if (strcmp(cols[i], "promiscuous") == 0)
-                        vadapter->en_attr.promiscuous_mode = atoi(values[i]);
-                else if (strcmp(cols[i], "silent_listener") == 0)
-                        vadapter->en_attr.silent_listener = atoi(values[i]);
-                /* TODO: Not processing vlans for now.
-                else if (strcmp(cols[i], "vlan") == 0)
-                        vadapter->vlan = atoi(values[i]);*/
-        }
-        return 0;
-}
-
-int
-process_vadapter_fc(void *data, int num_cols, char **values, char **cols)
-{
-        uint32_t i;
-        bxm_vadapter_attr_t *vadapter = (bxm_vadapter_attr_t*)data;
-
-        /* Fill the bridge structure */
-        for (i = 0; i < num_cols; i++) {
-                if (strcmp(cols[i], "wwnn") == 0)
-                        memcpy(&(vadapter->fc_attr.wwnn), values[i], 8);
-                else if (strcmp(cols[i], "wwpn") == 0)
-                        memcpy(&(vadapter->fc_attr.wwpn), values[i], 8);
-                else if (strcmp(cols[i], "fcid") == 0)
-                        memcpy(vadapter->fc_attr.fcid, values[i], 3);
-                else if (strcmp(cols[i], "spma") == 0)
-                        vadapter->fc_attr.spma = atoi(values[i]);
-                else if (strcmp(cols[i], "fpma") == 0)
-                        vadapter->fc_attr.fpma = atoi(values[i]);
-        }
-        return 0;
-}
-
-vps_error
-populate_vadapter_ex(bxm_vadapter_attr_t *vadapter)
-{
-        vps_error err = VPS_SUCCESS;
-        char query[1024];
-        uint8_t i;
-        char tmp_str[1024];
-        vpsdb_resource rsc;
-
-        vps_trace(VPS_ENTRYEXIT, "Entering %s", __FUNCTION__);
-        if (!vadapter) {
-                vps_trace(VPS_ERROR, "Vadapter not specified.");
-                err = VPS_DBERROR_INVALID;
-                goto out;
-        }
-
-        if (vadapter->protocol == BXM_PROTOCOL_EN) {
-                sprintf(query, "select * from bxm_vadapter_en_attr "
-                           "where _vadapter_id = %d;", vadapter->_vadapter_id);
-
-                if (VPS_SUCCESS != (err = vpsdb_read(query,
-                                          process_vadapter_en,
-                                          (vpsdb_resource*)vadapter))) {
-                        vps_trace(VPS_ERROR,
-                                        "Could not get extra information");
-                        err = VPS_DBERROR;
-                        goto out;
-                }
-        }
-        else if (vadapter->protocol == BXM_PROTOCOL_FC) {
-                sprintf(query, "select * from bxm_vadapter_fc_attr "
-                       "where _vadapter_id = %d;", vadapter->_vadapter_id);
-
-                if (VPS_SUCCESS != (err = vpsdb_read(query,
-                                          process_vadapter_fc,
-                                          (vpsdb_resource*)vadapter))) {
-                        vps_trace(VPS_ERROR,
-                                        "Could not get extra information");
-                        err = VPS_DBERROR;
-                        goto out;
-                }
-        }
-out:
-                vps_trace(VPS_ENTRYEXIT, "Leaving %s", __FUNCTION__);
-}
-
-vps_error
-populate_vadapter_information(vpsdb_resource *rsc, const char* name)
-{
-        bxm_vadapter_attr_t *vadapter = (bxm_vadapter_attr_t*)rsc->data;
-        vps_error err = VPS_SUCCESS;
-        char query[1024] = "select * from bxm_vadapter_attr ";
-        uint8_t i;
-
-        /* If name exists, we need information only for that bridge */
-        if (name)
-                sprintf(query, "%s where id = \"%s\";", query, name);
-        else
-                strcat(query, ";");
-
-        /* Update the resource information with the type */
-        rsc->type = VPS_DB_VADAPTER;
-
-        vps_trace(VPS_INFO, "populate_vadapter_information query: %s", query);
-        /* Get the bridges */
-        if (VPS_SUCCESS != (err = vpsdb_read(query,
-                            process_vadapter,
-                            rsc))) {
-                vps_trace(VPS_ERROR, "Could not get gateway information");
-                goto out;
-        }
-
-        /* For each gateway, get the external port status */
-        for (i = 0; i < rsc->count; i++) {
-                /*  For each vadaptor, populate its attributes */
-                populate_vadapter_ex((bxm_vadapter_attr_t*)rsc->data + i);
-        }
-out:
         return err;
 }
 
@@ -498,7 +125,7 @@ add_external_ports(uint16_t gw_id, uint16_t *ext_ports)
 }
 
 vps_error
-add_gateway(const char* bridge_id, vpsdb_gateway *gw)
+add_gateway(const char* bridge_id, bxm_gateway_attr_t *gw)
 {
         vps_error err = VPS_SUCCESS;
         uint8_t tmp[32];
@@ -515,13 +142,14 @@ add_gateway(const char* bridge_id, vpsdb_gateway *gw)
         memcpy(tmp, bridge_id, 6);
         sprintf(insert_gateway_query, "%s\"%s\"", insert_gateway_query, tmp);
         /* Set gw_id and all the flags */
-        sprintf(insert_gateway_query,
+/*        sprintf(insert_gateway_query,
                         "%s, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d",
-                        insert_gateway_query, gw->gw_id,
-                        gw->ext_protocol, gw->sp, gw->se, gw->flood,
+                        insert_gateway_query, gw->_gw_id,
+                        gw->_ext_protocol, gw->_vadapter_list,
+			gw->_vfabric_list, gw->flood,
                         gw->egress_secure, gw->ingress_secure,
-                        gw->l2_lookup, 0, gw->int_port);
-        /* TODO: set heartbeat correctly */
+                        gw->l2_lookup, 0, gw->_int_port);*/
+	/* TODO: set heartbeat correctly */
         sprintf(insert_gateway_query, "%s,\"%s\"", insert_gateway_query, "0");
         /* TODO: set connection speed later */
         sprintf(insert_gateway_query, "%s,\"%s\")", insert_gateway_query, "0");
@@ -532,95 +160,28 @@ add_gateway(const char* bridge_id, vpsdb_gateway *gw)
                 vps_trace(VPS_ERROR, "Error in adding gateway for bridge");
                 goto out;
         }
-
+/*
         if (VPS_SUCCESS
-                != (err = add_external_ports(gw->gw_id, gw->ext_ports))) {
+                != (err = add_external_ports(gw->_gw_id, gw->_ext_port))) {
                 vps_trace(VPS_ERROR, "Error in adding gateway to database");
                 goto out;
         }
-
+*/
 out:
         vps_trace(VPS_ENTRYEXIT, "Leaving add_gateway: %x", err);
         return err;
 }
 
+/* TODO : Rewrite the function using new header file and Unicode correction */
 vps_error
 add_bridge(vpsdb_resource *info)
 {
         vps_error err = VPS_SUCCESS;
-        vpsdb_bridge *bridge = (vpsdb_bridge*)info->data;
-        vpsdb_bridge *ptr = NULL;
-        vpsdb_gateway *gw = NULL;
+        bxm_bd_attr_t *bridge = (bxm_bd_attr_t*)info->data;
+        bxm_bd_attr_t *ptr = NULL;
+        bxm_gateway_attr_t *gw = NULL;
         uint32_t i, j;
         uint8_t tmp[32];
-        char insert_bridge_query[1024] = "insert into bridges(mac, "
-                "node_name, "
-                "db_id, last_bc_mac, "
-                "max_recv, vendor, "
-                "model_number, "
-                "fw_version) values (";
-
-        vps_trace(VPS_ENTRYEXIT, "Entering add_bridge");
-
-        /* Iterate each bridge info */
-        for (i = 0; i < info->count; i++) {
-                /* Set the correct bridge data-structure offset */
-                ptr = bridge + i;
-
-                /*** Formulate the query to insert the bridge into the DB ***/
-                /* Mac address */
-                memset(tmp, 0, sizeof(tmp));
-                memcpy(tmp, ptr->mac, 6);
-                sprintf(insert_bridge_query, "%s\"%s\"",
-                                insert_bridge_query, tmp);
-
-                /* node name */
-                memset(tmp, 0, sizeof(tmp));
-                memcpy(tmp, ptr->node_name, 8);
-                sprintf(insert_bridge_query, "%s, \"%s\"",
-                                insert_bridge_query, tmp);
-
-                /* Database Id */
-                sprintf(insert_bridge_query, "%s, %d",
-                                insert_bridge_query, ptr->db_id);
-
-                /* last associated Bridge Controller */
-                memset(tmp, 0, sizeof(tmp));
-                memcpy(tmp, ptr->last_bc_mac, 6);
-                sprintf(insert_bridge_query, "%s, \"%s\"",
-                                insert_bridge_query, tmp);
-
-                /* Max recv */
-                sprintf(insert_bridge_query, "%s, %d", insert_bridge_query,
-                                ptr->max_recv);
-                /* TODO: Hard-code for now the model, vendor and fw_version */
-                sprintf(insert_bridge_query, "%s, \"%s\", \"%s\", \"%s\"",
-                                insert_bridge_query, "Mellanox",
-                                "ConnectX", "MT_version");
-                strcat(insert_bridge_query, ");");
-
-                vps_trace(VPS_INFO, "insert bridge query: %s",
-                                insert_bridge_query);
-
-                /** Execute the query to insert bridge into the DB ***/
-                if (VPS_SUCCESS != (err = vpsdb_update(insert_bridge_query))) {
-                        vps_trace(VPS_ERROR,
-                                  "Error in adding bridge to the database");
-                        goto out;
-                }
-
-                /* Insert gateway information into the database */
-                for (j = 0; j < ptr->num_gateways;j++) {
-                        /* set the gateway offset */
-                        gw = ptr->gateways + j;
-                        if (VPS_SUCCESS != (err = add_gateway(ptr->mac, gw))) {
-                                vps_trace(VPS_ERROR,
-                                  "Error in adding bridge to the database");
-                                goto out;
-                        }
-                }
-        }
-
 out:
         vps_trace(VPS_ENTRYEXIT, "Leaving add_bridge");
         return err;
@@ -720,9 +281,9 @@ process_gateway(void *data, int num_cols, char **values, char **cols)
                 if (strcmp(cols[i], "gw_id") == 0)
                         gateway->_gw_id = atoi(values[i]);
                 else if (strcmp(cols[i], "physical_index") == 0)
-                        memcpy(gateway->_physical_index, values[i], 64);
+                        memcpy(gateway->_physical_index, values[i], 8);
                 else if (strcmp(cols[i], "desc") == 0)
-                        memcpy(gateway->desc, values[i], 64);
+                        memcpy(gateway->desc, values[i], 8);
                 else if (strcmp(cols[i], "bxm_guid") == 0)
                         gateway->_bxm_guid = atoi(values[i]);
                 else if (strcmp(cols[i], "flag_f") == 0)
@@ -949,26 +510,222 @@ populate_bridge_info(vpsdb_resource *rsc, const char *where_clause)
                  * is with the bridge structure.
                  */
                 bridge->_num_gw_module = gw_rsc.count;
-                /*
-                 * TODO:
-                 */
-               // bridge->_gw_module_index = malloc(gw_res.count *
-               // GW_MODULE_LEN);
+                bridge->_gw_module_index = gw_rsc.data;
         }
-
 out:
         return err;
 }
 
-/* TODO : Hansraj */
 int
-process_io_module(void *data, int num_cols, char **values, char **cols)
+process_vfabric(void *data, int num_cols, uint8_t **values, char **cols)
 {
-        vps_trace(VPS_ENTRYEXIT, "Entering process_io_module");
-        vps_trace(VPS_ENTRYEXIT, "Leaving process_io_module");
+        vpsdb_resource *rsc = (vpsdb_resource*)data;
+	bxm_vfabric_attr_t *vfabric;
+        uint32_t i;
+
+        vps_trace(VPS_ENTRYEXIT, "Entering process_vfabric");
+
+        /* Read the existing resrouce count for re-allocation */
+        if (NULL == (rsc->data = realloc(rsc->data,
+                     sizeof(bxm_vfabric_attr_t) * (rsc->count + 1)))) {
+                /*
+                 * The block could not be realloc'ed. This can cause serious
+                 * problems .Hence we return with a db_error
+                 */
+                vps_trace(VPS_ERROR, "Could not realloc memory: %d",
+                                rsc->count + 1);
+                return 1; /* This will propogate with SQL_ABORT */
+        }
+
+        /* Go the the vfabric array offset */
+        vfabric = rsc->data + (sizeof(bxm_vfabric_attr_t) * rsc->count);
+
+        /* Fill the vfabric structure */
+        for (i = 0; i < num_cols; i++) {
+                if (strcmp(cols[i], "primary_gw_id") == 0)
+                        vfabric->primary_gateway = atoi(values[i]);
+		else if (strcmp(cols[i], "id") == 0)
+                        vfabric->_vfabric_id = atoi(values[i]);
+		else if (strcmp(cols[i], "backup_gw_id") == 0)
+                        vfabric->backup_gateway = atoi(values[i]);
+                else if (strcmp(cols[i], "name") == 0)
+                        memcpy(vfabric->name,(values[i]), 6);
+                else if (strcmp(cols[i], "desc") == 0)
+                        memcpy(vfabric->desc,(values[i]), 6);
+                else if (strcmp(cols[i], "ctx_table_id") == 0)
+                        vfabric->_ctx_table_id = atoi(values[i]);
+                else if (strcmp(cols[i], "protocol") == 0)
+                        vfabric->protocol = atoi(values[i]);
+                else if (strcmp(cols[i], "auto_failover") == 0)
+                        vfabric->auto_failover = atoi(values[i]);
+                else if (strcmp(cols[i], "auto_failback") == 0)
+                        vfabric->auto_failback = atoi(values[i]);
+        }
+
+        /* After the data is correctly populated, increment the bridge count */
+        rsc->count++;
+        vps_trace(VPS_INFO, "Vfabric successfully read");
+
+        vps_trace(VPS_ENTRYEXIT, "Leaving process_vfabric");
         return 0; /* Callback must return 0 on success */
 }
 
+/*
+ * This function populates the vfabric info.
+ * TODO It can be further optimized to be into the same calling function
+ */
+
+vps_error
+populate_vfabric_info(vpsdb_resource *rsc, const char* where_clause)
+{
+        vps_error err = VPS_SUCCESS;
+        bxm_vfabric_attr_t *vfabric;
+        char query[1024] = "select * from bxm_vfabric_attr";
+        char tmp_str[1024];
+        uint8_t i;
+
+        /* If name exists, we need information only for that vfabric */
+        if (where_clause)
+                sprintf(query, "%s where %s;", query, where_clause);
+        else
+                strcat(query, ";");
+
+        /* Update the resource information with the type */
+        rsc->type = VPS_DB_IO_MODULE;
+
+        /* Get the bridges */
+        if (VPS_SUCCESS != (err = vpsdb_read(query,
+                            process_vfabric, /* call back function */
+                            rsc))) {
+                vps_trace(VPS_ERROR, "Could not get vfabric information");
+        }
+
+        return err;
+}
+
+/*
+ * This function will search the database and the max value of the id.
+ * Then it will increment the value and return .
+ */
+int
+generate_vfabric_id(void *data,
+                int num_cols,
+                char **values,
+                char **cols)
+{
+	vpsdb_resource *rsc = (vpsdb_resource*)data;
+	bxm_vfabric_attr_t *vfabric = (bxm_vfabric_attr_t *)rsc->data;
+        /* For now we are using a simple auto-increment */
+        if (values[0])
+                vfabric->_vfabric_id = atoi(values[0]) + 1;
+        else
+                vfabric->_vfabric_id = 1;
+
+        return 0;
+}
+
+/*
+ * Query: insert into bxm_vadapter_attr_t (id, name, desc, init_type,
+ *        protocol) values(...);
+ * [in\out] info :Preallocated pointer by the caller. The new object id created
+ *                will be returned into the same.
+ */
+vps_error
+add_vfabric(vpsdb_resource *info)
+{
+        vps_error err = VPS_SUCCESS;
+        bxm_vfabric_attr_t *vfabric = (bxm_vfabric_attr_t*)(info->data);
+
+        char get_max_query[128] = "select max(id) from bxm_vfabric_attr;";
+        char insert_query[1024] = "insert into bxm_vfabric_attr (id, name, "
+                           "desc, protocol, type) values (";
+
+        vps_trace(VPS_ENTRYEXIT, "Entering add_vfabric");
+
+        /* Prepare the query for vfabric add */
+        if (VPS_SUCCESS != (err = vpsdb_read(get_max_query,
+                              generate_vfabric_id, /* call back function */
+                              info))) {
+                vps_trace(VPS_ERROR, "Could not get max vfabric id");
+                err = VPS_DBERROR;
+                goto out;
+        }
+
+        /* Insert the vfabric into the table */
+        sprintf(insert_query, "%s %d, '%s', '%s', %d, %d);",
+			insert_query, vfabric->_vfabric_id,
+                        vfabric->name, vfabric->desc, vfabric->protocol, 1);
+        if (VPS_SUCCESS != (err = vpsdb_update(insert_query))) {
+                vps_trace(VPS_ERROR, "Error adding vfabric to datbase");
+                goto out;
+        }
+
+out:
+        vps_trace(VPS_ENTRYEXIT, "Leaving add_vfabric");
+        return err;
+}
+
+/*
+ * This function will fill the values of the CNA from the database
+ * The fields are not yet defined. So using the fields that are defined 
+ * in the database.
+ */
+int
+process_io_module(void *data, int num_cols, uint8_t **values, char **cols)
+{
+        vpsdb_resource *rsc = (vpsdb_resource*)data;
+	vpsdb_io_module_t *io_module;
+        uint32_t i;
+
+        vps_trace(VPS_ENTRYEXIT, "Entering process_io_module");
+
+        /* Read the existing resrouce count for re-allocation */
+        if (NULL == (rsc->data = realloc(rsc->data,
+                     sizeof(vpsdb_io_module_t) * (rsc->count + 1)))) {
+                /*
+                 * The block could not be realloc'ed. This can cause serious
+                 * problems .Hence we return with a db_error
+                 */
+                vps_trace(VPS_ERROR, "Could not realloc memory: %d",
+                                rsc->count + 1);
+                return 1; /* This will propogate with SQL_ABORT */
+        }
+
+        /* Go the the io_module array offset */
+        io_module = rsc->data + (sizeof(vpsdb_io_module_t) * rsc->count);
+
+        /* Fill the io_module structure */
+        for (i = 0; i < num_cols; i++) {
+                if (strcmp(cols[i], "name") == 0)
+                        memcpy(io_module->name, (values[i]), 8);
+                else if (strcmp(cols[i], "type") == 0)
+                        io_module->type = atoi(values[i]);
+                else if (strcmp(cols[i], "mac") == 0)
+                        memcpy(io_module->mac,(values[i]), 6);
+                else if (strcmp(cols[i], "guid") == 0)
+                        memcpy(io_module->guid, (values[i]), 8);
+                else if (strcmp(cols[i], "num_vhba") == 0)
+                        io_module->num_vhba = atoi(values[i]);
+                else if (strcmp(cols[i], "num_vnic") == 0)
+                        io_module->num_vnic = atoi(values[i]);
+                else if (strcmp(cols[i], "slot") == 0)
+                        io_module->slot = atoi(values[i]);
+                else if (strcmp(cols[i], "port") == 0)
+                        io_module->port = atoi(values[i]);
+                else if (strcmp(cols[i], "supported_speed") == 0)
+                        io_module->supported_speed = atoi(values[i]);
+        }
+
+        /* After the data is correctly populated, increment the bridge count */
+        rsc->count++;
+        vps_trace(VPS_INFO, "IO Module successfully read");
+
+        vps_trace(VPS_ENTRYEXIT, "Leaving process_io_module");
+        return 0; /* Callback must return 0 on success */
+}
+/*
+ * This function populates the io_module struct
+ */
 vps_error
 populate_io_module_info(vpsdb_resource *rsc, const char* where_clause)
 {
@@ -996,6 +753,11 @@ populate_io_module_info(vpsdb_resource *rsc, const char* where_clause)
 
         return err;
 }
+
+/*
+ * This function adds the io_module struct to the database
+ * TODO :NOT TESTED
+ */
 
 vps_error
 add_io_module(vpsdb_resource *info)
@@ -1151,7 +913,18 @@ vpsdb_get_resource(uint32_t type, vpsdb_resource *info, const char *name)
                    (err = populate_vadapter_information(info, name)))
                         goto out;
 
-                vps_trace(VPS_INFO, "Gathered gateway info");
+                vps_trace(VPS_INFO, "Gathered vadapter info");
+        }
+        else if (type == VPS_DB_VFABRIC)
+        {
+                if (name)
+                        vps_trace(VPS_INFO, "Get vfabric info for: %s", name);
+
+                if (VPS_SUCCESS !=
+                   (err = populate_vfabric_info(info, name)))
+                        goto out;
+
+                vps_trace(VPS_INFO, "Gathered fabric info");
         }
 out:
         vps_trace(VPS_ENTRYEXIT, "Leaving vpsdb_get_resource");
@@ -1164,6 +937,8 @@ out:
  * This routine adds information to the database. If its a host, it may contain
  * CNAs. Each CNA may in turn contains vHBAs or vNICs. If its a bridge, the
  * gateways associated with the bridge will be added into the database
+ * [IN] type : type of the object
+ * [IN/OUT] rsc : vps_db resouce pointer. It already has memory allocated.
  */
 vps_error
 vpsdb_add_resource(uint32_t type, vpsdb_resource *rsc)
@@ -1173,7 +948,8 @@ vpsdb_add_resource(uint32_t type, vpsdb_resource *rsc)
         vps_trace(VPS_ENTRYEXIT, "Entering vpsdb_add_resource");
 
         /* Read the type of resource to be inserted */
-        if (type != VPS_DB_IO_MODULE && type != VPS_DB_BRIDGE) {
+        if (type != VPS_DB_IO_MODULE && type != VPS_DB_BRIDGE &&
+                        type != VPS_DB_VADAPTER && type != VPS_DB_VFABRIC ) {
                 vps_trace(VPS_ERROR, "Invalid type for database insertion: %x",
                                 type);
                 err = VPS_DBERROR_INVALID;
@@ -1186,9 +962,6 @@ vpsdb_add_resource(uint32_t type, vpsdb_resource *rsc)
                 if (VPS_SUCCESS != (err = validate_add_bridge(rsc)))
                         goto out;
 
-                vps_trace(VPS_INFO, "Adding bridge to db: %s",
-                                ((vpsdb_bridge*)(rsc->data))->node_name);
-
                 if (VPS_SUCCESS != (err = add_bridge(rsc)))
                         goto out;
         }
@@ -1200,7 +973,7 @@ vpsdb_add_resource(uint32_t type, vpsdb_resource *rsc)
                         goto out;
 
                 vps_trace(VPS_INFO, "Adding host to db: %s",
-                                ((vpsdb_io_module_t*)(rsc->data))->name);
+                                ((vpsdb_io_module_t *)(rsc->data))->name);
 
                 if (VPS_SUCCESS != (err = add_io_module(rsc)))
                         goto out;
@@ -1213,28 +986,61 @@ vpsdb_add_resource(uint32_t type, vpsdb_resource *rsc)
                         goto out;
         }
 
+        if (type == VPS_DB_VFABRIC) {
+                vps_trace(VPS_INFO, "Adding vFABRIC to db");
+
+                if (VPS_SUCCESS != (err = add_vfabric(rsc)))
+                        goto out;
+        }
+
         vps_trace(VPS_INFO, "Resource updated successfully in database");
 
 out:
         vps_trace(VPS_ENTRYEXIT, "Leaving vpsdb_add_resource: %x", err);
+	return err;
 }
 
 vps_error
-vpsdb_edit_resource(uint32_t type, vpsdb_resource *rsc)
+vpsdb_edit_resource(uint32_t type, const char * where_clause)
 {
         vps_error err = VPS_SUCCESS;
+        char query[1024];
+	void * stmt;
 
         vps_trace(VPS_ENTRYEXIT, "Entering vpsdb_edit_resource");
 
         /* Read the type of resource to be inserted */
         if (type == VPS_DB_VADAPTER) {
                 vps_trace(VPS_INFO, "Editing vadapter.");
-
-                if (VPS_SUCCESS != (err = edit_vadapter(rsc)))
-                        goto out;
+		sprintf(query,"update bxm_vadapter_attr set %s", where_clause);
         }
+        if (type == VPS_DB_VFABRIC) {
+                vps_trace(VPS_INFO, "Editing vFABRIC.");
+		sprintf(query,"update bxm_vfabric_attr set %s", where_clause);
+        }
+
+        if (type == VPS_DB_EN_VADAPTER) {
+                vps_trace(VPS_INFO, "Editing vadapter EN attr.");
+		sprintf(query,"update bxm_vadapter_en_attr set %s",
+                                where_clause);
+        }
+
+        stmt = vfmdb_prepare_query(query, NULL, NULL);
+        if (!stmt) {
+                vps_trace(VPS_ERROR," Cannot prepare sqlite3 statement");
+                err = VPS_DBERROR;
+                goto out;
+        }
+
+        if (VPS_SUCCESS != (err = vfmdb_execute_query(stmt, NULL, NULL))) {
+                vps_trace(VPS_ERROR, "Error updating resource to datbase");
+                err = VPS_DBERROR;
+                goto out;
+        }
+
         vps_trace(VPS_INFO, "Resource updated successfully in database");
 
 out:
         vps_trace(VPS_ENTRYEXIT, "Leaving vpsdb_edit_resource: %x", err);
+	return err;
 }

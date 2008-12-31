@@ -5,7 +5,10 @@
 #include <map_util.h>
 #include <bxm_queue.h>
 #include <bxm_iboe.h>
+
+#ifdef VFM_EOIB
 #include <bx.h>
+#endif
 
 extern uint8_t g_local_mac[MAC_ADDR_LEN];
 extern uint8_t g_bridge_mac[MAC_ADDR_LEN];
@@ -219,6 +222,7 @@ process_fc_response(uint8_t *buff,
                 goto out;
         }
 
+        vps_trace(VPS_INFO, "OXID OF INCOMING PACKET:%d", fc_header.ox_id);
         ox_id = fc_header.ox_id;
 
         /* get entry from map*/
@@ -500,7 +504,7 @@ decide_packet(eth_hdr *fip_eth_hdr_fw, mlx_tunnel_hdr *tunnel_hdr,
         return err;
 }
 
-/**
+/*
  * send_gw_ad
  * This function triggers the process by simulating the arrival of a
  * BridgeX Discovery from the bridge.
@@ -596,7 +600,7 @@ process_fc_els_res(uint8_t *buff, uint32_t size, uint32_t *ret_pos,
                 req_entry_map *entry)
 {
         vps_error err = VPS_SUCCESS;
-        uint32_t fc_pk_len, length, temp_did, crc;
+        uint32_t temp_did,length, crc, fc_pk_len;
         uint8_t *fcoe_buff, *temp, *fc_pack_offset;
         uint16_t len, fcoe_plen;
 
@@ -613,11 +617,11 @@ process_fc_els_res(uint8_t *buff, uint32_t size, uint32_t *ret_pos,
          * Allocate memory for FCoE packet.
          * FCoE header length  + FC packet length + CRC + EOF
          */
-        if (g_fcoe_t11)
-                length = (OPEN_FCOE_HDR_SIZE + len + DWORD +
-                                sizeof(uint8_t));
+        if (g_fcoe_t11) 
+        length = (OPEN_FCOE_HDR_SIZE + len + 2 *DWORD);
         else
-                length = (FCOE_HDR_SIZE + len + DWORD + sizeof(uint8_t));
+        length = (FCOE_HDR_SIZE + len + DWORD + sizeof(uint8_t));
+        
 
         fcoe_buff = (uint8_t*)malloc(length);
         memset(fcoe_buff, 0x00, length);
@@ -645,6 +649,7 @@ process_fc_els_res(uint8_t *buff, uint32_t size, uint32_t *ret_pos,
         fcoe_plen = htons(FCOE_ENCAPS_LEN_SOF((len + DWORD)/DWORD));
 
         if (g_fcoe_t11) {
+                temp += sizeof(uint16_t);
                 temp += OPEN_FCOE_RESERVED - sizeof(uint8_t);
                 temp[0] = 0x2e;
                 temp += sizeof(uint8_t);
@@ -700,48 +705,6 @@ process_fc_els_res(uint8_t *buff, uint32_t size, uint32_t *ret_pos,
         return err;
 }
 
-/**
- * Read whole packet.
- * Update database and send response.
- *
- * Return : err
- *                  Invalid packet.
- */
-vps_error
-process_lbc_packet()
-{
-        uint32_t length;
-        uint8_t *packet;
-        uint32_t offset = 0;
-        eoib_conx_vfm_adv solicit;
-        ctrl_hdr  fip_ctrl_hdr;
-        vps_error err = VPS_SUCCESS;
-
-        vps_trace(VPS_ENTRYEXIT, "Entering read_packet");
-
-        /* BridgeX API call */
-        packet = bx_recv(&length);
-       
-        /* Read control header from the packet */
-        read_ctrl_hdr(packet, length, &offset, &fip_ctrl_hdr);
-       
-        /* Solicit message from host */
-        if (fip_ctrl_hdr.opcode == 0xFFF9 && 
-                        fip_ctrl_hdr.subcode == 0x01) {
-
-                 vps_trace(VPS_INFO, "Host solicit reserved");         
-                /* Process Solicit message payloaad */
-                eoib_conx_discovery(packet + offset, &solicit);
-
-                /* Send uinicast GW advertisement */
-                bxm_send_uincast_gw_adv(&solicit);
-                vps_trace(VPS_INFO, "Unicast GW Advertisement sent");         
-        }
-
-out:
-        vps_trace(VPS_ENTRYEXIT, "Leaving read_packet");
-        return err;
-}
 
 
 /**
@@ -929,6 +892,50 @@ start_sniffer(void *arg)
         return NULL;
 }
 
+#ifdef VFM_EOIB
+/**
+ * Read whole packet.
+ * Update database and send response.
+ *
+ * Return : err
+ *                  Invalid packet.
+ */
+vps_error
+process_lbc_packet()
+{
+        uint32_t length;
+        uint8_t *packet;
+        uint32_t offset = 0;
+        eoib_conx_vfm_adv solicit;
+        ctrl_hdr  fip_ctrl_hdr;
+        vps_error err = VPS_SUCCESS;
+
+        vps_trace(VPS_ENTRYEXIT, "Entering read_packet");
+
+        /* BridgeX API call */
+        packet = bx_recv(&length);
+       
+        /* Read control header from the packet */
+        read_ctrl_hdr(packet, length, &offset, &fip_ctrl_hdr);
+       
+        /* Solicit message from host */
+        if (fip_ctrl_hdr.opcode == 0xFFF9 && 
+                        fip_ctrl_hdr.subcode == 0x01) {
+
+                 vps_trace(VPS_INFO, "Host solicit reserved");         
+                /* Process Solicit message payloaad */
+                eoib_conx_discovery(packet + offset, &solicit);
+
+                /* Send uinicast GW advertisement */
+                bxm_send_uincast_gw_adv(&solicit);
+                vps_trace(VPS_INFO, "Unicast GW Advertisement sent");         
+        }
+
+out:
+        vps_trace(VPS_ENTRYEXIT, "Leaving read_packet");
+        return err;
+}
+
 /*
  * Packet processor thread.
  */
@@ -943,6 +950,8 @@ start_lbc_sniffer(void *arg)
 
         vps_trace(VPS_ENTRYEXIT, "Leaving start_lbc_sniffer");
 }
+
+#endif
 
 /*
  * Packet processor thread.
