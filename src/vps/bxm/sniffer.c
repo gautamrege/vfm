@@ -617,7 +617,7 @@ process_fc_els_res(uint8_t *buff, uint32_t size, uint32_t *ret_pos,
          * Allocate memory for FCoE packet.
          * FCoE header length  + FC packet length + CRC + EOF
          */
-        if (g_fcoe_t11) 
+        if (g_fcoe_t11 == 1) 
         length = (OPEN_FCOE_HDR_SIZE + len + 2 *DWORD);
         else
         length = (FCOE_HDR_SIZE + len + DWORD + sizeof(uint8_t));
@@ -648,7 +648,7 @@ process_fc_els_res(uint8_t *buff, uint32_t size, uint32_t *ret_pos,
         /* version Length  SOF */
         fcoe_plen = htons(FCOE_ENCAPS_LEN_SOF((len + DWORD)/DWORD));
 
-        if (g_fcoe_t11) {
+        if (g_fcoe_t11 == 1) {
                 temp += sizeof(uint16_t);
                 temp += OPEN_FCOE_RESERVED - sizeof(uint8_t);
                 temp[0] = 0x2e;

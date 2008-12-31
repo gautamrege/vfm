@@ -36,6 +36,8 @@
 #define WWPN "wwpn"
 #define WWNN "wwnn"
 
+#define FCOE_T11 "fcoe_t11"
+
 
 /* Print Configutation and Validate.*/
 void

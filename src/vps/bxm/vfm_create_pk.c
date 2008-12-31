@@ -94,6 +94,7 @@ create_tlv(void *data, vp_tlv *tlv)
                          */
                         memcpy(tlv->value + sizeof(uint16_t), data, 2 * DWORD);
                         break;
+
 #ifndef OPEN_FCOE
 		case TLV_5 : 
                         /*
@@ -103,9 +104,11 @@ create_tlv(void *data, vp_tlv *tlv)
                          * to point to the actual FABRIC NAME and then copy it
                          * to the output parameter.
                          */
+                         
                         memcpy(tlv->value + sizeof(uint16_t), data, 2 * DWORD);
                         break;
 #else       
+                        
                 case TLV_5 :
 
                         memcpy(tlv->value + 3 * sizeof(uint8_t), data, length);

@@ -480,7 +480,11 @@ vps_error __vadapter_online(bxm_vadapter_id_t vadapter_id)
         }
 	gateway = (bxm_gateway_attr_t *)rsc.data;
 
-	//form_req_struct(g_bridge_enc_mac, io_module->mac, INIT_VHBA, &req);
+        /*
+         * HACK: Ideally, we should use hte gateway MAC, but for now we use
+         * the hard-coded global MAC.
+         */
+	/*form_req_struct(g_bridge_enc_mac, io_module->mac, INIT_VHBA, &req); */
 
 	/* HACK: Hansraj -- please fix properly */
 	memset(&adv, 0, sizeof(adv));

@@ -16,6 +16,7 @@ extern uint8_t g_if_name[10];
 extern uint8_t g_wwnn[8];
 extern uint8_t g_wwpn[8];
 extern int g_loglevel;
+extern uint32_t g_fcoe_t11;
 
 
 
@@ -108,6 +109,9 @@ process_config_line(char *type, char *value)
         else if ( strcmp(type,WWNN) == 0) {
                 parse_address("wwnn", value, 8, g_wwnn);
         }
+        else if ( strcmp(type,FCOE_T11) == 0) {
+                g_fcoe_t11 = atoi(value);
+        }
 }
 
 /*
@@ -150,14 +154,24 @@ print_and_validate_config()
                 printf("BXM Protocol Type: Unknown \n");
                 abort();
         }
-        
+       
+        if (g_fcoe_t11 == 0 ) {
+                printf("FCoE type : FCoE Pre-T11 \n");
+        }
+        else if (g_fcoe_t11 == 1 ) {
+                printf("FCoE type : FCoE T11 \n");
+        }
+        else  {
+                printf("FCoE type : Unknown \n");
+                abort();
+        }
+
         printf("BXM Interface Name : %s\n", g_if_name);
 
         print_address("Bridge Internal mac",g_bridge_enc_mac, 6);
         print_address("Bridge mac",g_bridge_mac, 6);
         print_address("WWNN",g_wwnn, 8);
         print_address("WWPN",g_wwpn, 8);
-
 
         printf("Log Level  : %d \n", g_loglevel);
 
