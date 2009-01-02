@@ -25,84 +25,12 @@ generate_io_module_id(void *data,
         return 0;
 }
 
-
-/*
- * This function adds the io_module in the database(Table : bxm_io_modules)
- * 
- * [IN] *res_io_module : io module resource 
- *
- * Return : err 
- */
-vps_error
-add_io_module(vpsdb_resource *res_io_module)
-{
-        vps_error err = VPS_SUCCESS;
-        vpsdb_io_module_t *io_module = (vpsdb_io_module_t*)res_io_module->data;
-        void *stmt;
-        void **args;
-        char get_max_query[128] = "select max(id) from bxm_io_module_attr;";
-        char insert_query[1024]; 
-
-       
-        vps_trace(VPS_ENTRYEXIT, "Entering add_io_module");
-
-        memset(insert_query, 0 , sizeof(insert_query));
-        /* Prepare the query for io module add */
-
-        stmt = vfmdb_prepare_query(get_max_query, NULL, NULL);
-        if (!stmt) {
-                vps_trace(VPS_ERROR," Cannot prepare sqlite3 statement");
-                err = VPS_DBERROR;
-                goto out;
-        }
-
-        if (VPS_SUCCESS != (err = vfmdb_execute_query(stmt,
-                                 generate_io_module_id,:/* call back function */
-                                 res_io_module))) {
-                vps_trace(VPS_ERROR, "Could not get max io module id");
-                err = VPS_DBERROR;
-                goto out;
-        }
-        
-        args = (void**)malloc(3 * sizeof(void*));
-                        
-        args[0] = io_module->name;
-        args[1] = io_module->mac;
-        args[2] = io_module->guid;
-        
-        sprintf(insert_query, "insert into bxm_io_module_attr( id, name, "
-                "type, mac, guid, num_vhba, num_vnic, "
-                "slot, port, supported_speed) values ( %d, ?1, %d, ?2, ?3,"
-                "%d, %d, %d, %d, %d )", io_module->id,io_module->type,
-                io_module->num_vhba, io_module->num_vnic,
-                io_module->slot, io_module->port,io_module->supported_speed);
-
-
-        stmt = vfmdb_prepare_query(insert_query, "smg", args);
-        if (!stmt) {
-                vps_trace(VPS_ERROR," Cannot prepare sqlite3 statement");
-                err = VPS_DBERROR;
-                goto out;
-        }
-
-        if (VPS_SUCCESS != (err = vfmdb_execute_query(stmt, NULL, NULL))) {
-                vps_trace(VPS_ERROR, "Error adding vadapter to datbase");
-                goto out;
-        }
-
-        free(args);
-        vps_trace(VPS_ENTRYEXIT, "Leaving  add_io_module");
-
-out:        
-        return err;
-}
-
 /*
  * This function will fill the values of the CNA from the database
  * The fields are not yet defined. So using the fields that are defined
  * in the database.
  */
-        int
+int
 process_io_module(void *data, int num_cols, uint8_t **values, char **cols)
 {
         vpsdb_resource *rsc = (vpsdb_resource*)data;
@@ -148,7 +76,7 @@ process_io_module(void *data, int num_cols, uint8_t **values, char **cols)
                         io_module->supported_speed = atoi(values[i]);
         }
 
-        /* After the data is correctly populated, increment the bridge count */
+        /* After the data is correctly populated, increment the count */
         rsc->count++;
 
         vps_trace(VPS_ENTRYEXIT, "Leaving process_io_module");
@@ -156,12 +84,127 @@ process_io_module(void *data, int num_cols, uint8_t **values, char **cols)
 }
 
 
+/**
+ * 
+ * @return NULL if iomodule not found. Return vpsdb_io_module_t if found.
+ */
+vpsdb_io_module_t *
+get_iomodule_by_mac(uint8_t *mac)
+{
+        vps_error err = VPS_SUCCESS;
+        char query[1024];
+        void *stmt, **args;
+        vpsdb_resource rsc;
+
+        vps_trace(VPS_ENTRYEXIT, "Entering %s", __FUNCTION__);
+
+        memset(query, 0 , sizeof(query));
+        memset(&rsc, 0 , sizeof(vpsdb_resource));
+
+        sprintf(query, "select * from bxm_io_module_attr "
+                       "where mac = ?1;");
+
+        args = (void**)malloc(sizeof(void*));
+                        
+        args[0] = mac;
+        /* Prepare the query to get io_module by mac */
+
+        stmt = vfmdb_prepare_query(query, "m", args);
+        if (!stmt) {
+                vps_trace(VPS_ERROR," Cannot prepare sqlite3 statement");
+                err = VPS_DBERROR;
+                goto out;
+        }
+
+        if (VPS_SUCCESS != (err = vfmdb_execute_query(stmt,
+                                        process_io_module,/* call back function */
+                                        &rsc))) {
+                vps_trace(VPS_ERROR, "Could not get io module ");
+                err = VPS_DBERROR;
+                goto out;
+        }
+out:
+        vps_trace(VPS_ENTRYEXIT, "Leaving %s", __FUNCTION__);
+        return rsc.data;
+}
 
 
+/*
+ * This function adds the io_module in the database(Table : bxm_io_modules)
+ * 
+ * [IN] *res_io_module : io module resource 
+ *
+ * Return : err 
+ */
+vps_error
+add_io_module(vpsdb_resource *res_io_module)
+{
+        vps_error err = VPS_SUCCESS;
+        vpsdb_io_module_t *io_module = (vpsdb_io_module_t*)res_io_module->data;
+        void *stmt;
+        void **args;
+        char get_max_query[128] = "select max(id) from bxm_io_module_attr;";
+        char insert_query[1024]; 
+
+       
+        vps_trace(VPS_ENTRYEXIT, "Entering add_io_module");
+        if ( get_iomodule_by_mac(io_module->mac)) {
+                vps_trace(VPS_INFO,"IO Module already discovered");
+                goto out;
+        }
 
 
+        memset(insert_query, 0 , sizeof(insert_query));
+        /* Prepare the query to get max io module add */
+
+        stmt = vfmdb_prepare_query(get_max_query, NULL, NULL);
+        if (!stmt) {
+                vps_trace(VPS_ERROR," Cannot prepare sqlite3 statement");
+                err = VPS_DBERROR;
+                goto out;
+        }
+
+        if (VPS_SUCCESS != (err = vfmdb_execute_query(stmt,
+                                 generate_io_module_id,/* call back function */
+                                 res_io_module))) {
+                vps_trace(VPS_ERROR, "Could not get max io module id");
+                err = VPS_DBERROR;
+                goto out;
+        }
+        
+        args = (void**)malloc(3 * sizeof(void*));
+                        
+        args[0] = io_module->name;
+        args[1] = io_module->mac;
+        args[2] = io_module->guid;
+        
+        sprintf(insert_query, "insert into bxm_io_module_attr(id, name, "
+                "type, mac, guid, num_vhba, num_vnic, "
+                "slot, port, supported_speed) values ( %d, ?1, %d, ?2, ?3,"
+                "%d, %d, %d, %d, %d )", io_module->id,io_module->type,
+                io_module->num_vhba, io_module->num_vnic,
+                io_module->slot, io_module->port,io_module->supported_speed);
 
 
+        /* Prepare the query for io module add */
+        stmt = vfmdb_prepare_query(insert_query, "smg", args);
+        if (!stmt) {
+                vps_trace(VPS_ERROR," Cannot prepare sqlite3 statement");
+                err = VPS_DBERROR;
+                goto out;
+        }
+
+        if (VPS_SUCCESS != (err = vfmdb_execute_query(stmt, NULL, NULL))) {
+                vps_trace(VPS_ERROR, "Error adding vadapter to datbase");
+                goto out;
+        }
+
+        free(args);
+        vps_trace(VPS_ENTRYEXIT, "Leaving  add_io_module");
+
+out:        
+        return err;
+}
 
 
 /*
@@ -196,6 +239,7 @@ populate_iomodule(vpsdb_io_module_t *io_module)
                 goto out;
         }
 
+out:
         vps_trace(VPS_ENTRYEXIT, "Leaving  populate_iomodule");
 
 }

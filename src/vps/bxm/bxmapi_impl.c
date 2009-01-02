@@ -40,6 +40,7 @@ bxm_marshall_response(res_packet *buff, bxmapi_ctrl_hdr *ctrl_hdr,
                         break;
 
                 case BXM_EDIT:
+                case BXM_ONLINE:
                         create_api_tlv(TLV_INT, buff->size,
                                         buff->data, &offset);
                         break;
@@ -144,6 +145,8 @@ unmarshall_request(void *buff, uint32_t size, res_packet * pack)
 				case BXM_ONLINE:
 					process_bxm_vfabric_online(buff,
 							&ret_pos, &op_data);
+                                        bxm_marshall_response(&op_data,
+                                                        &ctrl_hdr, pack, 1);
 					break;
                         }
                         break;

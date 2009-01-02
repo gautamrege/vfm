@@ -39,6 +39,7 @@ unmarshall_response(void *buff, uint32_t size, res_packet *pack)
                                 goto out;
                         break;
                 case BXM_EDIT:
+                case BXM_ONLINE:
                 case BXM_EDIT_PROTOCOL_ATTR:
                         pack->data = malloc(sizeof(uint32_t));
                         pack->size = sizeof(uint32_t);

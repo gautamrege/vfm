@@ -398,6 +398,8 @@ vps_error __vadapter_online(bxm_vadapter_id_t vadapter_id)
 	bxm_gateway_attr_t *gateway;
 	bxm_vfabric_attr_t *vfabric;
 
+        vps_trace(VPS_ENTRYEXIT, "Entering %s", __FUNCTION__);
+
 	/**** Find the vadapter record ****/
 	sprintf(query, "select * from bxm_vadapter_attr where id = %d",
 			vadapter_id);
@@ -409,16 +411,17 @@ vps_error __vadapter_online(bxm_vadapter_id_t vadapter_id)
         }
 
 	memset(&rsc, 0, sizeof(vpsdb_resource));
-        if (VPS_SUCCESS != (err = vfmdb_execute_query(stmt,
+        if (VPS_SUCCESS != vfmdb_execute_query(stmt,
 					process_vadapter,
-					&rsc))) {
+					&rsc)) {
                 vps_trace(VPS_ERROR, "Could not get vadapter");
                 err = VPS_DBERROR;
                 goto out;
         }
 	/* Populate the en / fc attributes */
 	vadapter = (bxm_vadapter_attr_t*)rsc.data;
-	populate_vadapter_ex(vadapter);
+        /* TODO: Fix the following line later */
+	//populate_vadapter_ex(vadapter);
 
 	/**** Find the I/O Module record for this vadapter ****/
 	sprintf(query, "select * from bxm_io_module_attr where id = %d",
@@ -431,9 +434,9 @@ vps_error __vadapter_online(bxm_vadapter_id_t vadapter_id)
         }
 
 	memset(&rsc, 0, sizeof(vpsdb_resource));
-        if (VPS_SUCCESS != (err = vfmdb_execute_query(stmt,
+        if (VPS_SUCCESS != vfmdb_execute_query(stmt,
 					process_io_module,
-					&rsc))) {
+					&rsc)) {
                 vps_trace(VPS_ERROR, "Could not get vadapter");
                 err = VPS_DBERROR;
                 goto out;
@@ -451,9 +454,9 @@ vps_error __vadapter_online(bxm_vadapter_id_t vadapter_id)
         }
 
 	memset(&rsc, 0, sizeof(vpsdb_resource));
-        if (VPS_SUCCESS != (err = vfmdb_execute_query(stmt,
+        if (VPS_SUCCESS != vfmdb_execute_query(stmt,
 					process_vfabric,
-					&rsc))) {
+					&rsc)) {
                 vps_trace(VPS_ERROR, "Could not get vadapter");
                 err = VPS_DBERROR;
                 goto out;
@@ -471,9 +474,9 @@ vps_error __vadapter_online(bxm_vadapter_id_t vadapter_id)
         }
 
 	memset(&rsc, 0, sizeof(vpsdb_resource));
-        if (VPS_SUCCESS != (err = vfmdb_execute_query(stmt,
+        if (VPS_SUCCESS != vfmdb_execute_query(stmt,
 					process_gateway,
-					&rsc))) {
+					&rsc)) {
                 vps_trace(VPS_ERROR, "Could not get vadapter");
                 err = VPS_DBERROR;
                 goto out;
@@ -491,9 +494,11 @@ vps_error __vadapter_online(bxm_vadapter_id_t vadapter_id)
 	memcpy(adv.host_mac, io_module->mac, 6);
 	adv.max_recv = 1000;
 	/* Call the function which will send the Advertisement */
+        vps_trace(VPS_INFO, "Sending UNICAST ADV to host");
 	create_packet(1, 2, &adv);
 out:
-	;
+        vps_trace(VPS_ENTRYEXIT, "Leaving %s", __FUNCTION__);
+	return err;
 }
 
 bxm_error_t process_bxm_vadapter_online(uint8_t *buff,

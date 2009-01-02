@@ -6,6 +6,11 @@
 
 #include <stdint.h>
 
+#define BXM_SUCCESS             0
+#define BXM_ERROR_SENDING       1
+#define BXM_ERROR_RECEIVE       2
+#define BXM_ERROR_CONNECT       3
+
 /**
  * @file
  * @brief Error codes for BXM API.

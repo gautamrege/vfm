@@ -7,9 +7,11 @@
 #include <Python.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
+#include <bxm_error.h>
+#include <bxm_common.h>
 #include <bxm_vfabric.h>
 #include <bxm_vadapter.h>
-#include <bxmapi_common.h>
 
 /*
  * @brief The python wrapper for calling bxm_vadapter_create.

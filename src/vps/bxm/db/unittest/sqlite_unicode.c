@@ -355,7 +355,7 @@ int print_bridge(void* arg, int nCols, uint8_t** values, char **cols)
         return 0;
 }
 
-void test_read_db()
+void test_read_bridge()
 {
         int ret;
         void *stmt;
@@ -374,18 +374,52 @@ void test_read_db()
         }
 }
 
+int print_io_module(void* arg, int nCols, uint8_t** values, char **cols)
+{
+        int i;
+        for (i = 0; i < nCols; i++) {
+                if (strcmp(cols[i], "mac") == 0) {
+                        printf("mac : %0.2X:%0.2X:%0.2X:%0.2X:%0.2X:%0.2X\n",
+                               *values[i],     *(values[i]+1),
+                               *(values[i]+2), *(values[i]+3), 
+                               *(values[i]+4), *(values[i]+5));
+                }
+        }
+        return 0;
+}
+
+void test_read_io_module()
+{
+        int ret;
+        void *stmt;
+        /* Dummy parameters */
+        char *query = "select * from bxm_io_module_attr;";
+
+        stmt = vfmdb_prepare_query(query, NULL, NULL);
+        if (!stmt) {
+                printf("ERROR: Cannot prepare sqlite3 statement\n");
+                return;
+        }
+
+        ret = vfmdb_execute_query(stmt, print_io_module, NULL);
+        if (!ret) {
+                printf("ERROR: Sqlite3 statement execution failed.\n");
+        }
+}
+
 void main()
 {
         int rc;
 
         /* initialize DB */
-        rc = sqlite3_open("/home/hansraj/pluto/src/vps/cli/bxm.db", &g_db);
+        rc = sqlite3_open("db/vfm.db", &g_db);
         if (rc) {
                 printf("Can't open database: %s\n", sqlite3_errmsg(g_db));
                 sqlite3_close(g_db);
                 exit(1);
         }
 
+        /*
         printf("Insert IOModule..\n");
         //test_insert_iomodule(1);
         //exit(1);
@@ -400,6 +434,10 @@ void main()
         printf("Insert Gateway..\n");
         test_insert_gw(1122);
 
-        printf("Testing test_read_db\n");
-        test_read_db();
+        printf("Testing test_read_bridge\n");
+        test_read_bridge();
+        */
+
+        printf("Testing test_read_io_module\n");
+        test_read_io_module();
 }

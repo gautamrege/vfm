@@ -10,7 +10,7 @@
 
 #include <common.h>
 #include <vfm_fip.h>
-#include <db_access.h>
+#include <vfmdb.h>
 
 
 /* IO Module Type */

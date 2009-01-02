@@ -3,7 +3,6 @@
  */
 
 #include <pyapi.h>
-#include <bxm_vadapter.h>
 /* 
  * Parse the vadapter dictionary and fill up the structures.
  * Params :  
@@ -22,6 +21,16 @@ parse_vadapter_structure(PyObject* i_dict, bxm_vadapter_attr_t *attr,
 {
        PyObject* dict_object = NULL;
        PyObject* p_dict_object = NULL;
+
+
+       if (NULL != (dict_object = 
+                         PyDict_GetItemString(i_dict, "id"))) {
+                if(PyInt_Check(dict_object))
+                        attr->_vadapter_id = PyInt_AsLong(dict_object);
+                else
+                        goto out;
+       }
+
        if (NULL != (dict_object = PyDict_GetItemString(i_dict, "name"))) {
                 /* copy the valus in the structure */
                 memcpy(attr->name, PyString_AsString(dict_object),
@@ -223,6 +232,16 @@ parse_vfabric_structure(PyObject* i_dict, bxm_vfabric_attr_t *attr,
        PyObject* dict_object = NULL;
        PyObject* p_dict_object = NULL;
 
+       if (NULL != (dict_object = 
+                            PyDict_GetItemString(i_dict, "id"))) {
+                
+               /* check if the protocol is integer or not */
+                if(PyInt_Check(dict_object))
+                        attr->_vfabric_id = PyInt_AsLong(dict_object);
+                else
+                        goto out;
+       }
+
        if (NULL != (dict_object = PyDict_GetItemString(i_dict, "name"))) {
                 /* copy the valus in the structure */
                 memcpy(attr->name, PyString_AsString(dict_object),
@@ -363,8 +382,6 @@ py_bxm_vadapter_create(PyObject* self, PyObject *args)
                         "Error in creating a dictionary to store the results");
                 return NULL;
         }
-        printf("\nvadapter id : %d", vadapter_id); 
-        getchar();
         if (-1 != add_key_values(result, "id", Py_BuildValue("i",vadapter_id)))
                 return result;
 out:
@@ -391,15 +408,23 @@ py_bxm_vadapter_edit_general_attr(PyObject* self, PyObject *args)
         bxm_vadapter_attr_bitmask_t bitmask;
         /*validate the input object and get the dictionary object*/
         bxm_dict =  validate_dictionary(args, bxm_dict);
+        memset(&bitmask, 0, sizeof(bxm_vadapter_attr_bitmask_t));
         /* Pass this dictionary object to parse the key and its values*/
         parse_vadapter_structure(bxm_dict, &attr, &bitmask);
-
+        
         err = bxm_vadapter_edit_general_attr(attr._vadapter_id, &bitmask,
                                                           &attr);
         if (err != BXM_SUCCESS) {
                 PyErr_SetString(PyExc_StandardError,
                                 "Error in upadating the vadapter properties.");
                 goto out;
+        }
+        
+
+        if ((result = PyDict_New())== NULL) {
+                PyErr_SetString(PyExc_StandardError,
+                        "Error in creating a dictionary to store the results");
+                return NULL;
         }
         if(-1 != add_key_values(result, "id",
                                 Py_BuildValue("i", attr._vadapter_id)))
@@ -439,6 +464,12 @@ py_bxm_vfabric_create(PyObject* self, PyObject *args)
                                 "Error in creating the vfabric.");
                 goto out;
         }
+        if ((result = PyDict_New())== NULL) {
+                PyErr_SetString(PyExc_StandardError,
+                        "Error in creating a dictionary to store the results");
+                return NULL;
+        }
+
         if(-1 != add_key_values(result, "id", Py_BuildValue("i", vfabric_id)))
                 return result;
 out:
@@ -466,6 +497,7 @@ py_bxm_vfabric_edit_general_attr(PyObject* self, PyObject *args)
         bxm_vfabric_attr_bitmask_t bitmask;
         /*validate the input object and get the dictionary object*/
         bxm_dict =  validate_dictionary(args, bxm_dict);
+        memset(&bitmask, 0, sizeof(bxm_vfabric_attr_bitmask_t));
         /* Pass this dictionary object to parse the key and its values*/
         parse_vfabric_structure(bxm_dict, &attr, &bitmask);
 
@@ -476,8 +508,15 @@ py_bxm_vfabric_edit_general_attr(PyObject* self, PyObject *args)
                                 "Error in updating the vfabric properties.");
                 goto out;
         }
+        
+        if ((result = PyDict_New())== NULL) {
+                PyErr_SetString(PyExc_StandardError,
+                        "Error in creating a dictionary to store the results");
+                return NULL;
+        }
+
         if(-1 != add_key_values(result, "id",
-                                Py_BuildValue("i", attr._vfabric_id)))
+                Py_BuildValue("i", attr._vfabric_id)))
                 return result;
 out:
         return NULL;
@@ -524,6 +563,11 @@ py_bxm_vfabric_online(PyObject* self, PyObject *args)
                 PyErr_SetString(PyExc_StandardError,
                             "Error in changing the running mode of vfabric");
                 goto out;
+        }
+        if ((result = PyDict_New())== NULL) {
+                PyErr_SetString(PyExc_StandardError,
+                        "Error in creating a dictionary to store the results");
+                return NULL;
         }
         if(-1 != add_key_values(result, "id", Py_BuildValue("i", vfabric_id)))
                 return result;

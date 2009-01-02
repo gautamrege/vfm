@@ -25,7 +25,7 @@ extern uint8_t g_wwnn[8];
 extern uint8_t g_wwpn[8];
 
 #define LOGFILE "/vfm.log"
-#define SQLITE3_DB "../cli/bxm.db"
+#define SQLITE3_DB "db/vfm.db"
 
 
 /*

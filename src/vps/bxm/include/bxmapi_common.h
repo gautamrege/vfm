@@ -25,15 +25,6 @@
  * #include <bxm_buf.h>
  */
 
-/*
- * TODO : Defining the ERROR codes
- * Later these will be moved in error.h
- */
-#define BXM_SUCCESS             0
-#define BXM_ERROR_SENDING       1
-#define BXM_ERROR_RECEIVE       2
-#define BXM_ERROR_CONNECT       3
-
 #define SERVER_PORT             10006
 #define MAXBUFFLEN              500
 #define BUFFER_SIZE             1500 /* MTU will never go above this limit*/

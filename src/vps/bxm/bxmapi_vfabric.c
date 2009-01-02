@@ -243,13 +243,22 @@ process_bxm_vfabric_online(uint8_t *buff, uint32_t *ret_pos,
 	/* For each vadapter, call bxm_vadapter_online API */
 	for (i = 0; i < res.count; i++) {
 		vadapter = ((bxm_vadapter_attr_t *)res.data) + i;
-		if ( ! __vadapter_online(vadapter->_vadapter_id)) {
+		if ( VPS_SUCCESS != __vadapter_online(vadapter->_vadapter_id)) {
 			vps_trace(VPS_WARNING, "Could not activate adapter: %d",
 					vadapter->_vadapter_id);
 		}
+                else
+                {
+			vps_trace(VPS_INFO, "Vadapter %d successfully activated",
+					vadapter->_vadapter_id);
+                }
 	}
 
-out:	vps_trace(VPS_ENTRYEXIT, "Leaving process_bxm_create_vfabric");
+out:    op_arg->size  = sizeof(bxm_error_t);
+        op_arg->data  = malloc(op_arg->size);
+        memcpy(op_arg->data, &err, sizeof(bxm_error_t));
+
+	vps_trace(VPS_ENTRYEXIT, "Leaving process_bxm_create_vfabric");
 	return err;
 }
 

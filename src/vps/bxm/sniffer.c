@@ -437,10 +437,11 @@ decide_packet(eth_hdr *fip_eth_hdr_fw, mlx_tunnel_hdr *tunnel_hdr,
                                 "--*** CONNECTX DISCOVERY RECEIVED ***--");
                                 fcoe_conx_discovery(desc_buff, &solicit);
 
-                                /*  Unicast Gateway Advertisement */
+                                add_en_io_module_to_db(&solicit);
+                                /*  Unicast Gateway Advertisement 
                                 create_packet(1, 2, &solicit);
                                 vps_trace(VPS_ERROR,
-                                "--*** SENT UNICAST GW ADVERTISEMENT***--");
+                                "--*** SENT UNICAST GW ADVERTISEMENT***--"); */
                                 break;
                     }
                     break;

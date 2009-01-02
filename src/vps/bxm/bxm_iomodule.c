@@ -3,6 +3,7 @@
  */ 
 
 #include <rsc_discovery.h>
+#include <rsc_discovery.h>
 
 /*
  *  Add EN IO module attribute to DB.(DB Table : bxm_io_module_attr

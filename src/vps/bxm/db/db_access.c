@@ -517,7 +517,7 @@ out:
 }
 
 int
-process_vfabric(void *data, int num_cols, uint8_t **values, char **cols)
+process_vfabric(void *data, int num_cols, char **values, char **cols)
 {
         vpsdb_resource *rsc = (vpsdb_resource*)data;
 	bxm_vfabric_attr_t *vfabric;
@@ -665,178 +665,6 @@ out:
         return err;
 }
 
-/*
- * This function will fill the values of the CNA from the database
- * The fields are not yet defined. So using the fields that are defined 
- * in the database.
- */
-int
-process_io_module(void *data, int num_cols, uint8_t **values, char **cols)
-{
-        vpsdb_resource *rsc = (vpsdb_resource*)data;
-	vpsdb_io_module_t *io_module;
-        uint32_t i;
-
-        vps_trace(VPS_ENTRYEXIT, "Entering process_io_module");
-
-        /* Read the existing resrouce count for re-allocation */
-        if (NULL == (rsc->data = realloc(rsc->data,
-                     sizeof(vpsdb_io_module_t) * (rsc->count + 1)))) {
-                /*
-                 * The block could not be realloc'ed. This can cause serious
-                 * problems .Hence we return with a db_error
-                 */
-                vps_trace(VPS_ERROR, "Could not realloc memory: %d",
-                                rsc->count + 1);
-                return 1; /* This will propogate with SQL_ABORT */
-        }
-
-        /* Go the the io_module array offset */
-        io_module = rsc->data + (sizeof(vpsdb_io_module_t) * rsc->count);
-
-        /* Fill the io_module structure */
-        for (i = 0; i < num_cols; i++) {
-                if (strcmp(cols[i], "name") == 0)
-                        memcpy(io_module->name, (values[i]), 8);
-                else if (strcmp(cols[i], "type") == 0)
-                        io_module->type = atoi(values[i]);
-                else if (strcmp(cols[i], "mac") == 0)
-                        memcpy(io_module->mac,(values[i]), 6);
-                else if (strcmp(cols[i], "guid") == 0)
-                        memcpy(io_module->guid, (values[i]), 8);
-                else if (strcmp(cols[i], "num_vhba") == 0)
-                        io_module->num_vhba = atoi(values[i]);
-                else if (strcmp(cols[i], "num_vnic") == 0)
-                        io_module->num_vnic = atoi(values[i]);
-                else if (strcmp(cols[i], "slot") == 0)
-                        io_module->slot = atoi(values[i]);
-                else if (strcmp(cols[i], "port") == 0)
-                        io_module->port = atoi(values[i]);
-                else if (strcmp(cols[i], "supported_speed") == 0)
-                        io_module->supported_speed = atoi(values[i]);
-        }
-
-        /* After the data is correctly populated, increment the bridge count */
-        rsc->count++;
-        vps_trace(VPS_INFO, "IO Module successfully read");
-
-        vps_trace(VPS_ENTRYEXIT, "Leaving process_io_module");
-        return 0; /* Callback must return 0 on success */
-}
-/*
- * This function populates the io_module struct
- */
-vps_error
-populate_io_module_info(vpsdb_resource *rsc, const char* where_clause)
-{
-        vps_error err = VPS_SUCCESS;
-        vpsdb_io_module_t *io_module;
-        char query[1024] = "select * from bxm_io_modules";
-        char tmp_str[1024];
-        uint8_t i;
-
-        /* If name exists, we need information only for that io_module */
-        if (*where_clause)
-                sprintf(query, "%s where %s;", query, where_clause);
-        else
-                strcat(query, ";");
-
-        /* Update the resource information with the type */
-        rsc->type = VPS_DB_IO_MODULE;
-
-        /* Get the bridges */
-        if (VPS_SUCCESS != (err = vpsdb_read(query,
-                            process_io_module, /* call back function */
-                            rsc))) {
-                vps_trace(VPS_ERROR, "Could not get io_module information");
-        }
-
-        return err;
-}
-
-/*
- * This function adds the io_module struct to the database
- * TODO :NOT TESTED
- */
-
-vps_error
-add_io_module(vpsdb_resource *info)
-{
-        vps_error err = VPS_SUCCESS;
-        vpsdb_io_module_t *io_module = (vpsdb_io_module_t*)info->data;
-        vpsdb_io_module_t *ptr = NULL;
-        uint32_t i, j;
-        uint8_t tmp[32];
-        char insert_io_module_query[1024] = "insert into bxm_io_modules(name, "
-		"type, mac, guid, num_vhba, num_vnic, "
-		"slot, port, supported_port) values (";
-
-        vps_trace(VPS_ENTRYEXIT, "Entering add_io_module");
-
-	/* Iterate each io_module info */
-	for (i = 0; i < info->count; i++) {
-		/* Set the correct io_module data-structure offset */
-		ptr = io_module + i;
-
-		/* Formulate the query to insert the io_module into the DB */
-		/* node name */
-		memset(tmp, 0, sizeof(tmp));
-		memcpy(tmp, ptr->name, 8);
-		sprintf(insert_io_module_query, "%s\"%s\"",
-				insert_io_module_query, tmp);
-
-		/* Type */
-		sprintf(insert_io_module_query, "%s, %d",
-				insert_io_module_query, ptr->type);
-
-		/* Mac address */
-		memset(tmp, 0, sizeof(tmp));
-		memcpy(tmp, ptr->mac, 6);
-		sprintf(insert_io_module_query, "%s, \"%s\"",
-				insert_io_module_query, tmp);
-
-		/* node name */
-		memset(tmp, 0, sizeof(tmp));
-		memcpy(tmp, ptr->guid, 8);
-		sprintf(insert_io_module_query, "%s\"%s\"",
-				insert_io_module_query, tmp);
-
-		/* Num of vhba */
-		sprintf(insert_io_module_query, "%s, %d",
-				insert_io_module_query, ptr->num_vhba);
-
-		/* Num of vnic*/
-		sprintf(insert_io_module_query, "%s, %d",
-				insert_io_module_query, ptr->num_vnic);
-
-		/* Slot */
-		sprintf(insert_io_module_query, "%s, %d",
-				insert_io_module_query, ptr->slot);
-		/* Port */
-		sprintf(insert_io_module_query, "%s, %d",
-				insert_io_module_query, ptr->port);
-		/* Supported speed  */
-		sprintf(insert_io_module_query, "%s, %d",
-				insert_io_module_query, ptr->supported_speed);
-
-
-
-		strcat(insert_io_module_query, ");");
-
-		vps_trace(VPS_INFO, "insert io_module query: %s",
-				insert_io_module_query);
-	}
-	/** Execute the query to insert io_module into the DB ***/
-	if (VPS_SUCCESS != (err = vpsdb_update(insert_io_module_query))) {
-		vps_trace(VPS_ERROR,
-				"Error in adding io_module to the database");
-	}
-
-
-	vps_trace(VPS_ENTRYEXIT, "Leaving add_io_module: %x", err);
-	return err;
-
-}
 
 vps_error
 validate_add_io_module(vpsdb_resource *host)
@@ -886,7 +714,7 @@ vpsdb_get_resource(uint32_t type, vpsdb_resource *info, const char *name)
                         vps_trace(VPS_INFO, "Get host info for: %s", name);
 
                 /* Get all the host, CNA and vHBA, vNIC info */
-                if (VPS_SUCCESS != (err = populate_io_module_info(info, name)))
+                if (VPS_SUCCESS != (err = populate_iomodule(info, name)))
                         goto out;
 
                 vps_trace(VPS_INFO, "Gathered host info");

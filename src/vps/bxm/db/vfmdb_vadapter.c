@@ -204,7 +204,7 @@ populate_vadapter_ex(bxm_vadapter_attr_t *vadapter)
 
         if (vadapter->protocol == BXM_PROTOCOL_EN) {
                 sprintf(query, "select * from bxm_vadapter_en_attr "
-                           "where _vadapter_id = %d;", vadapter->_vadapter_id);
+                           "where vadapter_id = %d;", vadapter->_vadapter_id);
 
                 if (VPS_SUCCESS != (err = vpsdb_read(query,
                                           process_vadapter_en,
@@ -217,7 +217,7 @@ populate_vadapter_ex(bxm_vadapter_attr_t *vadapter)
         }
         else if (vadapter->protocol == BXM_PROTOCOL_FC) {
                 sprintf(query, "select * from bxm_vadapter_fc_attr "
-                       "where _vadapter_id = %d;", vadapter->_vadapter_id);
+                       "where vadapter_id = %d;", vadapter->_vadapter_id);
 
                 if (VPS_SUCCESS != (err = vpsdb_read(query,
                                           process_vadapter_fc,

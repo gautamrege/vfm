@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2008  VirtualPlane Systems, Inc.
  */
+#include <common.h>
 #include <vfmdb.h>
 
 /* The sqlite database pointer */
@@ -21,7 +22,7 @@ void* vfmdb_prepare_query(const char *query, const char *fmt, void **args)
         rc = sqlite3_prepare_v2(g_db, query, strlen(query), &stmt, NULL);
 #endif
         if (SQLITE_OK != rc) {
-                printf("SQL error: %s", sqlite3_errmsg(g_db));
+                vps_trace(VPS_ERROR, "SQL error: %s", sqlite3_errmsg(g_db));
                 goto out;
         }
 
@@ -58,14 +59,14 @@ void* vfmdb_prepare_query(const char *query, const char *fmt, void **args)
                                 break;
                         */
                         default:
-                                printf("Format error: %c", *fmt);
+                                vps_trace(VPS_ERROR, "Format error: %c", *fmt);
 				goto out;
                 }
 
                 /* increment i since positional paramters start from 1 */
                 rc = sqlite3_bind_text(stmt, i+1, str, length, SQLITE_STATIC);
                 if (rc != SQLITE_OK) {
-                        printf("SQL error: %s", sqlite3_errmsg(g_db));
+                        vps_trace(VPS_ERROR, "SQL error: %s", sqlite3_errmsg(g_db));
 			sqlite3_finalize(stmt);
 			stmt = NULL;
                         goto out;
@@ -142,7 +143,7 @@ process_row(sqlite3_stmt *stmt,
 
         /* invoke the callback */
         if (0 != sql_cb(rsc, ncols, values, columns)) {
-                printf("Callback failed.");
+                vps_trace(VPS_ERROR, "Callback failed.");
                 err = 1; /* SQLITE Error code??? */
         }
 
@@ -179,7 +180,7 @@ vps_error vfmdb_execute_query(void *stmt,
                                 break;
                         default:
                                 //  SQLITE_BUSY:  reset? to try again?
-                                printf("sqlite error in switch:%s\n",
+                                vps_trace(VPS_ERROR, "sqlite error in switch:%s\n",
                                                 sqlite3_errmsg(g_db));
                                 process = 0;
                                 break;

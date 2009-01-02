@@ -11,6 +11,8 @@ VPS_SRC=server.c \
     db/db_access.c \
     db/vfmdb.c \
     db/vfmdb_vadapter.c \
+    db/vfmdb_iomodule.c \
+    bxm_iomodule.c \
     config.c
 
 BXMAPI_SRC = bxmapi_common.c \

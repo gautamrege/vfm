@@ -58,7 +58,7 @@ test_vfabric_edit()
         vfabric_attr._vfabric_id = 12;
         vfabric_attr.protocol = 7;
         vfabric_attr.primary_gateway = 127;
-        bxm_vfabric_edit_general_attr(4, &vfabric_bitmask, &vfabric_attr);
+        bxm_vfabric_edit_general_attr(2, &vfabric_bitmask, &vfabric_attr);
 }
 
 void test_vadapter_edit_protocol()
@@ -85,6 +85,6 @@ int main()
         //test_vadapter_edit();
         //test_vadapter_edit_protocol();
         //test_vfabric_create();
-        //test_vfabric_edit();
-        test_vfabric_online();
+        test_vfabric_edit();
+        //test_vfabric_online();
 }
