@@ -112,8 +112,9 @@ create_api_tlv(uint8_t type, uint32_t len, void *value, uint8_t **offset)
 
 /* #ifdef BXM_TEST */
 /* This Function just displays the buff */
-display(uint8_t *buff, uint32_t size) {
-
+display(uint8_t *buff, uint32_t size)
+{
+#ifdef API_TEST
         uint32_t i, j = 0;
 
 	if (size) {
@@ -129,6 +130,7 @@ display(uint8_t *buff, uint32_t size) {
 	printf("\n");
 	}
 	else
+#endif
 		return 0;
 }
 /*#endif */

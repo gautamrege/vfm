@@ -17,16 +17,19 @@ def reg1():
  5. Vfabric online
 """
         vfabric = bxm.py_bxm_vfabric_create(vfabric_ip)
-        print "Vfabric created: ", vfabric['id']
+        print "Vfabric created:", vfabric
+
         vadapter = bxm.py_bxm_vadapter_create(vadapter_ip)
-        print "vadpter created: ", vfabric['id']
-        vbxm.py_bxm_vfabric_edit_general_attr({'id': vfabric['id'],
+        print "vadpter created:", vadapter
+
+        result = bxm.py_bxm_vfabric_edit_general_attr({'id': vfabric['id'],
                                                 'primary_gateway':1})
-        print "vfabric edited."
-        bxm.py_bxm_vadapter_edit_general_attr({'id':vadapter['id'],                        'io_module_id':1, 'vfabric_id':vfabric['id']})
-        print "vdapter edited."
+        print "vfabric edited:", result
+
+        result = bxm.py_bxm_vadapter_edit_general_attr({'id':vadapter['id'],'io_module_id':1, 'vfabric_id':vfabric['id']})
+        print "vdapter edited:", result
+
         result = bxm.py_bxm_vfabric_online({'id':vfabric['id']})
-        print "vdapter online sent."
-        print result
+        print "vfabric is online:", result
 
 reg1()

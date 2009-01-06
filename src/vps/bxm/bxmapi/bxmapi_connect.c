@@ -33,7 +33,6 @@ process_request(uint32_t sockfd, uint8_t* ip_data, uint32_t ip_length,
                 err = BXM_ERROR_SENDING;
                 return err;
         }
-        printf("\n sending data....\n");
 	free(ip_data);
         /* recieve the message from server */
         if ((pack->size = recv(sockfd, op_data, BUFFER_SIZE, 0)) < 0) {
