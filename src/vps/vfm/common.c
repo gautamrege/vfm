@@ -14,6 +14,9 @@ int g_loglevel = 0;
 
 /* Database pointer */
 sqlite3 *g_db = NULL;
+char g_db_path[100];
+
+char g_log_path[100];
 
 extern int g_vfm_local;
 extern int g_vfm_remote;
@@ -24,8 +27,6 @@ extern uint8_t g_if_name[10];
 extern uint8_t g_wwnn[8];
 extern uint8_t g_wwpn[8];
 
-#define LOGFILE "/vfm.log"
-#define SQLITE3_DB "db/vfm.db"
 
 
 /*
@@ -46,15 +47,59 @@ configure_database()
         vps_error err = VPS_SUCCESS;
 
         /* This will create the database if its does not exist */
-        rc = sqlite3_open(SQLITE3_DB, &g_db);
+        rc = sqlite3_open(g_db_path, &g_db);
         if (rc) {
-                printf("Can't open database: %s\n", SQLITE3_DB);
-                vps_trace(VPS_ERROR, "Can't open database: %s", SQLITE3_DB);
+                printf("Can't open database: %s\n", g_db_path);
+                vps_trace(VPS_ERROR, "Can't open database: %s", g_db_path);
                 err = VPS_ERROR_DB_INIT;
         }
 
         return err;
 }
+
+/* Initialization of Log File*/
+void
+init_log()
+{
+        time_t curr_time;
+        struct tm *timestamp;
+        char time_buff[30];
+
+        /*Get the current time*/
+        curr_time = time(NULL);
+
+        /*Format the time , "ddd * mm-dd-yyyy hh:mm:ss"*/
+        timestamp = localtime(&curr_time);
+        strftime(time_buff, sizeof(time_buff), "%a %m-%d-%Y %H:%M:%S",
+                        timestamp);
+
+        printf("\t LOG Start Date : %s \n ", time_buff);
+        if(strlen(g_log_path) > 0 )
+        {
+                g_logfile = fopen(g_log_path,"a");
+                if(g_logfile)
+                {
+                        fprintf(g_logfile, "\t==========================="
+                                        "===========================\n\n");
+                        fprintf(g_logfile, "\t LOG Start Date : %s %\n\n ",
+                                        time_buff);
+                        fprintf(g_logfile, "\t==========================="
+                                        "============================\n\n"); } 
+                else
+                                printf("Unable to open log file\n");
+        }
+
+}
+
+/* Close Log file */
+void
+close_log()
+{
+        if(g_logfile)
+                fclose(g_logfile);
+}
+
+
 
 void
 vps_trace(int level, const char* format, ...)
@@ -83,10 +128,9 @@ vps_trace(int level, const char* format, ...)
         va_start(args, format);
 
         /* If the log file is not specified, then log to stderr by default */
-        /*
-         * if (g_logfile)
-         * fp = g_logfile;
-         */
+        if (g_logfile)
+                fp = g_logfile;
+
 
         /*Get the current time*/
         curr_time = time(NULL);
