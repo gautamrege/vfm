@@ -441,7 +441,7 @@ void main()
         //exit(1);
 */
         printf("Inserting bridge..\n");
-        test_insert_multiple_bridges(1);
+        test_insert_multiple_bridges(5);
 /*
         printf("Insert Gateway Modules..\n");
         test_insert_gw_module(1);

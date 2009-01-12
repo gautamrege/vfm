@@ -1,8 +1,10 @@
-import sys
+import sys, os
 
-sys.path.append('/home/hansraj/pluto/src/vps/vfm/vfmapi/pyapi/build/lib.linux-x86_64-2.4')
-sys.path.append('/home/hansraj/pluto/src/vps/vfm/vfmapi')
+cwd=os.getcwd()
+sys.path.append("%s/build/lib.linux-x86_64-2.4" % cwd)
+sys.path.append("%s/.." % cwd)
 
+#print sys.path
 import vfm
 
 vadapter_ip = {'name' : "Vadapter", 'desc' : "Testing vadapter", 'protocol' : 1}
@@ -32,4 +34,13 @@ def reg1():
         result = vfm.py_vfm_vfabric_online({'id':vfabric['id']})
         print "vfabric is online:", result
 
+def reg2():
+        print """\nRegression Test 2:
+1. Display bridge inventory.
+"""
+        bridge_info = vfm.py_vfm_bd_select_inventory()
+        print bridge_info
+
 reg1()
+reg2()
+sys.exit(0)

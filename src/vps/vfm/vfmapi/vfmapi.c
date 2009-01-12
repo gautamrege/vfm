@@ -50,7 +50,7 @@ unmarshall_response(void *buff, uint32_t size, res_packet *pack)
                 case VFM_QUERY_INVENTORY:
                 case VFM_QUERY:
                         err = get_api_tlv(buff, &ret_pos, &pack->size);
-                        pack->data = malloc(sizeof(pack->size));
+                        pack->data = malloc(pack->size);
                         memset(pack->data, 0, pack->size);
                         err = get_api_tlv(buff, &ret_pos, pack->data);
                         if(err)

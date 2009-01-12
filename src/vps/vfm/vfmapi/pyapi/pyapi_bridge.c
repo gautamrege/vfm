@@ -247,7 +247,7 @@ py_vfm_bd_select_inventory(PyObject* self, PyObject *args)
 
         err = VFM_SUCCESS;
         
-#ifdef TEST1 
+#ifdef TEST1
         results = malloc(3 * sizeof(vfm_bd_attr_t));
         memset(results, 0, 3 * sizeof(vfm_bd_attr_t));
         num_result = 3;
@@ -290,6 +290,7 @@ py_vfm_bd_select_inventory(PyObject* self, PyObject *args)
         else
                 PyErr_SetString(PyExc_StandardError,
                         "Error in Filling up the result dictionary");
+        free(results);
 out:
         return NULL;
 

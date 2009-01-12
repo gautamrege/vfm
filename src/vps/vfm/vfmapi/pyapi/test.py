@@ -1,14 +1,14 @@
 import sys
 
-sys.path.append('/home/shailesh/plutofinal/src/vps/vfm/vfmapi/pyapi/build/lib.linux-i686-2.5')
-sys.path.append('/home/shailesh/plutofinal/src/vps/vfm/vfmapi/pyapi/vfmapi')
+sys.path.append('/home/jiren/shailesh/pluto/src/vps/vfm/vfmapi/pyapi/build/lib.linux-x86_64-2.4')
+sys.path.append('/home/jiren/shailesh/pluto/src/vps/vfm/vfmapi')
 
 import vfm
 
 print "Result " , vfm.py_vfm_bd_select_inventory()
+sys.exit(0)
 
 
-"""
 dict = {}
 result = {}
 dict["name"] = "vadap13"
@@ -62,4 +62,3 @@ elif option == '4':
 
 print "\nrecieved data..........."
 print result        
-"""
