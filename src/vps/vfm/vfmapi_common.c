@@ -54,14 +54,16 @@ get_api_tlv(uint8_t *buff, uint32_t *ret_pos, void * op_arg)
         memcpy(&(tlv.type), ptr, sizeof(tlv.type));
         ptr += sizeof(tlv.type);
 
+        tlv.type = ntohl(tlv.type);
         /* Copy the length into the tlv */
         memcpy(&(tlv.length), ptr, sizeof(tlv.length));
         ptr += sizeof(tlv.length);
 
+        tlv.length = ntohl(tlv.length);
         memcpy(op_arg, ptr, tlv.length);
         //printf("\nTYPE : %d \t LEN: %d, VALUE: %x ", tlv.type,
           //              tlv.length, *((uint8_t *)op_arg));
-        *ret_pos += (sizeof(tlv.type) + sizeof(tlv.length) + tlv.length);
+        *ret_pos += (TLV_SIZE + tlv.length);
 
         /*vps_trace(VPS_ENTRYEXIT, "Leaving get_api_tlv");*/
         return err;
@@ -96,14 +98,15 @@ create_api_tlv(uint8_t type, uint32_t len, void *value, uint8_t **offset)
 {
         api_tlv tlv;
         vfm_error_t err = VPS_SUCCESS;
+        uint32_t tlv_size = sizeof(tlv.type) + sizeof(tlv.length);
 
 /*        vps_trace(VPS_ENTRYEXIT, "Entering create_api_tlv");*/
 
-        tlv.type = type;
-        tlv.length = len;
-        memcpy(*offset, &tlv, 2);
-        memcpy(*offset + 2, value, tlv.length);
-        *offset +=(tlv.length + 2);
+        tlv.type = htonl(type);
+        tlv.length = htonl(len);
+        memcpy(*offset, &tlv, TLV_SIZE);
+        memcpy(*offset + TLV_SIZE, value, len);
+        *offset +=(len + TLV_SIZE);
 
 /*        vps_trace(VPS_ENTRYEXIT, "Leaving create_api_tlv");*/
         return err;

@@ -22,8 +22,8 @@ vfm_marshall_response(res_packet *buff, vfmapi_ctrl_hdr *ctrl_hdr,
         vps_error err = VPS_SUCCESS;
         vps_trace(VPS_ENTRYEXIT, "Entering vfm_marshall_response");
 
-        ctrl_hdr->length = (sizeof(vfmapi_ctrl_hdr) + buff->size 
-                        + sizeof(uint32_t) +(2 * no_of_args));
+        ctrl_hdr->length = (sizeof(vfmapi_ctrl_hdr) + buff->size +
+                        (TLV_SIZE * no_of_args));
 
         pack->data = (uint8_t *)malloc(ctrl_hdr->length);
         offset = pack->data;

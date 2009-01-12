@@ -14,7 +14,7 @@ INC= -I$(BASEDIR)/include -I$(VFMAPI_INC_PATH)
 DEFS=
 #TODO: Add .c.o rules asap
 all: vfmapi
-	
+
 client: 
 	gcc -o client $(CFLAGS) $(DEFS) $(INC) $(LIBS) $(SRC)
 vfmapi: 
