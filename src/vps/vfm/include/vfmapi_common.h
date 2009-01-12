@@ -63,7 +63,7 @@
 #define Q_UINT8                 0x01
 #define Q_UINT32                0x02
 #define Q_UINT64                0x03
-
+#define Q_NAMED_PARAM           0x04 
 
 #define NAME_SIZE  sizeof(char[64])              
 /*

@@ -11,6 +11,7 @@ VPS_SRC=server.c \
     db/vfmdb.c \
     db/vfmdb_vadapter.c \
     db/vfmdb_iomodule.c \
+    db/vfmdb_bridge_device.c \
     vfm_iomodule.c \
     config.c
 

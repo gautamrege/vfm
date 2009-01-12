@@ -11,7 +11,7 @@ VFMAPI=vfmapi
 LIBS= -lpthread
 VFMAPI_INC_PATH= $(BASEDIR)/include/vfmapi
 INC= -I$(BASEDIR)/include -I$(VFMAPI_INC_PATH)
-DEFS= -DVADAPTER_EDIT -DEDIT_PROTOCOL
+DEFS=
 #TODO: Add .c.o rules asap
 all: vfmapi
 	

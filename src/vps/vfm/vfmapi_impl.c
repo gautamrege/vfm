@@ -22,8 +22,8 @@ vfm_marshall_response(res_packet *buff, vfmapi_ctrl_hdr *ctrl_hdr,
         vps_error err = VPS_SUCCESS;
         vps_trace(VPS_ENTRYEXIT, "Entering vfm_marshall_response");
 
-        ctrl_hdr->length = (sizeof(vfmapi_ctrl_hdr) + buff->size +
-                        (2 * no_of_args));
+        ctrl_hdr->length = (sizeof(vfmapi_ctrl_hdr) + buff->size 
+                        + sizeof(uint32_t) +(2 * no_of_args));
 
         pack->data = (uint8_t *)malloc(ctrl_hdr->length);
         offset = pack->data;
@@ -50,17 +50,15 @@ vfm_marshall_response(res_packet *buff, vfmapi_ctrl_hdr *ctrl_hdr,
                                         buff->data, &offset);
                         break;
                 case VFM_QUERY_INVENTORY:
-                        /* TYPE = Vadapter_id_t array */
-                        memcpy(offset, buff->data, buff->size);
-                        break;
-
                 case VFM_QUERY:
-                        create_api_tlv(TLV_VADP_ATTR, buff->size,
+                        create_api_tlv(TLV_INT, sizeof(uint32_t),
+                                        &buff->size, &offset);
+                        create_api_tlv(TLV_BD_ATTR, buff->size,
                                         buff->data, &offset);
                         break;
         }
 
-//	free(buff->data);
+	free(buff->data);
         vps_trace(VPS_ENTRYEXIT, "Leaving vfm_marshall_response");
         return err;
 }
@@ -156,13 +154,15 @@ unmarshall_request(void *buff, uint32_t size, res_packet * pack)
                                 case VFM_QUERY_INVENTORY:
                                         process_vfm_bd_select_inventory(buff,
                                                         &ret_pos, &op_data);
-                                        vfm_bridge_marshall_response(&op_data,
+                                        vfm_marshall_response(&op_data,
                                                         &ctrl_hdr, pack, 2);
+                                        break;
                                 case VFM_QUERY:
                                         process_vfm_bd_query_general_attr(buff,
                                                         &ret_pos, &op_data);
-                                        vfm_bridge_marshall_response(&op_data,
+                                        vfm_marshall_response(&op_data,
                                                         &ctrl_hdr, pack, 1);
+                                        break;
                         }
                         break;
 

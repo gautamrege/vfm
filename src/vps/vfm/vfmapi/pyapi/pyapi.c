@@ -3,6 +3,7 @@
  */
 
 #include <pyapi.h>
+#include <pyapi_bridge.h>
 /* 
  * Parse the vadapter dictionary and fill up the structures.
  * Params :  
@@ -589,6 +590,8 @@ static PyMethodDef VfmMethods[] = {
                    "Edit the vfabric properties and return the vfabric id."},
         {"py_vfm_vfabric_online", py_vfm_vfabric_online, METH_VARARGS,
                 "Change the running mode of vfabric to ONLINE."},
+        {"py_vfm_bd_select_inventory", py_vfm_bd_select_inventory,
+                 METH_VARARGS, "Query the Bridge device inventory."},
         {NULL, NULL, 0, NULL}
 };
 

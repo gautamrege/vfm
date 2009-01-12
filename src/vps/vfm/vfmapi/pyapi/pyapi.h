@@ -14,6 +14,19 @@
 #include <vfm_vadapter.h>
 
 /*
+ * Validate the input data, convert it into the python object and then validate
+ * if it is a dictionary object or not.
+ */
+PyObject *
+validate_dictionary(PyObject * , PyObject *);
+
+/* Add a key and its value in the result dictionary*/
+int
+add_key_values(PyObject* result, const char* key, PyObject * value);
+
+
+
+/*
  * @brief The python wrapper for calling vfm_vadapter_create.
  *
  * @param[in] self The python object
@@ -26,7 +39,8 @@
  * relevant Python exception.
  *
  */
-PyObject *py_vfm_vadapter_create(PyObject* self, PyObject *args);
+PyObject *
+py_vfm_vadapter_create(PyObject* self, PyObject *args);
 
 /*
  * @brief The python wrapper for calling vfm_vadapter_edit_general_attr.
@@ -61,7 +75,8 @@ PyObject *py_vfm_vadapter_create(PyObject* self, PyObject *args);
  * On failure, it will return NULL and throw the relevant Python exception.
  *
  */
-PyObject *py_vfm_vadapter_edit_general_attr(PyObject* self, PyObject *args);
+PyObject *
+py_vfm_vadapter_edit_general_attr(PyObject* self, PyObject *args);
 
 /*
  * @brief The python wrapper for calling vfm_vfabric_create.
@@ -76,7 +91,8 @@ PyObject *py_vfm_vadapter_edit_general_attr(PyObject* self, PyObject *args);
  * relevant Python exception.
  *
  */
-PyObject *py_vfm_vfabric_create(PyObject* self, PyObject *args);
+PyObject *
+py_vfm_vfabric_create(PyObject* self, PyObject *args);
 
 /*
  * @brief The python wrapper for calling vfm_vfabric_edit_general_attr.
@@ -109,7 +125,8 @@ PyObject *py_vfm_vfabric_create(PyObject* self, PyObject *args);
  * relevant Python exception.
  *
  */
-PyObject *py_vfm_vfabric_edit_general_attr(PyObject* self, PyObject *args);
+PyObject *
+py_vfm_vfabric_edit_general_attr(PyObject* self, PyObject *args);
 
 /*
  * @brief The python wrapper for calling vfm_vfabric_online.
@@ -126,6 +143,7 @@ PyObject *py_vfm_vfabric_edit_general_attr(PyObject* self, PyObject *args);
  *                  relevant Python exception.
  *
  */
-PyObject *py_vfm_vfabric_online(PyObject* self, PyObject *args);
+PyObject *
+py_vfm_vfabric_online(PyObject* self, PyObject *args);
 
 #endif /* INCLUDED_pyapi_functions */

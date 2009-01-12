@@ -67,7 +67,6 @@ create_connection(int *sock_id)
                 return err;
         }
 
-
         memset(buff, 0, BUFFER_SIZE);
         /* create a socket to connect to server */
         if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {

@@ -36,6 +36,7 @@ vfm_bd_select_inventory (vfm_bd_attr_t * attr,
         api_tlv tlv;
         uint32_t mesg_len, res_len;
         uint32_t no_of_args = 2;
+        int i = 0;
         uint8_t *message, *offset, *res_mesg;
         vfmapi_ctrl_hdr ctrl_hdr;
         int sock_fd;
@@ -75,12 +76,19 @@ vfm_bd_select_inventory (vfm_bd_attr_t * attr,
                 goto out;
 
         err = process_request(sock_fd, message, mesg_len, &pack);
+
         if (err != VFM_SUCCESS) {
                 printf("\n Error in process request : %d ", err);
                 goto out;
         }
 
         err = unmarshall_response(pack.data, pack.size, &op_pack);
+        
+        *num_result = (op_pack.size / sizeof(vfm_bd_attr_t));
+
+        if (op_pack.size > 0) {
+                *result = op_pack.data;
+        }
 
 out:
         return err;
@@ -128,8 +136,10 @@ vfm_bd_query_general_attr(vfm_bd_guid_t bridge_guid,
 
         err = create_ctrl_hdr(VFMAPI_BRIDGE_DEVICE, VFM_QUERY, mesg_len,
                                                                 &ctrl_hdr);
-        if (err)
+        if (err != VFM_SUCCESS) {
+                printf("\n Error in process request : %d ", err);
                 return err;
+        }
 
         message = (uint8_t *)malloc(mesg_len);
         offset = message;
@@ -146,16 +156,28 @@ vfm_bd_query_general_attr(vfm_bd_guid_t bridge_guid,
                         &bitmask, &offset);
 
 
-        display(message, mesg_len);
+        /*display(message, mesg_len);*/
         err = create_connection(&sock_fd);
-        if (err)
+        if (err != VFM_SUCCESS) {
+                printf("\n Error in Create Connection : %d ", err);
                 return err;
+        }
 
         err = process_request(sock_fd, message, mesg_len, &pack);
-        if (err)
+        if (err != VFM_SUCCESS) {
+                printf("\n Error in process request : %d ", err);
                 return err;
+        }
 
         err = unmarshall_response(pack.data, pack.size, &op_pack);
+        if (err != VFM_SUCCESS) {
+                printf("\n Error in Unmarshalling the response : %d ", err);
+                return err;
+        }
 
+        if(op_pack.size > 0) {
+                result = op_pack.data;
+        }
+out:
         return err;
 }

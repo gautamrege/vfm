@@ -48,20 +48,20 @@ unmarshall_response(void *buff, uint32_t size, res_packet *pack)
                                 goto out;
                         break;
                 case VFM_QUERY_INVENTORY:
-                        err = get_api_tlv(buff, &ret_pos, pack->size);
+                case VFM_QUERY:
+                        err = get_api_tlv(buff, &ret_pos, &pack->size);
                         pack->data = malloc(sizeof(pack->size));
+                        memset(pack->data, 0, pack->size);
                         err = get_api_tlv(buff, &ret_pos, pack->data);
+                        if(err)
+                             goto out;
                         break;
                 case VFM_DESTROY:
                         err = get_api_tlv(buff, &ret_pos, pack->data);
                         if (err)
                              goto out;
                         break;
-                case VFM_QUERY:
-                        err = get_api_tlv(buff, &ret_pos, pack->data);
-                        break;
         }
-
         display(pack->data, pack->size);
 out:
         return err;

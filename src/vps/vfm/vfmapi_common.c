@@ -154,19 +154,24 @@ add_query_parameters(char* buff, int count, const char* db_field,
                 if (data_type == Q_UINT64)
                         sprintf(buff, " %s and %s = %ld", buff, db_field,
                                                     *(uint64_t *)attr_field);
-
+                if (data_type == Q_NAMED_PARAM)
+                        sprintf(buff, " %s and %s = %s", buff, db_field,
+                                        (uint8_t *)attr_field);
         }
         else {
                 if (data_type == Q_UINT8)
-                        sprintf(buff, " %s = \"%s\"", db_field,
+                        sprintf(buff, " where %s = \"%s\"", db_field,
                                                     (uint8_t *)attr_field);
                 if (data_type == Q_UINT32)
-                        sprintf(buff, " %s = %d", db_field,
+                        sprintf(buff, " where %s = %d", db_field,
                                                     *(uint32_t *)attr_field);
                 if (data_type == Q_UINT64)
-                        sprintf(buff, " %s = %ld", db_field,
+                        sprintf(buff, " where %s = %ld", db_field,
                                                     *(uint64_t *)attr_field);
-}
+                if (data_type == Q_NAMED_PARAM)
+                        sprintf(buff, " where %s = %s", db_field,
+                                        (uint8_t *)attr_field);
+        }
 }
 
 /* 
@@ -190,7 +195,9 @@ add_update_query_parameters(char* buff, int count, const char* db_field,
                 if (data_type == Q_UINT64)
                         sprintf(buff, " %s , %s = %ld", buff, db_field,
                                         *(uint64_t *)attr_field);
-
+                if (data_type == Q_NAMED_PARAM)
+                        sprintf(buff, " %s , %s = %s", buff, db_field,
+                                        (uint8_t *)attr_field);
         }
         else {
                 if (data_type == Q_UINT8)
@@ -202,6 +209,9 @@ add_update_query_parameters(char* buff, int count, const char* db_field,
                 if (data_type == Q_UINT64)
                         sprintf(buff, " %s = %ld", db_field,
                                         *(uint64_t *)attr_field);
-	}
+                if (data_type == Q_NAMED_PARAM)
+                        sprintf(buff, " %s = %s", db_field,
+                                        (uint8_t *)attr_field);
+        }
 }
 /*#endif */

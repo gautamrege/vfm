@@ -265,14 +265,12 @@ test_insert_gw(gwid)
         }
 }
 
-test_insert_bridge()
+test_insert_bridge(uint8_t *guid)
 {
         int ret;
         void *stmt;
         void **args;
 
-        /* gw1 MAC */
-        uint8_t guid[8] = {0x00, 0x30, 0x48, 0x68, 0xB3, 0xDE, 0x00, 0x00};
 
         /* bc2 MAC */
         uint8_t vfm_guid[8] = {0x00, 0x30, 0x48, 0x77, 0x67, 0xEE, 0x00, 0x00};
@@ -407,6 +405,24 @@ void test_read_io_module()
         }
 }
 
+void test_insert_multiple_bridges(uint32_t count)
+{
+        uint32_t i;
+        uint8_t bridge_guid[8] = 
+                {0x01, 0x30, 0x48, 0x68, 0xB3, 0xDE, 0x00, 0x00};
+
+        for(i = 0; i < count; i++)
+        {
+                // Currently adding some randomness by changing 3rd byte
+                bridge_guid[3]++;
+                test_insert_bridge(bridge_guid);
+        }
+}
+
+
+
+
+
 void main()
 {
         int rc;
@@ -423,10 +439,10 @@ void main()
         printf("Insert IOModule..\n");
         //test_insert_iomodule(1);
         //exit(1);
-
+*/
         printf("Inserting bridge..\n");
-        test_insert_bridge();
-
+        test_insert_multiple_bridges(1);
+/*
         printf("Insert Gateway Modules..\n");
         test_insert_gw_module(1);
         test_insert_gw_module(2);
@@ -438,6 +454,6 @@ void main()
         test_read_bridge();
         */
 
-        printf("Testing test_read_io_module\n");
-        test_read_io_module();
+        //printf("Testing test_read_io_module\n");
+        //test_read_io_module();
 }
