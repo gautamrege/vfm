@@ -17,7 +17,8 @@ extern uint8_t g_wwnn[8];
 extern uint8_t g_wwpn[8];
 extern int g_loglevel;
 extern uint32_t g_fcoe_t11;
-
+extern char g_db_path[100];
+extern char g_log_path[100];
 
 
 /* Read Config File */
@@ -111,7 +112,15 @@ process_config_line(char *type, char *value)
         }
         else if ( strcmp(type,FCOE_T11) == 0) {
                 g_fcoe_t11 = atoi(value);
+       }
+        else if ( strcmp(type, DB_PATH) == 0) {
+                memcpy(g_db_path, value, strlen(value));
         }
+        else if ( strcmp(type, LOGFILE) == 0) {
+                memcpy(g_log_path,
+                                value, strlen(value));
+        }
+
 }
 
 /*
@@ -172,7 +181,8 @@ print_and_validate_config()
         print_address("Bridge mac",g_bridge_mac, 6);
         print_address("WWNN",g_wwnn, 8);
         print_address("WWPN",g_wwpn, 8);
-
+        printf("Database  : %s\n", g_db_path);
+        printf("Log File  : %s\n", g_log_path);
         printf("Log Level  : %d \n", g_loglevel);
 
 }
