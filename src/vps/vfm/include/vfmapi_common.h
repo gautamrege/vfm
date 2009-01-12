@@ -66,6 +66,8 @@
 
 
 #define NAME_SIZE  sizeof(char[64])              
+/* The size of Type & Length of TLV */
+#define TLV_SIZE  2 * sizeof(uint32_t)
 /*
  * Control header structure for the VFM_API messages for the api
  * implementation.
@@ -83,10 +85,11 @@ typedef struct __vfmapi_ctrl_hdr {
 
 /*
  * Contains the API TLV's .
+ * 32 bit length : Can go upto 4GB
  */
 typedef struct __api_tlv {
-        uint8_t type;
-        uint8_t length;
+        uint32_t type;
+        uint32_t length;
         void *value;
 }api_tlv;
 
@@ -98,7 +101,6 @@ typedef struct __api_tlv {
 typedef struct __res_packet {
         void *data;
         int size;
-
 }res_packet;
 
 /*

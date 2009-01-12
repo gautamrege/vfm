@@ -85,6 +85,6 @@ int main()
         //test_vadapter_edit();
         //test_vadapter_edit_protocol();
         //test_vfabric_create();
-        test_vfabric_edit();
-        //test_vfabric_online();
+        //test_vfabric_edit();
+        test_vfabric_online();
 }

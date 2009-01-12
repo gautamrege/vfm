@@ -44,7 +44,7 @@ vfm_bd_select_inventory (vfm_bd_attr_t * attr,
         vfm_error_t err = VFM_SUCCESS;
 
         mesg_len = (sizeof(vfmapi_ctrl_hdr) +  sizeof(vfm_bd_attr_bitmask_t) +
-                        sizeof(vfm_bd_attr_t) + 2 * no_of_args);
+                        sizeof(vfm_bd_attr_t) + TLV_SIZE * no_of_args);
 
         memset(&ctrl_hdr , 0 , sizeof(vfmapi_ctrl_hdr));
 
@@ -122,7 +122,7 @@ vfm_bd_query_general_attr(vfm_bd_guid_t bridge_guid,
         vfm_error_t err = VFM_SUCCESS;
 
         mesg_len = (sizeof(vfmapi_ctrl_hdr) + sizeof(vfm_bd_guid_t) +
-                        sizeof(vfm_bd_attr_bitmask_t) + 2 * no_of_args);
+                        sizeof(vfm_bd_attr_bitmask_t) + TLV_SIZE * no_of_args);
 
         memset(&ctrl_hdr , 0 , sizeof(vfmapi_ctrl_hdr));
 
