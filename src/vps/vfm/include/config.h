@@ -21,22 +21,22 @@
 #define MGMT_MODE_LOCAL "mgmt_mode_local"
 #define MGMT_MODE_REMOTE "mgmt_mode_remote"
 
-
 #define INTERNAL_PROTOCOL "internal_protocol"
-
 #define INTERNAL_PROTOCOL_IB "IB"
 #define INTERNAL_PROTOCOL_EN "EN"
 #define INTERNAL_PROTOCOL_FC "FC"
 
 #define GW_INTERNAL_MAC "gw_internal_mac"
 #define GW_MAC "gw_mac"
-
 #define VFM_ETH_INTF "vfm_eth_intf"
 
 #define WWPN "wwpn"
 #define WWNN "wwnn"
 
 #define FCOE_T11 "fcoe_t11"
+
+#define DB_PATH "database"
+#define LOGFILE "logfile"
 
 
 /* Print Configutation and Validate.*/

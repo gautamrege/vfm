@@ -171,7 +171,7 @@ process_vfm_edit_vadpter(uint8_t *buff, uint32_t *ret_pos, res_packet *op_arg)
  */
 vfm_error_t
 process_vfm_query_inventory(uint8_t *buff, uint32_t *ret_pos,
-                             res_packet *temp)
+                             res_packet *op_arg)
 {
 
         vfm_vadapter_attr_bitmask_t bitmask;

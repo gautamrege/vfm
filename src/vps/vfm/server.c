@@ -17,9 +17,9 @@
 #include <map_util.h>
 #include <vfm_ib.h>
 #include <config.h>
+#include <signal.h>
 
 extern sqlite3 *g_db;
-extern FILE *g_logfile;
 extern req_entry_map* g_req_map[REQ_ENTRY_MAP_LEN];
 
 
@@ -53,6 +53,7 @@ pre_initialization(void * reserved)
 
         read_config();
         configure_database();
+        init_log();
         memset(g_req_map, 0, sizeof(g_req_map));
         vps_trace(VPS_INFO, "Configuration setup");
         return err;
@@ -156,7 +157,7 @@ vps_shutdown(void *reserved)
 void
 post_shutdown(void *reserved)
 {
-        fclose(g_logfile);
+        close_log();
         sqlite3_close(g_db);
 }
 
@@ -182,6 +183,20 @@ parse_options(int argc, char* argv[])
          */
 }
 
+/*
+ * Signal Handler
+ */
+void
+termination_handler (int signum)
+{
+        vps_trace(VPS_ERROR, "Ctrl-c");
+        post_shutdown(NULL);
+        signal(SIGINT, SIG_DFL);
+        exit(0);
+}
+
+
+
 int
 main(int argc, char* argv[])
 {
@@ -191,6 +206,9 @@ main(int argc, char* argv[])
         pthread_t process_packet_tid1;
         pthread_t process_packet_tid2;
         pthread_t cli_listener_tid;
+
+        /* Signal Handler for Ctrl C */
+        signal(SIGINT, termination_handler);
 
         /* Process Command line options */
         parse_options(argc, argv);

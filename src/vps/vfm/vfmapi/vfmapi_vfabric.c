@@ -28,7 +28,7 @@ vfm_vfabric_create(char *   name,
         vfm_error_t err = VFM_SUCCESS;
 
         mesg_len = (sizeof(vfmapi_ctrl_hdr) + sizeof(vfm_protocol_t) +
-                        2 * NAME_SIZE + 2 * no_of_args);
+                        2 * NAME_SIZE + TLV_SIZE * no_of_args);
 
         memset(&ctrl_hdr , 0, sizeof(vfmapi_ctrl_hdr));
 
@@ -102,7 +102,7 @@ vfm_vfabric_edit_general_attr(vfm_vfabric_id_t vfabric_id,
 
         mesg_len = (sizeof(vfmapi_ctrl_hdr) +sizeof(vfm_vfabric_id_t) +
                         sizeof(vfm_vfabric_attr_bitmask_t) +
-                        sizeof(vfm_vfabric_attr_t) + 2 * no_of_args);
+                        sizeof(vfm_vfabric_attr_t) + TLV_SIZE * no_of_args);
 
         memset(&ctrl_hdr , 0, sizeof(vfmapi_ctrl_hdr));
 
@@ -178,7 +178,7 @@ vfm_vfabric_online(vfm_vfabric_id_t vfabric_id)
         vfm_error_t err = VFM_SUCCESS;
 
         mesg_len = (sizeof(vfmapi_ctrl_hdr) + sizeof(vfm_vfabric_id_t) +
-                        2 * no_of_args);
+                        TLV_SIZE * no_of_args);
 
         memset(&ctrl_hdr , 0, sizeof(vfmapi_ctrl_hdr));
 
