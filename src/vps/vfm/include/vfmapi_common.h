@@ -65,6 +65,9 @@
 #define Q_UINT64                0x03
 #define Q_NAMED_PARAM           0x04 
 
+/* Max number of arguments for the query */
+#define MAX_ARGS                10
+
 #define NAME_SIZE  sizeof(char[64])              
 /* The size of Type & Length of TLV */
 #define TLV_SIZE  2 * sizeof(uint32_t)

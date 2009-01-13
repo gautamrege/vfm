@@ -147,6 +147,7 @@ void
 add_query_parameters(char* buff, int count, const char* db_field,
                                   void* attr_field, uint8_t data_type)
 {
+	buff = buff + strlen(buff);
         if (count > 0) {
                 if (data_type == Q_UINT8)
                         sprintf(buff, " %s and %s = \"%s\"", buff, db_field,

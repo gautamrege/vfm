@@ -38,9 +38,9 @@ def reg2():
         print """\nRegression Test 2:
 1. Display bridge inventory.
 """
-        bridge_info = vfm.py_vfm_bd_select_inventory()
+        input = {}
+        bridge_info = vfm.py_vfm_bd_select_inventory(input)
         print bridge_info
 
 reg1()
 reg2()
-sys.exit(0)

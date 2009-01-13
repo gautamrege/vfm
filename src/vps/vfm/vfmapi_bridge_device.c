@@ -25,7 +25,7 @@ process_vfm_bd_select_inventory(uint8_t *buff, uint32_t *ret_pos,
         vfm_bd_attr_bitmask_t bitmask;
         vpsdb_resource vps_res;
         uint32_t count = 0, i = 0;
-        char fmt[10];
+        char fmt[MAX_ARGS];
         void **args;
         void *stmt;
 
@@ -36,8 +36,10 @@ process_vfm_bd_select_inventory(uint8_t *buff, uint32_t *ret_pos,
         get_api_tlv(buff, ret_pos, &bitmask);
         memset(fmt, 0, sizeof(fmt));
 
+        memset(&vps_res, 0, sizeof(vpsdb_resource));
         /* Maximum unicode arguments are 2 */
-        args = (void **) malloc(2 * sizeof(void *));
+        args = (void **) malloc(MAX_ARGS * sizeof(void *));
+
         if (bitmask.guid) {
                 add_query_parameters(query, count, "guid", "?1", Q_NAMED_PARAM);
                 sprintf(fmt, "g");
@@ -63,10 +65,7 @@ process_vfm_bd_select_inventory(uint8_t *buff, uint32_t *ret_pos,
         }
         sprintf(query, "%s;", query);
 
-        if (fmt[0])
-                stmt = vfmdb_prepare_query(query, fmt, args);
-        else
-                stmt = vfmdb_prepare_query(query, fmt, NULL);
+        stmt = vfmdb_prepare_query(query, fmt, args);
 
         if (!stmt) {
                 vps_trace(VPS_ERROR," Cannot prepare sqlite3 statement");
@@ -81,10 +80,9 @@ process_vfm_bd_select_inventory(uint8_t *buff, uint32_t *ret_pos,
                 goto out;
         }
 
-        //vpsdb_get_resource(VPS_DB_BRIDGE, &vps_res, query);
-
         op_arg->size = sizeof(vfm_bd_attr_t) * vps_res.count;
         op_arg->data = vps_res.data;
+        free(args);
 out:
         vps_trace(VPS_ENTRYEXIT, "Leaving process_vfm_create_vadpter");
         return err;
@@ -99,7 +97,7 @@ process_vfm_bd_query_general_attr(uint8_t* buff, uint32_t* ret_pos,
         vfm_bd_attr_bitmask_t bitmask;
         vpsdb_resource vps_res;
         uint32_t count = 0;
-        char fmt[10];
+        char fmt[MAX_ARGS];
         void **args;
         void *stmt;
         vps_error err = VPS_SUCCESS;
@@ -134,10 +132,9 @@ process_vfm_bd_query_general_attr(uint8_t* buff, uint32_t* ret_pos,
                 goto out;
         }
 
-        //vpsdb_get_resource(VPS_DB_BRIDGE, &vps_res, query);
-
         op_arg->size = sizeof(vfm_bd_attr_t) * vps_res.count;
         op_arg->data = vps_res.data;
+        free(args);
 out:
         vps_trace(VPS_ENTRYEXIT, "Leaving process__vfm_bd_query_general_attr");
         return err;
