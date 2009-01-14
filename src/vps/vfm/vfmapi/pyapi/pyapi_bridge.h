@@ -18,16 +18,18 @@
  * @param[in] self The python object
  *
  * @param[in] args Dictionary for displaying the bridge inventory:
- *            {'bd_guid' : <bridge_guid>, 
- *             'desc' : * <desc>, 
- *             'state' : <state>,
- *             'running_mode' : <running_mode>,
- *             'firmware_version' : <firmware_version>,
- *             'vfm_guid' : <vfm_guid>
- *             }
+ *            { 
+ *              'bd_guid' : <bridge_guid>, 
+ *              'desc' : * <desc>, 
+ *              'state' : <state>,
+ *              'running_mode' : <running_mode>,
+ *              'firmware_version' : <firmware_version>,
+ *              'vfm_guid' : <vfm_guid>
+ *            }
  *
  * @return PyObject which contains the following dictionary on success:
- *            {'bd_guid' : 
+ *            {'bd_guid' : <Dictionary containing the attributes of 
+ *                              the bridge>
  *                          {
  *                              'desc' : * <desc>, 
  *                              'state' : <state>,
@@ -35,8 +37,9 @@
  *                              'firmware_version' : <firmware_version>,
  *                              'vfm_guid' : <vfm_guid>,
  *                              'num_gw_modules' : <Number of gateway modules>,
- *                              'gateway_module_indexs' : <Dictionary 
- *                                      containing the gateway module index>
+ *                              'gateway_module_index' : <List
+ *                                      containing the gateway module index>,
+ *                              'state' : <state>
  *                              'last_keep_alive' : <last keepalive from 
  *                                                              BridgeX device>
  *                          }
@@ -58,20 +61,22 @@ py_vfm_bd_select_inventory(PyObject* self, PyObject *args);
  *            {'bd_guid' : <bridge_guid>}
  *
  * @return PyObject which contains the following dictionary on success:
- *            {'bd_guid' : <bridge_guid>, 
- *             'desc' : * <desc>, 
- *             'state' : <state>,
- *             'running_mode' : <running_mode>,
- *             'firmware_version' : <firmware_version>,
- *             'vfm_guid' : <vfm_guid>,
- *             'num_gw_modules' : <Number of gateway modules>,
- *             'gateway_module_index' : 
- *                             {
- *                              'index_no': <Dictionary containing the 
- *                                           gateway module index>
- *                             }
- *             'last_keep_alive' : <last keepalive from BridgeX device>
- *             }
+ *            {'bd_guid' : <Dictionary containing the attributes of
+ *                              the bridge>
+ *                          {
+ *                              'desc' : * <desc>, 
+ *                              'state' : <state>,
+ *                              'running_mode' : <running_mode>,
+ *                              'firmware_version' : <firmware_version>,
+ *                              'vfm_guid' : <vfm_guid>,
+ *                              'num_gw_modules' : <Number of gateway modules>,
+ *                              'gateway_module_index' : <List
+ *                                      containing the gateway module index>,
+ *                              'state' : <state>
+ *                              'last_keep_alive' : <last keepalive from 
+ *                                                              BridgeX device>
+ *                          }
+ *           }
  * On failure, it will return NULL and throw the
  * relevant Python exception.
  *
@@ -127,7 +132,7 @@ py_vfm_gw_module_attr_t(PyObject* self, PyObject *args);
  *
  * @return PyObject which contains the following vfm_gw_module_attr_t dictionary * on success :
  *            {
-               'port_id' : <port id>, 
+ *             'port_id' : <port id>, 
  *             'physical_index' : <physical_index>, 
  *             'type' : <type>,
  *             'protocol' : <protocol>,

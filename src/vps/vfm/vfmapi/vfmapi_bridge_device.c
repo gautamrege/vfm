@@ -3,9 +3,40 @@
  */
 
 #include <vfmapi_common.h>
-#include <vfm_bridge_device.h>
 
+vfm_error_t
+unpack_bridge_data(res_packet *op_pack,uint32_t *num_result,
+                                vfm_bd_attr_t *result[])
+{
+        int i = op_pack->size;
+        int j = 0, size = 0;
+        vfm_error_t err = VFM_SUCCESS;
+        uint8_t *offset;
+        offset = (uint8_t *)op_pack->data;
 
+        memcpy(num_result, offset, sizeof(uint32_t));
+        offset += sizeof(uint32_t);
+
+        *result = (vfm_bd_attr_t *) malloc(sizeof(vfm_bd_attr_t) 
+                                                * (*num_result));
+
+        for(i = 0; i < *num_result; i++) {
+                
+                memcpy(*result + i, offset, sizeof(vfm_bd_attr_t));
+
+                offset += sizeof(vfm_bd_attr_t);
+                size = (sizeof(vfm_gw_module_index_t) *
+                                (*result + i)->_num_gw_module);
+
+                (*result + i)->_gw_module_index = 
+                        (vfm_gw_module_index_t *)malloc(size);
+
+                memcpy((*result + i)->_gw_module_index, offset, size);
+                offset += size; 
+        }
+out:
+        return err;
+}
 /*
  * Get the list of existing bridge device in the local inventory.
  * Parameters:
@@ -37,12 +68,15 @@ vfm_bd_select_inventory (vfm_bd_attr_t * attr,
         uint32_t mesg_len, res_len;
         uint32_t no_of_args = 2;
         int i = 0;
+        int num = 0;
         uint8_t *message, *offset, *res_mesg;
         vfmapi_ctrl_hdr ctrl_hdr;
         int sock_fd;
         res_packet pack, op_pack;
 
         vfm_error_t err = VFM_SUCCESS;
+
+        *result = NULL;
 
         mesg_len = (sizeof(vfmapi_ctrl_hdr) +  sizeof(vfm_bd_attr_bitmask_t) +
                         sizeof(vfm_bd_attr_t) + TLV_SIZE * no_of_args);
@@ -84,11 +118,9 @@ vfm_bd_select_inventory (vfm_bd_attr_t * attr,
 
         err = unmarshall_response(pack.data, pack.size, &op_pack);
         
-        *num_result = (op_pack.size / sizeof(vfm_bd_attr_t));
-
-        if (op_pack.size > 0) {
-                *result = op_pack.data;
-        }
+        err = unpack_bridge_data(&op_pack, &num, result);
+        *num_result = num;
+        free(op_pack.data);
 
 out:
         return err;

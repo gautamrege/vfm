@@ -42,5 +42,5 @@ def reg2():
         bridge_info = vfm.py_vfm_bd_select_inventory(input)
         print bridge_info
 
-reg1()
+#reg1()
 reg2()

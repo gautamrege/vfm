@@ -212,44 +212,6 @@ process_external_ports(void *data,
 }
 
 
-/*
- * This routine is called ONCE for each record from the result set - Gateways
- */
-int
-process_gateway_module(void *data, int num_cols, char **values, char **cols)
-{
-        vpsdb_resource *rsc = (vpsdb_resource*)data;
-        uint32_t *gw_module;
-        uint8_t i;
-        vps_trace(VPS_ENTRYEXIT, "Entering process_gateway. Count: %d",
-                rsc->count);
-
-        if (NULL == (rsc->data = realloc(rsc->data,
-                     sizeof(uint32_t) * (rsc->count + 1)))) {
-                /*
-                 * The block could not be realloc'ed. This can cause serious
-                 * problems. Hence we return with a db_error
-                 */
-                vps_trace(VPS_ERROR, "Could not realloc memory: %d",
-                                rsc->count + 1);
-                return 1; /* This will propogate with SQL_ABORT */
-        }
-
-        /* Go the the bridge array offset */
-        gw_module = rsc->data + (sizeof(uint32_t) * rsc->count);
-
-        /* Fill the bridge structure */
-        for (i = 0; i < num_cols; i++) {
-                if (strcmp(cols[i], "gw_module_id") == 0)
-                        *gw_module = atoi(values[i]);
-        }
-        /* After the data is correctly populated, increment the bridge count */
-        rsc->count++;
-        vps_trace(VPS_INFO, "Gateway successfully read");
-        vps_trace(VPS_ENTRYEXIT, "Leaving processs_gateway.");
-        return 0;
-}
-
 
 /*
  * This routine is called ONCE for each record from the result set - Gateways
@@ -372,98 +334,6 @@ populate_gateway_information(vpsdb_resource *rsc, const char* where_clause)
                  * the func.
                  */
                 populate_gw_external_ports((vfm_gateway_attr_t*)rsc->data + i);
-        }
-out:
-        return err;
-}
-
-/* Here name is the vfm_guid of the bridge device */
-vps_error
-populate_gateway_module_information(vpsdb_resource *rsc, const char* name)
-{
-        vfm_gw_module_attr_t *gateway;
-        vps_error err = VPS_SUCCESS;
-        char query[1024] = "select * from vfm_gw_module_attr ";
-        uint8_t i;
-
-        /* If name exists, we need information only for that bridge */
-        if (name != '\0')
-                sprintf(query, "%s where vfm_bridge_guid = \"%s\";",
-                                                query, name);
-        else
-                strcat(query, ";");
-
-        /* Update the resource information with the type */
-        rsc->type = VPS_DB_GATEWAY;
-
-        vps_trace(VPS_INFO, "populate_gateway_module_information query: %s",
-                                                                        query);
-        /* Get the bridges */
-        if (VPS_SUCCESS != (err = vpsdb_read(query,
-                            process_gateway_module,
-                            /* gateway call back function */
-                            rsc))) {
-                vps_trace(VPS_ERROR, "Could not get gateway information");
-                goto out;
-        }
-out:
-        return err;
-}
-
-
-vps_error
-populate_bridge_info(vpsdb_resource *rsc, const char *where_clause)
-{
-        vfm_bd_attr_t *bridge;
-        vps_error err = VPS_SUCCESS;
-        char query[1024] = "select * from vfm_bridge_device ";
-        char tmp_str[1024];
-        uint8_t i;
-        vpsdb_resource gw_rsc;
-
-        /* If name exists, we need information only for that bridge */
-        if (*where_clause)
-                sprintf(query, "%s where %s;", query, where_clause);
-        else
-                strcat(query, ";");
-
-        /* Update the resource information with the type */
-        rsc->type = VPS_DB_BRIDGE;
-
-        /* Get the bridges */
-        if (VPS_SUCCESS != (err = vpsdb_read(query,
-                            process_bridge, /* bridge call back function */
-                            rsc))) {
-                vps_trace(VPS_ERROR, "Could not get bridge information");
-                goto out;
-        }
-
-        /* For each bridge, get the gateway */
-        for (i = 0; i < rsc->count; i++) {
-                bridge = (vfm_bd_attr_t*)rsc->data + i;
-
-                /* reset the gateway resource */
-                memset(&gw_rsc, 0, sizeof(gw_rsc));
-
-                /* 'name' parameter should be a NULL terminated string */
-                memset(tmp_str, 0, sizeof(tmp_str));
-
-                memcpy(tmp_str, &bridge->_bd_guid,
-                                        sizeof(bridge->_bd_guid));
-
-                sprintf(tmp_str,"%d",bridge->_bd_guid);
-                /*
-                 * For each gateway, the external port status is updated
-                 * in the func.
-                 */
-                populate_gateway_module_information(&gw_rsc, tmp_str);
-                /*
-                 * Move data from the resource into the bridge. Pointer
-                 * assignment. Now, the ownership of the gateway allocation
-                 * is with the bridge structure.
-                 */
-                bridge->_num_gw_module = gw_rsc.count;
-                bridge->_gw_module_index = gw_rsc.data;
         }
 out:
         return err;
@@ -650,19 +520,8 @@ vpsdb_get_resource(uint32_t type, vpsdb_resource *info, const char *name)
 
         vps_trace(VPS_ENTRYEXIT, "Entering vpsdb_get_resource");
 
-        /* If resource is a bridge, we need to populate the gateways also */
-        if (type == VPS_DB_BRIDGE) {
-                if (*name)
-                        vps_trace(VPS_INFO, "Get bridge info for: %s", name);
-
-                /* Get all the brige and gateway info */
-                if (VPS_SUCCESS != (err = populate_bridge_info(info, name)))
-                        goto out;
-
-                vps_trace(VPS_INFO, "Gathered bridge info");
-        }
         /* If resource is a host, we need to populate the gateways also */
-        else if (type == VPS_DB_IO_MODULE) {
+        if (type == VPS_DB_IO_MODULE) {
                 if (name)
                         vps_trace(VPS_INFO, "Get host info for: %s", name);
 

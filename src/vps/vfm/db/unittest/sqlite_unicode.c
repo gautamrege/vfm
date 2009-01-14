@@ -208,31 +208,6 @@ test_insert_iomodule(int id)
         }
 }
 
-test_insert_gw_module(int id)
-{
-        int ret;
-        void *stmt;
-        void **args;
-
-        uint8_t bridge_mac[8] = {0x00, 0x30, 0x48, 0x68, 0xB3, 0xDE, 0x00, 0x00};
-        char query[1024];
-
-        args = (void**)malloc(sizeof(void*));
-        args[0] = bridge_mac;
-
-        sprintf(query, "insert into vfm_gw_module_attr (gw_module_id,"
-                       "vfm_bridge_guid) values(%d, ?1);", id);
-        stmt = vfmdb_prepare_query(query, "g", args);
-        if (!stmt) {
-                printf("ERROR: Cannot prepare sqlite3 statement\n");
-                return;
-        }
-
-        ret = vfmdb_execute_query(stmt, NULL, NULL);
-        if (!ret) {
-                printf("ERROR: Sqlite3 statement execution failed.\n");
-        }
-}
 
 test_insert_gw(gwid)
 {
@@ -271,9 +246,8 @@ test_insert_bridge(uint8_t *guid)
         void *stmt;
         void **args;
 
-
         /* bc2 MAC */
-        uint8_t vfm_guid[8] = {0x00, 0x30, 0x48, 0x77, 0x67, 0xEE, 0x00, 0x00};
+        uint8_t vfm_guid[8] = {0x01, 0x30, 0x48, 0x77, 0x67, 0xEE, 0x00, 0x00};
 
         char *query = "insert into vfm_bridge_device values(?1, ?2, ?3, ?4, ?5);";
 
@@ -294,6 +268,34 @@ test_insert_bridge(uint8_t *guid)
         if (!ret) {
                 printf("ERROR: Sqlite3 statement execution failed.\n");
         }
+        free(args);
+}
+
+void 
+test_insert_gw_module(uint8_t *bd_guid, uint32_t gw_id)
+{
+        int ret;
+        void *stmt;
+        void **args;
+        char gw_query[512];
+
+        sprintf(gw_query,"insert into vfm_gw_module_attr values(%d,?1);",
+                                                                        gw_id);
+        args = (void**)malloc(sizeof(void*));
+        args[0] = bd_guid;
+
+        stmt = vfmdb_prepare_query(gw_query, "g", args);
+
+        if (!stmt) {
+                printf("ERROR: Cannot prepare sqlite3 statement\n");
+                return;
+        } 
+        ret = vfmdb_execute_query(stmt, NULL, NULL);
+        if (!ret) {
+                printf("ERROR: Sqlite3 statement execution failed.\n");
+        }
+
+        free(args);
 }
 
 test_update_db()
@@ -372,6 +374,16 @@ void test_read_bridge()
         }
 }
 
+int print_gw_module(void* arg, int nCols, uint8_t** values, char **cols)
+{
+        int i;
+        for (i = 0; i < nCols; i++) {
+                if (strcmp(cols[i], "gw_module_id") == 0) {
+                        printf("GW module id : %d",atoi(values[i]));
+                }
+        }
+        return 0;
+}
 int print_io_module(void* arg, int nCols, uint8_t** values, char **cols)
 {
         int i;
@@ -386,6 +398,36 @@ int print_io_module(void* arg, int nCols, uint8_t** values, char **cols)
         return 0;
 }
 
+void test_read_gw_module()
+{
+        uint8_t bridge_guid[8] = 
+                {0x01, 0x30, 0x48, 0x68, 0xB3, 0xDE, 0x00, 0x00};
+        int ret, i = 0;
+        void **args;
+        void *stmt;
+        /* Dummy parameters */
+        char *query = "select * from vfm_gw_module_attr where vfm_bridge_guid = ?1;";
+        
+        for (i = 2 ; i < 5 ;i++) {
+
+        bridge_guid[2]++;
+
+        args = (void**)malloc(sizeof(void*));
+
+        args[0] = bridge_guid;
+
+        stmt = vfmdb_prepare_query(query, "g", args);
+        if (!stmt) {
+                printf("ERROR: Cannot prepare sqlite3 statement\n");
+                return;
+        }
+
+        ret = vfmdb_execute_query(stmt, print_gw_module, NULL);
+        if (!ret) {
+                printf("ERROR: Sqlite3 statement execution failed.\n");
+        }
+        }
+}
 void test_read_io_module()
 {
         int ret;
@@ -405,23 +447,23 @@ void test_read_io_module()
         }
 }
 
-void test_insert_multiple_bridges(uint32_t count)
+void create_vanilla_testdb(uint32_t count)
 {
-        uint32_t i;
+        uint32_t i, j =0;
         uint8_t bridge_guid[8] = 
-                {0x01, 0x30, 0x48, 0x68, 0xB3, 0xDE, 0x00, 0x00};
+                {0x01, 0x30, 0x48, 0x68, 0xB3, 0xDE, 0x03, 0x00};
+        int gw_module_id = 43;
 
         for(i = 0; i < count; i++)
         {
                 // Currently adding some randomness by changing 3rd byte
                 bridge_guid[3]++;
                 test_insert_bridge(bridge_guid);
+
+                for (j = 0; j < 2; j++)
+                        test_insert_gw_module(bridge_guid, gw_module_id+i+j);
         }
 }
-
-
-
-
 
 void main()
 {
@@ -439,10 +481,8 @@ void main()
         printf("Insert IOModule..\n");
         //test_insert_iomodule(1);
         //exit(1);
-*/
-        printf("Inserting bridge..\n");
-        test_insert_multiple_bridges(5);
-/*
+
+
         printf("Insert Gateway Modules..\n");
         test_insert_gw_module(1);
         test_insert_gw_module(2);
@@ -456,4 +496,8 @@ void main()
 
         //printf("Testing test_read_io_module\n");
         //test_read_io_module();
+
+        //test_read_gw_module();
+        printf("Create vanilla test database..\n");
+        create_vanilla_testdb(5);
 }

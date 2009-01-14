@@ -62,7 +62,6 @@ parse_unicode_to_string(uint64_t val, int length)
                         buff[j] = ':';
                 j++;
         }
-//        printf("\nLength %d", strlen(buff));
         return Py_BuildValue("s", buff);
 }
 
@@ -141,9 +140,9 @@ create_bd_dictionary(PyObject *result, uint32_t num_result,
          * dictionary object and fill up the values.
          */
         int error = 0;
-        int i = 0;
-        PyObject *innerDict, *temp;
-
+        int i = 0, j =0;
+        PyObject *innerDict, *temp, *list;
+        
         for (i = 0; i < num_result; i++) {
                 if ((innerDict = PyDict_New())== NULL) {
                         PyErr_SetString(PyExc_StandardError,
@@ -153,35 +152,62 @@ create_bd_dictionary(PyObject *result, uint32_t num_result,
                 }
 
                 temp = Py_BuildValue("i", (results+i)->_state);
-
                 if(PyDict_SetItemString(innerDict, "state", temp) == -1) {
                         error = -1;
                         goto out;
                 }
                
                 temp = Py_BuildValue("s", (results+i)->desc);
-
                 if(-1 == PyDict_SetItemString(innerDict, "desc", temp)) {
                         error = -1;
                         goto out;
                 }
 
 
-                temp = Py_BuildValue("i", (results+i)->running_mode);
+                temp = Py_BuildValue("i", (results+i)->_last_keep_alive);
+                if(-1 == PyDict_SetItemString(innerDict, "last_keep_alive",temp)) {
+                        error = -1;
+                        goto out;
+                }
 
+                temp = Py_BuildValue("i", (results+i)->running_mode);
                 if(-1 == PyDict_SetItemString(innerDict, "running_mode",temp)) {
                         error = -1;
                         goto out;
                 }
                 
                 temp = Py_BuildValue("s", (results+i)->_firmware_version);
-
-
-                if(-1 == PyDict_SetItemString(innerDict, "firmware_version",temp)) {
+                if(-1 == PyDict_SetItemString(innerDict, "firmware_version",
+                                                                  temp)) {
                         error = -1;
                         goto out;
                 }
-              
+                
+                temp = Py_BuildValue("i", (results+i)->_num_gw_module);
+                if(PyDict_SetItemString(innerDict, "num_gw_modules", temp)
+                                                                   == -1) {
+                        error = -1;
+                        goto out;
+                }
+                if(NULL == (list = PyList_New((results+i)->_num_gw_module))) {
+                        error = -1;
+                        goto out;
+                }
+
+                for (j = 0; j < (results+i)->_num_gw_module; j++) {
+                        temp = Py_BuildValue("i", 
+                                      atoi((results+i)->_gw_module_index[j]));
+                        if (-1 == PyList_SetItem(list, j, temp)) {
+                                error = -1;
+                                goto out;
+                        }
+                }
+                if(PyDict_SetItemString(innerDict, "gw_module_index", list)
+                                                                   == -1) {
+                        error = -1;
+                        goto out;
+                }
+
                 temp = parse_unicode_to_string((results+i)->_vfm_guid,8);
                 if(-1 == PyDict_SetItemString(innerDict, "vfm_guid",temp)) {
                         error = -1;
@@ -218,7 +244,7 @@ out:
  *             'firmware_version' : <firmware_version>,
  *             'vfm_guid' : <vfm_guid>,
  *             'num_gw_modules' : <Number of gateway modules>,
- *             'gateway_module_indexs' :<Dictionary containing the 
+ *             'gateway_module_index' :<Dictionary containing the 
  *                                           gateway module index>
  *             'last_keep_alive' : <last keepalive from BridgeX device>
  *             }

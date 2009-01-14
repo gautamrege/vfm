@@ -12,7 +12,7 @@
 /**
  * @brief BridgeX Manager GUID
  */
-typedef uint32_t vfm_guid_t;
+typedef uint64_t vfm_guid_t;
 
 /**
  *@brief A bitmask to identify the writable properties of a resource
@@ -109,5 +109,5 @@ typedef uint64_t vfm_bd_guid_t;
  * @brief A gateway module physical index. This is a identifier for the porti
  * derived from the physical configuration of the bridge device. 
  */
-typedef char *vfm_gw_module_index_t;
+typedef uint8_t vfm_gw_module_index_t[8];
 #endif /* INCLUDED_vfm_common */

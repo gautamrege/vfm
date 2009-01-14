@@ -5,6 +5,10 @@
 #include <vfmapi_common.h>
 #include <common.h>
 
+
+
+
+
 /*
  * This function will create the message for the request .
  * The op parameter will be filled up (if any)
@@ -58,7 +62,7 @@ vfm_marshall_response(res_packet *buff, vfmapi_ctrl_hdr *ctrl_hdr,
                         break;
         }
 
-	free(buff->data);
+        free(buff->data);
         vps_trace(VPS_ENTRYEXIT, "Leaving vfm_marshall_response");
         return err;
 }

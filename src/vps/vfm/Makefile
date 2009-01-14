@@ -33,7 +33,7 @@ EOIB=ext/eoib-swgw/bx.c \
 DB_SRC=db/unittest/sqlite_unicode.c
  
 TEST_SRC=db/unittest/db_test.c
-DEFS=-DMELLANOX -DOPEN_FCOE
+DEFS=-DMELLANOX -DOPEN_FCOE -DVFM_NO_OBJ_CACHE
 IB_DEFS= -DVFM_EOIB
 CFLAGS=-g
 LIBS=-lsqlite3 -lpthread

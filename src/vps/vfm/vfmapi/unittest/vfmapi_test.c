@@ -79,6 +79,45 @@ test_vfabric_online()
         vfm_vfabric_online(1);
 }
 
+test_bridge_inventory()
+{
+        vfm_bd_attr_t attr;
+        vfm_bd_attr_bitmask_t bitmask;
+        uint32_t num = 0;
+        vfm_bd_attr_t *result;
+        memset(&attr, 0 , sizeof(vfm_bd_attr_t));
+        memset(&bitmask, 0, sizeof(vfm_bd_attr_bitmask_t));
+        vfm_bd_select_inventory(&attr, bitmask, &num, &result);
+        int i = 0,j=0;
+        printf("\n num : %d", num);
+        for(i = 0; i < num; i++) {
+                printf("\n Desc : %s", (result+ i)->desc);
+                printf("\n firmware version : %s", 
+                (result + i)->_firmware_version);
+                printf("\n number of gw modules : %d ", 
+                (result + i)->_num_gw_module);
+                for(j = 0;j < (result + i)->_num_gw_module;j++) {
+                        printf("GW module index : %s", 
+                                  (result + i)->_gw_module_index[j]);
+                }
+        }
+}
+
+test_bridge_device()
+{
+        uint8_t guid[8] = {0x00, 0x30, 0x48, 0x68, 0xB3, 0xDE, 0x00, 0x00};
+        vfm_bd_attr_t attr;
+        vfm_bd_attr_bitmask_t bitmask;
+        uint32_t num = 0;
+        vfm_bd_attr_t *result;
+        memset(&bitmask, 0, sizeof(vfm_bd_attr_bitmask_t));
+        bitmask.guid = 1;
+        memcpy(&attr._bd_guid, guid, sizeof(guid));
+        vfm_bd_query_general_attr(attr._bd_guid, bitmask, result);
+}
+
+
+
 int main()
 {
         //test_vadapter_create();
@@ -86,5 +125,6 @@ int main()
         //test_vadapter_edit_protocol();
         //test_vfabric_create();
         //test_vfabric_edit();
-        test_vfabric_online();
+        //test_vfabric_online();
+        test_bridge_inventory();
 }
