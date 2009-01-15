@@ -165,7 +165,7 @@ unmarshall_request(void *buff, uint32_t size, res_packet * pack)
                                         process_vfm_bd_query_general_attr(buff,
                                                         &ret_pos, &op_data);
                                         vfm_marshall_response(&op_data,
-                                                        &ctrl_hdr, pack, 1);
+                                                        &ctrl_hdr, pack, 2);
                                         break;
                         }
                         break;

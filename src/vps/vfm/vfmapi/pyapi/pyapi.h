@@ -32,10 +32,16 @@ add_key_values(PyObject* result, const char* key, PyObject * value);
  * @param[in] self The python object
  *
  * @param[in] args Dictionary for vadapter creation:
- *            {'name' : <name>, 'desc' : * <desc>, 'protocol' : <protocol> }
+ *            {'name' : <string[64]:name>,
+ *             'desc' : <string[64]:desc>,
+ *             'protocol' : <1|2|3: 1=EN, 2=IB, 3=FC>
+ *            }
+ * Example: {'name':'vadapter1', 'desc':'vadapter1 desc', 'protocol':1}
+ *
+ * @note Mandatory params: 'name', 'protocol'.
  *
  * @return PyObject which contains the following dictionary on success:
- * { 'id' : <vadapter id> }. On failure, it will return NULL and throw the
+ * { 'id' : <int:vadapter id> }. On failure, it will return NULL and throw the
  * relevant Python exception.
  *
  */
@@ -49,26 +55,41 @@ py_vfm_vadapter_create(PyObject* self, PyObject *args);
  *
  * @param[in] args Dictionary to edit the vadapter properties :
  *            {
-                'id' : <vadapter_id>, 
- *              'name' : <name>, 'desc' : * <desc>,
- *              'protocol' : <protocol>, 'running_mode' : <running_mode>
- *              'io_module_id' : <io_module_id>, 'init_type' : <init_type>
- *              'assignment_type' : <assignment_type>,
- *              'vfabric_id' : <vfabric_id>
- *              'v_en_attr' : <Dictionary to edit the en attributes>
+ *              'id' : <int:vadapter_id>, 
+ *              'name' : <string[64]:name>,
+ *              'desc' : <string[64]:desc>,
+ *              'protocol' : <1|2|3: 1=EN, 2=IB, 3=FC>
+ *              'running_mode' : <0|1: 0=OFFLINE, 1=ONLINE>
+ *              'io_module_id' : <int:io_module_id>,
+ *              'init_type' : <1|2: 1=HOST_INITIATED, 2=NETWORK_INITITATED>
+ *              'assignment_type' : <1|2|3: 1=AUTO, 2=ONCE, 3=MANUAL>,
+ *              'vfabric_id' : <int:vfabric_id>
+ *              'en_attr' : <Dictionary to edit the en attributes>
  *                           {
- *                              'mac' : <mac>, 'vlan' : <vlan>,
- *                              'mtu' : <mtu>,
- *                              'promiscuous_mode' : <promiscuous_mode>
- *                              'silent_listener' : <silent_listener>
+ *                              'mac' : <string:'xx:xx:xx:xx:xx:xx'>,
+ *                              'vlan' : <int_array:vlan ids>,
+ *                              'mtu' : <int:mtu>,
+ *                              'promiscuous_mode' : <0|1: 0=no, 1=yes>
+ *                              'silent_listener' : <0|1: 0=no, 1=yes>
  *                           }
- *              'v_fc_attr' : <Dictionary to edit the fc attributes>
+ *              'fc_attr' : <Dictionary to edit the fc attributes>
  *                           {
- *                              'wwnn' : <wwnn>, 'wwpn' : <wwpn>
- *                              'fcid' : <fcid>, 'mtu' : <mtu>
- *                              'spma' : <spma>, 'fpma' : <fpma>
+ *                              'wwnn' : <string:'xx:xx:xx:xx:xx:xx:xx:xx'>,
+ *                              'wwpn' : <string:'xx:xx:xx:xx:xx:xx:xx:xx'>,
+ *                              'fcid' : <string:'xx:xx:xx'>,
+ *                              'mtu' : <int:mtu>
+ *                              'spma' : <0|1: 0=DISABLED, 1=ENABLED>,
+ *                              'fpma' : <0|1: 0=DISABLED, 1=ENABLED>,
  *                           }
  *           }
+ *
+ * Example: { 'id' : 1, 'name' : 'vadapter1', 'protocol' : 1,
+ *            'en_attr' : { 'mac' : 'AA:BB:CC:DD:EE:FF', 
+ *                          'vlan' : [ 1, 2, 3 ],
+ *                          'mtu' : 1500 }
+ *          }
+ *
+ * @note Mandatory fields: 'id'
  *
  * @return PyObject which contains the following dictionary on success:
  * { 'id' : <vadapter id> }. 
@@ -84,10 +105,13 @@ py_vfm_vadapter_edit_general_attr(PyObject* self, PyObject *args);
  * @param[in] self The python object
  *
  * @param[in] args Dictionary for vfabric creation:
- *            {'name' : <name>, 'desc' : * <desc>, 'protocol' : <protocol> }
+ *            {'name' : <string[64]:name>,
+ *             'desc' : <string[64]:desc>,
+ *             'protocol' : <1|2|3: 1=EN, 2=IB, 3=FC>
+ *            }
  *
  * @return PyObject which contains the following dictionary on success:
- * { 'id' : <vfabric id> }. On failure, it will return NULL and throw the
+ * { 'id' : <int:vfabric id> }. On failure, it will return NULL and throw the
  * relevant Python exception.
  *
  */
@@ -101,17 +125,19 @@ py_vfm_vfabric_create(PyObject* self, PyObject *args);
  *
  * @param[in] args Dictionary to edit the vfabric properties:
  *            {
-                'id' : <vfabric_id>, 
- *              'name' : <name>, 'desc' : * <desc>,
- *              'protocol' : <protocol>, 'running_mode' : <running_mode>
- *              'primary_gateway' : <primary_gateway>,
- *              'backup_gateway' : <backup_gateway>,
- *              'ha_state' : <ha_state>
- *              'auto_failover' : <auto_failover>
- *              'auto_failback' : <auto_failback>
- *              'v_en_attr' : <Dictionary to edit the en attributes>
+ *              'id' : <int:vfabric_id>, 
+ *              'name' : <string[64]:name>,
+ *              'desc' : <string[64]:desc>,
+ *              'protocol' : <1|2|3: 1=EN, 2=IB, 3=FC>
+ *              'running_mode' : <0|1: 0=OFFLINE, 1=ONLINE>
+ *              'primary_gateway' : <int:gateway id>,
+ *              'backup_gateway' : <int:backup_gateway>,
+ *              'ha_state' : <0|1: 0=NORMAL, 1=FAILOVER>
+ *              'auto_failover' : <0|1: 0=DISABLED, 1=ENABLEd>
+ *              'auto_failback' : <0|1: 0=DISABLED, 1=ENABLEd>
+ *              'en_attr' : <Dictionary to edit the en attributes>
  *                           {
- *                              'vlan' : <vlan>,
+ *                              'vlan' : <int_array:vlan ids>,
  *                           }
  *              'v_fc_attr' : <Dictionary to edit the fc attributes>
  *                           {
@@ -120,8 +146,14 @@ py_vfm_vfabric_create(PyObject* self, PyObject *args);
  *                           }
  *           }
  *
+ * Example: { 'id' : 1, 'name' : 'vadapter1', 'protocol' : 1,
+ *            'en_attr' : { 'vlan' : [ 1, 2, 3 ]}
+ *          }
+ *
+ * @note Mandatory fields: id
+ *
  * @return PyObject which contains the following dictionary on success:
- * { 'id' : <vfabric id> }. On failure, it will return NULL and throw the
+ * { 'id' : <int:vfabric id> }. On failure, it will return NULL and throw the
  * relevant Python exception.
  *
  */
@@ -135,7 +167,7 @@ py_vfm_vfabric_edit_general_attr(PyObject* self, PyObject *args);
  *
  * @param[in] args Dictionary to change the running mode of 
  *                 the vfabric to online:
- *                 {'id' : <vfabric id>}
+ *                 {'id' : <int:vfabric id>}
  *
  * @return PyObject which contains the following dictionary on success:
  *                 {'id' : <vfabric id>}

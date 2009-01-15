@@ -35,7 +35,7 @@ test_vadapter_edit()
         attr.io_module_id = 13;
         attr.vfabric_id = 21;
         attr.protocol = 2;
-        vfm_vadapter_edit_general_attr(11, &bitmask, &attr);
+        vfm_vadapter_edit_general_attr(77, &bitmask, &attr);
 }
 
 test_vfabric_create()
@@ -81,12 +81,16 @@ test_vfabric_online()
 
 test_bridge_inventory()
 {
+        uint8_t guid[8] = {0x01, 0x30, 0x48, 0x6D, 0xB3, 0xDE, 0x03, 0x00};
         vfm_bd_attr_t attr;
         vfm_bd_attr_bitmask_t bitmask;
         uint32_t num = 0;
-        vfm_bd_attr_t *result;
+        vfm_bd_attr_t *result = NULL;
         memset(&attr, 0 , sizeof(vfm_bd_attr_t));
         memset(&bitmask, 0, sizeof(vfm_bd_attr_bitmask_t));
+
+        memcpy(&attr._bd_guid, guid, sizeof(guid));
+        bitmask.guid = 1;
         vfm_bd_select_inventory(&attr, bitmask, &num, &result);
         int i = 0,j=0;
         printf("\n num : %d", num);
@@ -103,17 +107,31 @@ test_bridge_inventory()
         }
 }
 
+
 test_bridge_device()
 {
-        uint8_t guid[8] = {0x00, 0x30, 0x48, 0x68, 0xB3, 0xDE, 0x00, 0x00};
+        uint8_t guid[8] = {0x01, 0x30, 0x48, 0x6D, 0xB3, 0xDE, 0x03, 0x00};
         vfm_bd_attr_t attr;
         vfm_bd_attr_bitmask_t bitmask;
-        uint32_t num = 0;
-        vfm_bd_attr_t *result;
+        uint32_t num = 0, j = 0;
+        vfm_bd_attr_t *result = NULL;
+        memset(&attr, 0, sizeof(vfm_bd_attr_t));
         memset(&bitmask, 0, sizeof(vfm_bd_attr_bitmask_t));
+
         bitmask.guid = 1;
         memcpy(&attr._bd_guid, guid, sizeof(guid));
+
+        result = &attr;
         vfm_bd_query_general_attr(attr._bd_guid, bitmask, result);
+                printf("\n Desc : %s", (result)->desc);
+                printf("\n firmware version : %s", 
+                (result)->_firmware_version);
+                printf("\n number of gw modules : %d ", 
+                (result)->_num_gw_module);
+                for(j = 0;j < (result)->_num_gw_module;j++) {
+                        printf("GW module index : %s", 
+                                  (result)->_gw_module_index[j]);
+                }
 }
 
 
@@ -121,10 +139,11 @@ test_bridge_device()
 int main()
 {
         //test_vadapter_create();
-        //test_vadapter_edit();
+        test_vadapter_edit();
         //test_vadapter_edit_protocol();
         //test_vfabric_create();
         //test_vfabric_edit();
         //test_vfabric_online();
-        test_bridge_inventory();
+        //test_bridge_inventory();
+        //test_bridge_device();
 }

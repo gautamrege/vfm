@@ -16,10 +16,8 @@ unpack_bridge_data(res_packet *op_pack,uint32_t *num_result,
 
         memcpy(num_result, offset, sizeof(uint32_t));
         offset += sizeof(uint32_t);
-
         *result = (vfm_bd_attr_t *) malloc(sizeof(vfm_bd_attr_t) 
                                                 * (*num_result));
-
         for(i = 0; i < *num_result; i++) {
                 
                 memcpy(*result + i, offset, sizeof(vfm_bd_attr_t));
@@ -121,10 +119,8 @@ vfm_bd_select_inventory (vfm_bd_attr_t * attr,
         err = unpack_bridge_data(&op_pack, &num, result);
         *num_result = num;
         free(op_pack.data);
-
 out:
         return err;
-
 }
 
 
@@ -151,65 +147,20 @@ vfm_bd_query_general_attr(vfm_bd_guid_t bridge_guid,
                           vfm_bd_attr_bitmask_t bitmask,
                           vfm_bd_attr_t *result)
 {
-        api_tlv tlv;
-        uint32_t mesg_len, res_len;
-        uint32_t no_of_args = 1;
-        uint8_t *message, *offset, *res_mesg;
-        vfmapi_ctrl_hdr ctrl_hdr;
-        int sock_fd;
-        res_packet pack, op_pack;
-
+        /* put bridge_guid into the attr struct */
+        /* Check if the bitmask for the guid is set */
+        /* call the vfm_bd_select_inventory API */
+        /* populate the FIRST element from the result array into the
+           output result */
         vfm_error_t err = VFM_SUCCESS;
+        vfm_bd_attr_t attr;
+        int num = 0;
+        memset(&attr, 0, sizeof(vfm_bd_attr_t));
 
-        mesg_len = (sizeof(vfmapi_ctrl_hdr) + sizeof(vfm_bd_guid_t) +
-                        sizeof(vfm_bd_attr_bitmask_t) + TLV_SIZE * no_of_args);
-
-        memset(&ctrl_hdr , 0 , sizeof(vfmapi_ctrl_hdr));
-
-        err = create_ctrl_hdr(VFMAPI_BRIDGE_DEVICE, VFM_QUERY, mesg_len,
-                                                                &ctrl_hdr);
-        if (err != VFM_SUCCESS) {
-                printf("\n Error in process request : %d ", err);
-                return err;
-        }
-
-        message = (uint8_t *)malloc(mesg_len);
-        offset = message;
-
-        memcpy(offset, &ctrl_hdr, sizeof(vfmapi_ctrl_hdr));
-        offset += sizeof(vfmapi_ctrl_hdr);
-
-
-        /* TYPE = TLV_GUID, vfm_vadapter_attr_t */
-        create_api_tlv(TLV_GUID, sizeof(vfm_bd_guid_t), &bridge_guid,
-                                                                  &offset);
-        /* TYPE =TLV_BIT_MASK , vfm_bd_attr_bitmask_t */
-        create_api_tlv(TLV_BIT_MASK, sizeof(vfm_bd_attr_bitmask_t),
-                        &bitmask, &offset);
-
-
-        /*display(message, mesg_len);*/
-        err = create_connection(&sock_fd);
-        if (err != VFM_SUCCESS) {
-                printf("\n Error in Create Connection : %d ", err);
-                return err;
-        }
-
-        err = process_request(sock_fd, message, mesg_len, &pack);
-        if (err != VFM_SUCCESS) {
-                printf("\n Error in process request : %d ", err);
-                return err;
-        }
-
-        err = unmarshall_response(pack.data, pack.size, &op_pack);
-        if (err != VFM_SUCCESS) {
-                printf("\n Error in Unmarshalling the response : %d ", err);
-                return err;
-        }
-
-        if(op_pack.size > 0) {
-                result = op_pack.data;
-        }
-out:
+        if(bitmask.guid)
+                attr._bd_guid = bridge_guid;
+        else
+                err = -1;
+        err = vfm_bd_select_inventory(&attr, bitmask, &num, &result);
         return err;
 }

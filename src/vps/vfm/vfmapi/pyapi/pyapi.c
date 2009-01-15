@@ -30,6 +30,7 @@ parse_vadapter_structure(PyObject* i_dict, vfm_vadapter_attr_t *attr,
                         attr->_vadapter_id = PyInt_AsLong(dict_object);
                 else
                         goto out;
+                bitmask->id = 1;
        }
 
        if (NULL != (dict_object = PyDict_GetItemString(i_dict, "name"))) {
@@ -591,6 +592,8 @@ static PyMethodDef VfmMethods[] = {
         {"py_vfm_vfabric_online", py_vfm_vfabric_online, METH_VARARGS,
                 "Change the running mode of vfabric to ONLINE."},
         {"py_vfm_bd_select_inventory", py_vfm_bd_select_inventory,
+                 METH_VARARGS, "Display the Bridge device inventory."},
+        {"py_vfm_bd_query_general_attr", py_vfm_bd_query_general_attr,
                  METH_VARARGS, "Query the Bridge device inventory."},
         {NULL, NULL, 0, NULL}
 };
