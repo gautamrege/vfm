@@ -96,9 +96,7 @@ unmarshall_request(void *buff, uint32_t size, res_packet * pack)
                                         num = 1;
                                         vfm_marshall_response(&op_data,
                                                         &ctrl_hdr, pack, num);
-
                                         break;
-
                                 case VFM_EDIT:
                                         err = process_vfm_edit_vadpter(buff,
                                                         &ret_pos, &op_data);

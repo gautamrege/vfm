@@ -93,6 +93,7 @@ process_vfm_edit_vadpter(uint8_t *buff, uint32_t *ret_pos, res_packet *op_arg)
         vps_error err = VPS_SUCCESS;
         vps_trace(VPS_ENTRYEXIT, "Entering process_vfm_edit_vadpter");
 
+        memset(query, 0 , sizeof(query));
 
         void * void_ptr;
         get_api_tlv(buff, ret_pos, &vadapter_id);
