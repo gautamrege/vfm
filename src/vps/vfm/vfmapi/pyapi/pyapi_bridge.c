@@ -278,18 +278,19 @@ get_bridge_data(PyObject* self, PyObject* args)
         if (num_result == 0) {
                 PyErr_SetString(PyExc_StandardError,
                         "No Bridge records found.");
+                result = NULL;
                 goto out;
         }
         if (-1 != create_bd_dictionary(result, num_result, results)) {
                 printf("result dictionary created.. \n");
-                return result;
         }
         else
                 PyErr_SetString(PyExc_StandardError,
                         "Error in Filling up the result dictionary");
-        free(results);
 out:
-        return NULL;
+        if (results)
+                free(results);
+        return result;
 }
 
 /*
