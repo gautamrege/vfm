@@ -83,6 +83,7 @@ parse_bridge_structure(PyObject* i_dict, vfm_bd_attr_t *attr,
                                 goto out;
                         }
                         memcpy(&attr->_bd_guid, guid, sizeof(guid));
+                        bitmask->guid = 1;
        }
 
        if (NULL != (dict_object = PyDict_GetItemString(i_dict, "desc"))) {
@@ -141,6 +142,7 @@ create_bd_dictionary(PyObject *result, uint32_t num_result,
          */
         int error = 0;
         int i = 0, j =0;
+        char tmp_buff[64];
         PyObject *innerDict, *temp, *list;
         
         for (i = 0; i < num_result; i++) {
@@ -195,8 +197,10 @@ create_bd_dictionary(PyObject *result, uint32_t num_result,
                 }
 
                 for (j = 0; j < (results+i)->_num_gw_module; j++) {
-                        temp = Py_BuildValue("i", 
-                                      atoi((results+i)->_gw_module_index[j]));
+                        memset(tmp_buff, 0, sizeof(tmp_buff));
+                        memcpy(tmp_buff, (results+i)->_gw_module_index[j],
+                                        sizeof(vfm_gw_module_index_t));
+                        temp = Py_BuildValue("s", tmp_buff);
                         if (-1 == PyList_SetItem(list, j, temp)) {
                                 error = -1;
                                 goto out;
