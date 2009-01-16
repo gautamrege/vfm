@@ -225,39 +225,8 @@ out:
         return error;
 }
 
-
-/*
- * @brief The python wrapper for calling vfm_bd_select_inventory.
- *
- * @param[in] self The python object
- *
- * @param[in] args Dictionary for displaying the bridge inventory:
- *            {'bd_guid' : <bridge_guid>,
- *             'desc' : * <desc>, 
- *             'state' : <state>,
- *             'running_mode' : <running_mode>,
- *             'firmware_version' : <firmware_version>,
- *             'vfm_guid' : <vfm_guid>
- *             }
- *
- * @return PyObject which contains the following dictionary on success:
- *            {'bd_guid' : <bridge_guid>, 
- *             'desc' : * <desc>, 
- *             'state' : <state>,
- *             'running_mode' : <running_mode>,
- *             'firmware_version' : <firmware_version>,
- *             'vfm_guid' : <vfm_guid>,
- *             'num_gw_modules' : <Number of gateway modules>,
- *             'gateway_module_index' :<Dictionary containing the 
- *                                           gateway module index>
- *             'last_keep_alive' : <last keepalive from BridgeX device>
- *             }
- * On failure, it will return NULL and throw the
- * relevant Python exception.
- *
- */
 PyObject *
-py_vfm_bd_select_inventory(PyObject* self, PyObject *args)
+get_bridge_data(PyObject* self, PyObject* args)
 {
         PyObject* vfm_dict = NULL, *result = NULL;
         vfm_error_t err;
@@ -293,9 +262,7 @@ py_vfm_bd_select_inventory(PyObject* self, PyObject *args)
         strcpy(results[1]._firmware_version, "v1.1");
         strcpy(results[2]._firmware_version, "v1.1");
 #else
-
-        err = vfm_bd_select_inventory(&attr, bitmask, &num_result,
-                                                   &results);
+        err = vfm_bd_select_inventory(&attr, bitmask, &num_result, &results);
 #endif        
 
         if (err != VFM_SUCCESS) {
@@ -323,5 +290,46 @@ py_vfm_bd_select_inventory(PyObject* self, PyObject *args)
         free(results);
 out:
         return NULL;
+}
 
+/*
+ * @brief The python wrapper for calling vfm_bd_select_inventory.
+ *
+ * @param[in] self The python object
+ *
+ * @param[in] args Dictionary for displaying the bridge inventory:
+ *            {'bd_guid' : <bridge_guid>,
+ *             'desc' : * <desc>, 
+ *             'state' : <state>,
+ *             'running_mode' : <running_mode>,
+ *             'firmware_version' : <firmware_version>,
+ *             'vfm_guid' : <vfm_guid>
+ *             }
+ *
+ * @return PyObject which contains the following dictionary on success:
+ *            {'bd_guid' : <bridge_guid>, 
+ *             'desc' : * <desc>, 
+ *             'state' : <state>,
+ *             'running_mode' : <running_mode>,
+ *             'firmware_version' : <firmware_version>,
+ *             'vfm_guid' : <vfm_guid>,
+ *             'num_gw_modules' : <Number of gateway modules>,
+ *             'gateway_module_index' :<Dictionary containing the 
+ *                                           gateway module index>
+ *             'last_keep_alive' : <last keepalive from BridgeX device>
+ *             }
+ * On failure, it will return NULL and throw the
+ * relevant Python exception.
+ *
+ */
+PyObject *
+py_vfm_bd_select_inventory(PyObject* self, PyObject *args)
+{
+        return get_bridge_data(self, args);
+}
+
+PyObject*
+py_vfm_bd_query_general_attr(PyObject* self, PyObject* args)
+{
+        return get_bridge_data(self, args);
 }

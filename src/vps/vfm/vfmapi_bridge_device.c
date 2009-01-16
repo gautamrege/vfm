@@ -66,25 +66,16 @@ process_vfm_bd_select_inventory(uint8_t *buff, uint32_t *ret_pos,
         vfm_bd_attr_bitmask_t bitmask;
         vpsdb_resource vps_res;
         uint32_t count = 0, i = 0;
-        char fmt[MAX_ARGS];
-        void **args;
-
-
-        void *stmt;
 
         vps_error err = VPS_SUCCESS;
         vps_trace(VPS_ENTRYEXIT, "Entering process_vfm_bd_select_inventory");
         
         memset(&attr, 0, sizeof(vfm_bd_attr_t));
         memset(&bitmask, 0, sizeof(vfm_bd_attr_bitmask_t));
-        memset(fmt, 0, sizeof(fmt));
         memset(&vps_res, 0, sizeof(vpsdb_resource));
 
         get_api_tlv(buff, ret_pos, &attr);
         get_api_tlv(buff, ret_pos, &bitmask);
-
-        /* Maximum unicode arguments are 2 */
-        args = (void **) malloc(MAX_ARGS * sizeof(void *));
 
         
         err = populate_bridge_information(attr, bitmask, &vps_res);
@@ -97,7 +88,6 @@ process_vfm_bd_select_inventory(uint8_t *buff, uint32_t *ret_pos,
         /* pack the bridge data*/
         pack_bridge_data(&vps_res, op_arg);
         free(vps_res.data);
-        free(args);
 out:
         vps_trace(VPS_ENTRYEXIT, "Leaving process_vfm_create_vadpter");
         return err;
@@ -112,9 +102,6 @@ process_vfm_bd_query_general_attr(uint8_t* buff, uint32_t* ret_pos,
         vfm_bd_attr_bitmask_t bitmask;
         vpsdb_resource vps_res;
         uint32_t count = 0;
-        char fmt[MAX_ARGS];
-        void **args;
-        void *stmt;
         vps_error err = VPS_SUCCESS;
         vps_trace(VPS_ENTRYEXIT, "Entering process_vfm_bd_select_inventory");
 
@@ -126,8 +113,6 @@ process_vfm_bd_query_general_attr(uint8_t* buff, uint32_t* ret_pos,
 
         memset(&vps_res, 0, sizeof(vpsdb_resource));
 
-        memset(fmt, '\0', sizeof(fmt));
-
         err = populate_bridge_information(attr, bitmask, &vps_res);
 
         if (err != VPS_SUCCESS) {
@@ -136,9 +121,8 @@ process_vfm_bd_query_general_attr(uint8_t* buff, uint32_t* ret_pos,
                 goto out;
         }
 
-        op_arg->size = sizeof(vfm_bd_attr_t) * vps_res.count;
-        op_arg->data = vps_res.data;
-        free(args);
+        pack_bridge_data(&vps_res, op_arg);
+        free(vps_res.data);
 out:
         vps_trace(VPS_ENTRYEXIT, "Leaving process__vfm_bd_query_general_attr");
         return err;
