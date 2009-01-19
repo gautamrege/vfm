@@ -86,8 +86,13 @@ def execute(p) :
                 print bridge_info
 
 print ' ---*** POSITIVE TESTS ***---'
-#inventory()
+inventory()
+inventory()
+inventory()
+inventory()
+
 reg_guid()
+"""
 reg_desc()
 reg_firmware()
 reg_vfm_guid()
@@ -107,3 +112,4 @@ ne_reg_vfm_guid()
 #ne_reg_state() 
 #ne_reg_running()
 #execute({ 'desc' : 'bridge is new'})'''
+"""

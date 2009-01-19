@@ -27,7 +27,7 @@
 
 #define SERVER_PORT             10006
 #define MAXBUFFLEN              500
-#define BUFFER_SIZE             1500 /* MTU will never go above this limit*/
+#define BUFFER_SIZE             8192 /* TODO: Refer to bug# 56 */
 
 /* Defining the Modules */
 #define VFMAPI_IOMODULE         0x1

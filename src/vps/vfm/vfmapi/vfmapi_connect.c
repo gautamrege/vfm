@@ -43,7 +43,7 @@ process_request(uint32_t sockfd, uint8_t* ip_data, uint32_t ip_length,
 
        pack->data = malloc(pack->size);
        memcpy(pack->data, op_data, pack->size);
-
+       
        return err;
 }
 
