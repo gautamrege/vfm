@@ -378,10 +378,11 @@ fcoe_vHBA_keep_alive(uint8_t *msg_desc, fcoe_vHBA_alive *alive)
         get_tlv(ptr, &data);
         get_tlv_value(&data, &alive->host_mac);
         ptr += (data.length * sizeof(uint32_t));
-        /* Type = 11*/
+#ifndef OPEN_FCOE
+        /* Type = 11 */
         get_tlv(ptr, &data);
         get_tlv_value(&data, &alive->hba);
-
+#endif
         vps_trace(VPS_ENTRYEXIT, "Leaving fcoe_vHBA_keep_alive");
         return err;
 }

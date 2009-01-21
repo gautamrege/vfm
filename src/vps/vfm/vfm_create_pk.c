@@ -856,7 +856,7 @@ create_packet(uint16_t op, uint8_t subop, void *data)
                 control_hdr.opcode  = 1;
                 control_hdr.subcode = 2;
                 control_hdr.reserved = 0;
-                control_hdr.desc_list_length = 13;
+                control_hdr.desc_list_length = 12;
                 control_hdr.flags |= SET_FP;
                 control_hdr.flags |= SET_SP;
                 control_hdr.flags |= SET_F;
@@ -868,9 +868,8 @@ create_packet(uint16_t op, uint8_t subop, void *data)
                 if (!(is_multicast_ether_addr(conx_mac))) {
                         /*
                          * If and only if this is a unicast message to a conx
-                         * then set A = 1 & S = 1.
+                         * then set S = 1.
                          */
-                        control_hdr.flags |= SET_A;
                         control_hdr.flags |= SET_S;
                 }
 

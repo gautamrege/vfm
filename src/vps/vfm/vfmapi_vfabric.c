@@ -151,21 +151,14 @@ process_vfm_edit_vfabric(uint8_t *buff, uint32_t *ret_pos, res_packet *op_arg)
                                                  &attr._ctx_table_id, Q_UINT32);
         
 
-	if(count > 0)	
+	if(count > 0) {	
 		sprintf(query, "%s where id = %d;" , query, vfabric_id);
 
         /* Call the function of the db acces layer edit the properties
          * of the vfabric.
          */
-        err = vpsdb_edit_resource(VPS_DB_VFABRIC, query);
-         
-
-#ifdef VFM_TEST
-        void_ptr = &attr;
-        display(void_ptr, sizeof(vfm_vfabric_attr_t));
-        void_ptr = &attr_db;
-        display(void_ptr, sizeof(vfm_vfabric_attr_t));
-#endif
+                err = vpsdb_edit_resource(VPS_DB_VFABRIC, query);
+        }
         op_arg->size  = sizeof(vfm_error_t);
         op_arg->data  = malloc(op_arg->size);
         memcpy(op_arg->data, &err, sizeof(vfm_error_t));
