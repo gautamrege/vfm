@@ -30,6 +30,8 @@ vps_initial_terminal_settings = None
 vps_enable_exec_mode = False
 vps_enable_config_mode = False
 vps_current_prompt = lib.constants._VFM_STAN 
+#vps_xml_mode = False 
+
 
 _SUB_MODE_GW = command_ref.MOD_GATEWAY
 _SUB_MODE_BRIDGE = command_ref.MOD_BRIDGE
@@ -144,7 +146,7 @@ def check_mode_change(cmd):
 
 vps_pid = os.getpid()
 vps_oneshot = False
-vps_xml_mode = False 
+#vps_xml_mode = False 
 vps_oneshot = False
 vps_tokenized = False 
 vps_trace = False
@@ -280,6 +282,14 @@ def get_latest_command():
     global vps_latest_command
     return vps_latest_command
 
+
+def set_vps_xml_mode(bool):
+    #global lib.constants.vps_xml_mode
+    lib.constants.vps_xml_mode = bool
+
+def get_vps_xml_mode():
+    return lib.constants.vps_xml_mode	
+
 def get_current_time():
     """Prints time, eg: 2008-09-08 15:10:08"""
     time_fmt = "%Y-%m-%d %H:%M:%S"
@@ -382,6 +392,7 @@ def main(argv):
             lib.essentials.setNoninteractive()
             vps_oneshot = True
             command = o[1]
+	    print 'qsdnjq',command 
         if o[0] == '-db':
             vps_enable_debugger = True
         if o[0] == '-e':
@@ -389,7 +400,7 @@ def main(argv):
         if o[0] == '-l':
             log_history = False
         if o[0] == '-X':
-            vps_xml_mode = True
+            set_vps_xml_mode(True)
 
     try:
         # Line-buffering

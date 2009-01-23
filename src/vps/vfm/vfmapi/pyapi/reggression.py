@@ -11,13 +11,6 @@ vadapter_ip = {'name' : "Vadapter", 'desc' : "Testing vadapter", 'protocol' : 1}
 vfabric_ip = {'name' : "Vfabric", 'desc' : "Testing vfabric"}
 
 def reg1():
-        print """\nRegression Test 1:
- 1. Create a vfabric
- 2. Create a vadapter
- 3. Edit vfabric : primary_gw = 1
- 4. Edit vadapter: vfabric_id = <step 1> & io_module = 1
- 5. Vfabric online
-"""
         vfabric = vfm.py_vfm_vfabric_create(vfabric_ip)
         print "Vfabric created:", vfabric
 
@@ -42,5 +35,18 @@ def reg2():
         bridge_info = vfm.py_vfm_bd_select_inventory(input)
         print bridge_info
 
-reg1()
+def help():
+        print """ 1. Create a vfabric
+ 2. Create a vadapter
+ 3. Edit vfabric : primary_gw = 1
+ 4. Edit vadapter: vfabric_id = <step 1> & io_module = 1
+ 5. Vfabric online
+
+ Press 'Enter' to start..
+"""
+        
+#help()
+#raw_input()
+#reg1()
+reg2()
 reg2()

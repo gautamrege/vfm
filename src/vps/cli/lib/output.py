@@ -180,7 +180,6 @@ class XMLoutput:
            Since this has to be descriptive so seperated from attachInformaiton.
         """    
         if self.__completed:
-               print 'Here'
                RuntimeError("XML not formated correctly")
         self.__descriptionParen.printOpenParen(_DESCRIPTION)
         self.__descriptionParen.printXML("Type", "Error")
@@ -221,7 +220,6 @@ class CLIoutput(object):
 
       def attachError(self, errorhandler):
           if self.__status == CLIoutput._INPROCESS:
-               print exception
                self.__status = CLIoutput._FAILURE
           elif self.__status != CLIoutput._FAILURE:
                msg = "Status is '%s'" % (self.__status,)
@@ -230,11 +228,11 @@ class CLIoutput(object):
           desc[ "Type" ] = "Error"
           desc[ "Message" ] = str(errorhandler)
           try:
-              code = exception.getCode()
+              code = lib.errorhandler.getCode()
           except AttributeError:
               code = None
           if code is None:
-              code = codes.GEN_UNSPECIFIED
+              code = lib.constants.GEN_UNSPECIFIED
           desc[ "Code" ] = code
           try:
               syntax = errorhandler.getSyntax()
@@ -245,7 +243,7 @@ class CLIoutput(object):
           self.__description.append(("Description", desc))
     
            
-      def pipeHandler(self, outputf, po4, xml_output):
+      def __PipeHandler(self, outputf, po4, xml_output):
           while True:
                 each_line = po4.fromchild.readline()
                 if not each_line:
@@ -262,7 +260,7 @@ class CLIoutput(object):
           outputf.write("%s<%s>\n" % (prefix, tag))
           self.__indentation += 4
 
-      def __XMLclosetag(self, outputf, tag):
+      def __XMLcloseTag(self, outputf, tag):
           """Writes the closing tag"""
           self.__indentation -=4
           prefix = ' ' * self.__indentation
@@ -272,21 +270,21 @@ class CLIoutput(object):
           if isinstance(value, types.FileType):
              self.__XMLopenTag(outputf, name)
              self.__FileHandler(outputf, value, xml_output = True)
-             self.__XMLclosetag(outputf, name)
+             self.__XMLcloseTag(outputf, name)
           elif isinstance(value, popen2.Popen4):
              self.__XMLopenTag(outputf, name)
              self.__PipeHandler(outputf, value, xml_output = True)
-             self.__XMLclosetag(outputf, name)
+             self.__XMLcloseTag(outputf, name)
           elif isinstance(value, types.ListType):
              self.__XMLopenTag(outputf, name)
-             for (listname, listval) in val:
+             for (listname, listval) in value:
                    self.__XMLvalue(outputf, listname, listval)
-             self.__XMLclosetag(outputf, name)
+             self.__XMLcloseTag(outputf, name)
           elif isinstance(value, types.DictType):
              self.__XMLopenTag(outputf, name)
              for x in value:
                  self.__XMLvalue(outputf, x, value[x])
-             self.__XMLclosetag(outputf, name)
+             self.__XMLcloseTag(outputf, name)
           else:
              prefix = ' ' * self.__indentation
              outputf.write("%s<%s>%s</%s>\n" % (prefix, name, 
@@ -326,6 +324,7 @@ class CLIoutput(object):
              return
           self.__isOutputGenerated = False 
           virt_outputf = lib.XMLtoText._ExternalizedOutput(outputf)
+	  exc = None
           try:
               if self.__status in [ CLIoutput._SUCCESS, CLIoutput._INPROCESS ]:
                    self.__TextValue(virt_outputf, "CLIoutput", self.__clioutput)
@@ -351,8 +350,6 @@ class CLIoutput(object):
               except:
                   pass
           for ( x, desc) in self.__description:
-              print 'Inside description'
-              print x, desc
               outputf.write("%s: %s\n" % (desc["Type"], desc["Message"]))
  
 
@@ -402,7 +399,7 @@ class CLIoutput(object):
           if isinstance(value, types.FileType):
                self.__fileObjects.append(value)
           elif isinstance(value, popen2.Popen4):
-               self.__pipeObjects.append(value)
+               self.__pipeObject.append(value)
 
 
       def __fileHandler(self, outputf, inputf, xml_output):
@@ -439,7 +436,6 @@ class CLIoutput(object):
               self.completeOutputSuccess()
 
       def completeOutputSuccess(self):
-           
           if self.__status == CLIoutput._INPROCESS:
              self.endAssembling("CLIoutput")
              self.__status = CLIoutput._SUCCESS
@@ -456,21 +452,20 @@ class CLIoutput(object):
 
           try:
               self.__XMLopenTag(outputf, "Response")
-              self.__XMLvalue(outputf, "CLIoutput",
-                                  self.__clioutput)
-              self.__XMLcloseTag(outputf, "ReponseStatus")
-              if self.__status in [ CLIoutput.SUCCESS, CLIoutput.INPROCESS ] :
+              self.__XMLvalue(outputf, "CommandOutput",self.__clioutput)
+              self.__XMLopenTag(outputf, "ResponseStatus")
+              if self.__status in [ CLIoutput._SUCCESS, CLIoutput._INPROCESS ] :
                    self.__XMLvalue(outputf, "Status", "Success")
-              elif self.__status == CLIoutput.FAILURE:
+              elif self.__status == CLIoutput._FAILURE:
                    self.__XMLvalue(outputf, "Status", "Failure")
               else:
                    raise RuntimeError("Status value: %s" % (self.__status,))
               self.__XMLvalue(outputf, "DescriptionList", self.__description)
               self.__XMLcloseTag(outputf, "ResponseStatus")
-              self.__XMLcloseTag(utputf, "Response")
+              self.__XMLcloseTag(outputf, "Response")
               outputf.flush()
           except Exception, ex:
-              print "Traceback"
+	      print NameError("Exception occured")
           self.__garbageCollection()
 
       def __garbageCollection(self):
@@ -483,7 +478,7 @@ class CLIoutput(object):
                   f.close()
               except:
                   pass
-          for po4 in self.__pipeObjects:
+          for po4 in self.__pipeObject:
               try:
                   os.kill(po4.pid, signal.SIGKILL)
               except:

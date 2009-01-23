@@ -21,7 +21,7 @@ from lib.errorhandler import *
 # Globals
 #
 
-_VIEW_IOMODULE = "bxm_io_module_attr"
+_VIEW_IOMODULE = "vfm_io_module_attr"
 
 def _output_iomodule_list_verbose(outf, name, iomodule_list):
     """ Output Format"""
@@ -62,7 +62,7 @@ def show(argv):
     output = lib.output.CLIoutput("iomodule", _output_handlers)
     
     if len(argv) > 2:
-	print show.__doc__
+	output.completeOutputError(InvalidArgumentCount(syntax = show.__doc__))
 	return output
 
     if len(argv) == 2:
@@ -74,7 +74,7 @@ def show(argv):
        return output
     
     else:
-        print show.__doc__
+        output.completeOutputError(InvalidArgumentCount(syntax = show.__doc__))
 	return output
 	
     return output

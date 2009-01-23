@@ -111,8 +111,8 @@ def isNumber(s):
         """Returns true if string s is a number."""
 
         try: long(s)
-        except: return 0
-        return 1
+        except: return -1
+        return 0
 
 
 # Evaluate string: isDigitString
@@ -123,8 +123,36 @@ def isDigitString(s):
                 if char not in string.digits: return 0
         return 1
 
+import re
 
-
+# Evaluate Alphanueric : isAlphanumeric
+def isAlphanumeric(s):
+    """ Returns -1 if false else 0 """
+    expression = re.compile('[a-zA-Z0-9]') 
+    if re.compile('[a-zA-Z0-9]+').match(s) == None: 
+	return -1
+    else:
+	return 0
+    
+# Checks the start with the name with an digit
+def isStartNumeric(s):
+    """ Return -1 false else 0"""
+    for char in s:
+	if re.compile('[0-9]').match(char[0]) != None:
+	     return -1
+        break        
+    return 0       
+ 
+# Check for the special character.
+def isContainSpecial(s):
+    """ Return -1 if false else 0"""
+    _SPECIAL_CHAR_LIST = ['!','@','#','$','%','^','&','*','(',')'
+			  ,'+','=','/','>','<','\,',';',':','?','~','`']
+    for char in s:
+	if char[0] in _SPECIAL_CHAR_LIST:
+		return -1
+    return 0
+ 	
 def confirmation_required(asking, reply_list = [ "no", "yes"], \
                              if_interrupt = 0, case_sensitive = 0):
     ''' 

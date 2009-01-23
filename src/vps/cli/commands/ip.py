@@ -85,9 +85,12 @@ def show(argv):
 	     elif keyword[1].startswith('route'):
 		_show_ip_routes(output, [])
 	else:
-             print show.__doc__
+             output.completeOutputError(InvalidArgumentCount(syntax=show.__doc__)) 
+	     return output
+             #print show.__doc__
     else:
-         print show.__doc__
+	 output.completeOutputError(InvalidArgumentCount(syntax=show.__doc__))
+         #print show.__doc__
          return output 
 
     return output
@@ -99,7 +102,7 @@ def _show_ip_addresses(output, argv):
     if len(argv) > 2:
         output.completeOutputError(InvalidArgumentCount(
             syntax=_show_ip_addresses.__doc__))
-        return
+        return output
 
     addr = None
     if len(argv) >= 1:
@@ -109,12 +112,12 @@ def _show_ip_addresses(output, argv):
         except UnknownIpCheck, ex:
             output.completeOutputError(InvalidArgumentCount(2, argv[0],
                 _show_ip_addresses.__doc__, str(ex)))
-            return
+            return output
         if len(argv) == 2:
             if (argv[1] == '' or not "usage".startswith(argv[1].lower())):
                 output.completeOutputError(InvalidArgumentCount(
                     3, argv[1], _show_ip_addresses.__doc__))
-                return
+                return output
     cmd = [_IP, 'addr']
     (exitval, output_result, err, fullstatus) = lib.process.execute_command(cmd)
     output.beginList("IPaddressSpecList")
@@ -364,7 +367,7 @@ def edit(argv):
          elif keyword[1].startswith('route'):
                 _edit_ip_route(output_cli, argv)
     else:
-          print edit.__doc__
+          output_cli.completeOutputError(InvalidArgumentCount(syntax = edit.__doc__))
     return output_cli
 
 #
@@ -384,31 +387,31 @@ def _edit_ip_address(output, argv):
     interface = None
  
     if argc < 6:
-       print _edit_ip_address.__doc__
-       return 
+       output.completeOutputError(InvalidArgumentCount(syntax=_edit_ip_address.__doc__))
+       return output
 
 
     if argv[2] == '' or not "interface".startswith(argv[2].lower()):
          if argv[4] == '' or not "netmask".startwith(argv[4].lower()):
            msg = 'Expected keywords "interface" and "netmask" '
-           print _edit_ip_address.__doc__
-           return
+           output.completeOutputError(InvalidArgumentCount(syntax=_edit_ip_address.__doc__))
+           return output
 
     interface = argv[3]
     try:
         checkInterface(interface)
     except UnknownInterfaceCheck, ex:
         error_msg = ex
-        print "Error:", error_msg 
-        return
+        output.completeOutputError(InvalidArgumentCount(descape = "Error: error_msg"))
+        return output
  
     ip_addr   = argv[1]
     try:
         checkIp(ip_addr)
     except UnknownIpCheck, ex:
         error_msg = ex
-        print "Error:", error_msg
-        return
+        output.completeOutputError(InvalidArgumentCount(descape = "Error: error_msg"))
+        return output
          
     
     netmask_addr   = argv[5]
@@ -416,8 +419,8 @@ def _edit_ip_address(output, argv):
         checkNetmask(netmask_addr)
     except UnknownNetmaskCheck, ex:
         error_msg = ex
-        print "Error:", error_msg
-        return
+        output.completeOutputError(InvalidArgumentCount(descape = "Error: error_msg"))
+        return output
     
     #
     # These lines are for getting the default route.
@@ -468,38 +471,37 @@ def _edit_ip_route(output , argv):
     interface = None
 
     if argc < 6:
-       print _edit_ip_route.__doc__
-       return 
+       output.completeOutputError(InvalidArgumentCount(syntax = _edit_ip_route.__doc__))
+       return output
 
     if argv[1] == '' or not "default".startswith(argv[1].lower()) \
            or argv[2] == '' or not "gateway".startswith(argv[2].lower()):
        msg = 'Expected initial keywords "default" and "gateway".'
-       lib.errorhandler.InvalidArgumentCount(5, "ip-route",
-            syntax=_edit_ip_route.__doc__, desc=msg)
-       return 
+       output.completeOutputError(InvalidArgumentCount(5, "ip-route",syntax=_edit_ip_route.__doc__, desc=msg))
+       return output
 
     gateway = argv[3]
     if argc == 5:
         if argv[4] == '' or not "interface".startswith(argv[4].lower()):
             msg = 'Expected keyword "interface".'
-	    lib.errorhandler.InvalidArgumentCount(7, "ip-route",
-                _edit_ip_route.__doc__, msg)
-            return 
+	    output.completeOutputError(InvalidArgumentCount(7, "ip-route",
+                _edit_ip_route.__doc__, msg))
+            return output
 
         interface = argv[5]
         try:
             checkInterface(interface)
         except UnknownInterfaceCheck, ex:
-            lib.errorhandler.InvalidArgumentCount(8, "ip-route",
-		_edit_ip_route.__doc__, "Not a Valid Interface")
-            return 
+            output.completeOutputError(InvalidArgumentCount(8, "ip-route",
+		_edit_ip_route.__doc__, "Not a Valid Interface"))
+            return output
 
     try:
         checkIp(gateway)
     except UnknownIpCheck, ex:
-	lib.errorhandler.InvalidArgumentCount(6, "ip-route",
-		_edit_ip_route.__doc__, "Not a valid Ip Address")
-        return 
+	output.completeOutputError(InvalidArgumentCount(6, "ip-route",
+		_edit_ip_route.__doc__, "Not a valid Ip Address"))
+        return output
 
     #
     # These lines are for getting the default route.
@@ -511,7 +513,7 @@ def _edit_ip_route(output , argv):
     if route is None:
         output.completeOutputError(
             'no default route exists; use "add ip route"')
-        return 
+        return output
  
     #net_config.eraseIProute(route)
 

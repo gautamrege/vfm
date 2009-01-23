@@ -62,7 +62,7 @@ def show(argv):
 
     output.endList("ARPentryList")
     output.completeOutputSuccess()
-    print output
+    #print output
     return output
 
 
@@ -96,7 +96,7 @@ def no(argv):
         return output
 
     if len(argv) == 1:
-        arp_entries = open("/process/net/arp", 'r').readlines()
+        arp_entries = open("/proc/net/arp", 'r').readlines()
         for line in arp_entries[1:]:           # skip header
             cmd = (_ARP, "-d", line.split()[0])
             lib.process.execute_command(cmd)

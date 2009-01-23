@@ -39,7 +39,7 @@ def edit(argv):
         try:
             doit = lib.essentials.confirm(
 	        "Are you sure that you want to reboot the system")
-        except liberrorhandler.InteractiveCliRequired, ex:
+        except lib.errorhandler.InteractiveCliRequired, ex:
             output.completeOutputError(ex)
             return output
 

@@ -13,16 +13,22 @@ TERMINAL_COUNTS = 1
 
 SOFTWARE_VERSION = "0.0.1"
 
-VPS_PRODUCT = "BridgeX Manager"
+VPS_PRODUCT = "Virtual Fabric Manager"
 
 INTERNAL_ERROR_MESSAGE = \
 """An Error has occurred. Please contact VirtualPlane Systems Customer Support."""
 
-_VFM_STAN     = 'BXM>'
-_VFM_EXEC     = 'BXM#'
-_CLI_PROMPT_  = 'BXM'
+_VFM_STAN     = 'VFM>'
+_VFM_EXEC     = 'VFM#'
+_CLI_PROMPT_  = 'VFM'
 
-_VIEW_VADAPTER = "v_bxm_vadapter_attr"
-_VIEW_BRIDGE = "v_bxm_bridge_attr"
-_VIEW_GATEWAY = "v_bxm_gateway_attr"
-_VIEW_IOMODULE = "bxm_io_module_attr"
+vps_xml_mode = False
+
+_VIEW_VADAPTER = "v_vfm_vadapter_attr"
+_VIEW_BRIDGE = "v_vfm_bridge_attr"
+_VIEW_GATEWAY = "v_vfm_gateway_attr"
+_VIEW_IOMODULE = "vfm_io_module_attr"
+
+# Lenght of the attribute in the database.
+_ATTR_ID_LENGHT = 6
+

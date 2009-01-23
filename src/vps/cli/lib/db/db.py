@@ -14,7 +14,8 @@ if path not in sys.path:
      sys.path.append(path) 
     
 DB_LOC = ''
-DB_NAME = '/usr/local/vps/bxm/bxm.db'
+DB_NAME = '/home/hansraj/pluto_dev/src/vps/vfm/db/vfm.db'
+#DB_NAME = '/usr/local/vps/bxm/bxmv3.db'
 _CURSOR = ""
 _CURRENT_TABLE = ""
 
@@ -42,7 +43,6 @@ class Database(object):
           ''' Connect to the database'''
           #sys.path.append(DB_LOC)
           db_location = DB_NAME
-          #print db_location
           connection = sqlite.connect(db_location)
           return connection
          
@@ -83,7 +83,7 @@ class Database(object):
               conn = self._connect()
           except:
               print 'Can\'t Connect to the Database. Please copy "bxm.db" at \
-                            /usr/local/vps/bxm'
+                            /src/vps/vfm/db'
               return 'Null' 
           cursor = self._createCursor(conn)
           cursor.execute(cmd)

@@ -12,12 +12,20 @@ import lib.output
 
 from lib.errorhandler import *
 
+def _output_ping_list_verbose(outf, name, ping_list):
+    print ping_list['PingOutput']
+
+
+_output_handlers = {
+                        "PingSpecList"  : _output_ping_list_verbose
+                   }
+
 def edit(argv):
     """Ping a host (or IP address)
 
         Syntax: ping <host> [count <count>]
     """
-  
+
     output = lib.output.CLIoutput("ping")
 
     if len(argv) == 4 and not "count".startswith(argv[2].lower()):
@@ -52,7 +60,6 @@ def edit(argv):
 
     try:
         ipaddr = socket.gethostbyname(name)
-	print ipaddr
     except socket.error, e:
         output.completeOutputError("cannot resolve '%s': %s" % (name, e))
         return output
@@ -61,9 +68,11 @@ def edit(argv):
         pipe = popen2.Popen4("/bin/ping -nb -c %d -w %d %s" % \
                                                 (cnt, cnt+10, name),
                                                 0)
-        output.beginAggregate("Ping")
-        output.setNameValue("PingOutput", pipe)
-        output.endAggregate("Ping")
+	#output.beginList("PingSpecList")
+        output.beginAssembling("Ping")
+        output.setVirtualNameValue("PingOutput", pipe)
+        output.endAssembling("Ping")
+	#output.endList("PingSpecList")
         output.completeOutputSuccess()
     except OSError, e:
         output.completeOutputError("Internal error: ping failed: %s" % (e,))

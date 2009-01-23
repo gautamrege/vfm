@@ -41,11 +41,10 @@ class InvalidArgumentCount(Exception):
     def __init__(self, pos=None, param=None, syntax=None, descape=None):
         Exception.__init__(self)
         self.pos = pos
-        #self.param = lib.escape.special_character(param)
         self.param = ''
         self.syntax = syntax
         self.descape = descape
-        self.__str__()
+        #self.__str__()
 
     def __str__(self):
         if self.pos is None:
@@ -59,8 +58,7 @@ class InvalidArgumentCount(Exception):
             if self.descape:
                 output += ' ' + self.descape
         
-        print self.getSyntax()
-        print output
+        #print self.getSyntax()
         return output
 
     def getSyntax(self):
@@ -68,6 +66,30 @@ class InvalidArgumentCount(Exception):
 
     def getCode(self):
         return constants.GEN_SYNTAX_ERROR
+
+class OutputError(Exception):
+      def __init__(self, msg=None, syntax=None):
+          Exception.__init__(self)
+          self.msg = msg
+          self.syntax = syntax
+	  #self.__str__()
+
+      def __str__(self):
+          if self.msg is None:
+                if self.syntax is None:
+                     output = "Error Occured . Please type \"help\" for more information."
+                else:
+                     print self.syntax
+          else:
+                output = self.msg
+	  print "\t",output
+          return output
+
+      def getMsg(self):
+	  return self.msg
+
+      def getSyntax(self):
+	  return self.syntax
 
 class InvalidNameException(Exception):
     def __init__(self, value, reason=None, object='object'):

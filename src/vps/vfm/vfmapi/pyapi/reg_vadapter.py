@@ -64,9 +64,9 @@ def edit4():#ERROR IN UPDATING THE VADAPTER
                 print e
 
 reg1()
-reg2()
+'''reg2()
 reg3()
 invalid_ip()
 edit2()
 edit3()  
-edit4()        
+edit4()'''

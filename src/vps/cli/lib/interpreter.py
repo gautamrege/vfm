@@ -27,6 +27,8 @@ import command_ref
 
 vps_trace = False
 vps_execute = True
+vps_current_module = ''
+
 
 class Interpreter(cmd.Cmd):
       """
@@ -118,8 +120,9 @@ class Interpreter(cmd.Cmd):
 
           if vps_cli.get_current_prompt() == lib.constants._VFM_STAN \
               or vps_cli.get_current_prompt() == None:
-            raise NameError("'%s' command can't be invoked in standard mode. " % \
-                          (cmd))
+              print NameError("'%s' command can't be invoked in standard mode. " % \
+                          (args))
+	      return
 
           #
           # FIXME: Should check if the modifier is "add" then 
@@ -143,26 +146,28 @@ class Interpreter(cmd.Cmd):
 	  #print modifier , cmd , command_name , args
           cmd = command_name
           args_len = len(args)
-
+	 	
           if cmd == "":
              return -1
 
           if cmd != "":
              tokens = cmd.split()
-
-             if args_len == 0 and tokens[1] != "":
-                   vps_cli.cli_runner(tokens[1])
+ 
+             #if args_len == 0 and tokens[1] != "":
+             #      vps_cli.cli_runner(tokens[1])
 
              if args_len > 0:
-                if args[0] != 'configure':
+                if tokens[0] != 'configure':
                       print 'This is modifier ' ,args
                 else :
                      if args_len < 3 :
-                        command_extension = tokens[1] + ' ' + args[1]
+                        command_extension = tokens[1]
+			global vps_current_module
+			vps_current_module = args[1]
                         vps_cli.cli_runner(command_extension)
                      elif args_len == 3:
                           if args[2] == 'configure':
-                             raise lib.errorhandler.InvalidArgumentCount ()
+                             print lib.errorhandler.InvalidArgumentCount ()
                           else:
                              print 'This is modifier ' ,args
                      elif args_len == 4 :
@@ -290,8 +295,7 @@ class Interpreter(cmd.Cmd):
                  exec execute_string
              except :
                  docstring = None
-             raise lib.errorhandler.ModifierdoesntExistException(modifier, 
-                                     cmd, docstring)
+	         raise NameError("No such command present: %s" %(modifier + ' ' + cmd,))
           func = getattr(module, modifier)
           orig_args = list(args)
 
@@ -313,7 +317,7 @@ class Interpreter(cmd.Cmd):
 
           if isinstance(output, lib.output.XMLoutput) or \
                      isinstance(output, lib.output.CLIoutput):
-              return output
+             return output
                        
       def _invokeModeShow(self,xml_output, current_mode , command, tokens):
           """ Here we will show the sub mode when we find the curent mode is executive"""
@@ -327,9 +331,7 @@ class Interpreter(cmd.Cmd):
 		 return xml_output
           elif mode[0] not in command_ref.NON_SUB_CMD_MOD:
                  query = 'Select submode from mode_status where mode = ' + '"'+mode[0]+'"'
-          print query  
           alldata = database._execute(query)
-          print alldata  
    
       def default(self, command):
           """
@@ -337,7 +339,7 @@ class Interpreter(cmd.Cmd):
             This is the central point of the intrepreter.py 
           """
           xml_output = lib.output.XMLoutput()
-
+	  
           try:
              # Tokenization of the command
              if not vps_cli.vps_tokenized:
@@ -346,19 +348,9 @@ class Interpreter(cmd.Cmd):
                 tokens = []
                 for arg in command:
                       tokens.append(lib.escape.unescape(arg))
-              
+             
+             # configure terminal is handled here. 
              currentmode =  vps_cli.get_current_prompt()
-             """
-             if len(tokens) == 1 and command == "show" \
-                           and "config" in currentmode :
-		   tokens = []
-	           token = currentmode.split("-")
-                   mode = token[1].split(")")
-          	   if mode[0] in command_ref.NON_SUB_CMD_MOD:
-                 	command_name = "commands."+mode[0]
-                 	#xml_output = self.__invokeExecuteCommand(command, mode[0], command_name,tokens)
-		        #return self._invokeModeShow(xml_output, currentmode,  command, tokens)
- 	     """
 	     for token in tokens:
 		if token == 'terminal':
 			modifier, cmd, command_name, tokens = \
@@ -366,15 +358,45 @@ class Interpreter(cmd.Cmd):
 			command_name = "configure terminal"
                  	return self.__invokeConfig(modifier, cmd, command_name, tokens)
 			
-             if len(tokens) == 1 and command in command_ref.COMMAND_MODIFIER_NON_CO_EXISTS:
+             # vadapter <vadapter-name> type commands handled here.
+             if len(tokens) == 2 and tokens[0] in command_ref.NON_SUB_CMD_MOD:
                  modifier, cmd, command_name, tokens = \
                              command_ref.cmdToMode(command, tokens)
                  return self.__invokeConfig(modifier, cmd, command_name, tokens)
 
-             # Get the command from the command_ref
-             modifier, cmd, command_name = \
-                              command_ref.cmdToPlugin(tokens, currentmode)
 
+	     # vadapter [ So when length is 1 then is an error]
+             if len(tokens) == 1 and tokens[0] in command_ref.NON_SUB_CMD_MOD:
+		raise NameError( " \n '%s' Not a valid command. \n Please type : 'help %s' \n " % (tokens[0], tokens[0]))
+		return
+
+ 	     #
+             # So when len is 1 and the modifier is "show" [now] .Later add [edit] 
+	     # in here.
+	 
+   	     if len(tokens) == 1 and command == "show" \
+                           and "config" in currentmode :
+
+                  modifier, cmd, command_name = command_ref.cmdToModifier(tokens, currentmode)
+                  token = currentmode.split("-")
+                  mode = token[1].split(")")
+                  if mode[0] in command_ref.NON_SUB_CMD_MOD and command == "show":
+                          tokens = []
+			  tokens.insert(0,vps_current_module)
+	     elif tokens[0] == "edit" and "config" in currentmode :
+		  token = currentmode.split("-")
+		  mode = token[1].split(")")
+		  command_name = "commands."+mode[0] 
+		  cmd = mode[0]
+		  modifier = tokens[0]
+		  index  = tokens.index('edit')
+		  tokens.pop(index)
+		  tokens.insert(0,vps_current_module)		
+	     else:	 
+             	  # Get the command from the command_ref. All other command handled here.
+             	  modifier, cmd, command_name = \
+                               command_ref.cmdToPlugin(tokens, currentmode)
+	
              if command_name == 'exit':
                  return self.__invokeExit(modifier, cmd, command_name, tokens)
              elif command_name == 'set':
@@ -383,16 +405,6 @@ class Interpreter(cmd.Cmd):
                  return self.__invokeLoginExec()
              elif command_name == 'end':
                  return self.__invokeDisable()
-
-             if len(tokens) == 1 and command == "show" \
-                           and "config" in currentmode :
-                   token = currentmode.split("-")
-                   mode = token[1].split(")")
-                   if mode[0] in command_ref.NON_SUB_CMD_MOD:
-                          tokens = []
-		   elif mode[0] in command_ref.SUB_CMD_MOD:
-			  tokens = []
-			  tokens.insert(0,mode[0])
 
              # Invoke the actual command
 	     #print "modifier", modifier
@@ -412,8 +424,8 @@ class Interpreter(cmd.Cmd):
           try:
                # Display the output through the display class
                if isinstance(xml_output, lib.output.CLIoutput):
-                   if vps_cli.vps_xml_mode:
-                         xml_output.outputXML(sys.stdout)
+                   if vps_cli.get_vps_xml_mode():
+                         xml_output.outputCLItoXML(sys.stdout)
                    else:
                          os.environ['SHELL'] = '/bin/true'
                          os.environ['LESSSECURE'] = "1"

@@ -367,6 +367,7 @@ def _reverse_map(m):
 _decode_map = _reverse_map(_encode_map)
 
 def xml_encode(value):
+    #print '.xml_encode'
     if value is None:
         return ""
     else:

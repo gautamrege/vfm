@@ -58,7 +58,7 @@ def show(argv):
 
     """
     output = lib.output.CLIoutput("gateway")
-    #_show_gateway(output, argv)
+    _show_gateway(output, argv)
     return output
 
 
@@ -66,7 +66,17 @@ def _show_gateway(output, argv):
     """
        Show gateway
            syntax : show gateway
+		    show gateway < gateway-id >
+		    show gateway < help | ?  >
     """
+   
+    if len(argv) > 1 or argv[0] == "?" or argv[0] == "help" or argv[0] == "":
+	output.completeOutputError(InvalidArgumentCount(syntax =show.__doc__))
+	return output
+
+    elif len(argv) == 1:
+	print argv[0]
+
     output.beginList("GatewaySpecList")
     _get_gateway_from_db(output,"gateway")
     output.endList("GatewaySpecList")
@@ -99,26 +109,4 @@ def _gateway_spec(output, gw_id, gw_module, bxm_guid, name,
     output.setVirtualNameValue("FLOOD", flood)
     output.setVirtualNameValue("CHECKSUM_OFFLOAD", checksum_offload)
     output.endAssembling("GatewayList")
-
-#
-# argv[0] == 'edit_gateway'
-# argv[1] == '<object>'
-# argv[2] depends on argv[1]
-#
-def edit(argv):
-    """
-      syntax: [edit] gateway <object> 
-    """
-    output = lib.output.CLIoutput("gateway")
-    lib.essentials.dispatch_action(output, argv,
-                             (("gateway", _edit_gateway)),
-                             edit.__doc__)
-    return output
-
-
-def _edit_gateway(output, argv):
-    """
-      Edit gateway related information
-          syntax [edit] gateway <gateway-id>
-    """
 

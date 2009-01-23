@@ -90,6 +90,7 @@ _COMMAND_REF = \
     'bridge'            : 'commands.bridge',
     'iomodule'          : 'commands.iomodule',
     'gateway'           : 'commands.gateway',
+    'vfabric'           : 'commands.vfabric',
 }
 
 #
@@ -113,7 +114,7 @@ CLEAR_MODIFIER = "clear"
 MOD_ADD = "add"
 COMMAND_MODIFIER = [EDIT_MODIFIER, SHOW_MODIFIER, NO_MODIFIER, CLEAR_MODIFIER, MOD_ADD]
 
-NON_SUB_CMD_MOD = ["gateway" , "vadapter", "terminal" , "bridge" , "iomodule"]
+NON_SUB_CMD_MOD = ["gateway" , 'vfabric', "vadapter", "terminal" , "bridge" , "iomodule"]
 
 MOD_GATEWAY = ""
 MOD_VADAPTER = ""
@@ -212,22 +213,41 @@ class UnknownPluginException(Exception):
 
 def cmdToMode(command, cmd_tokens):
     # Here we will return the mode components.
-    tokens = []
-    target = "configure" + " "+ command
+    tokens = cmd_tokens
+    target = "configure" + " "+ cmd_tokens[0]
     modifier = __getModifier(cmd_tokens)
     return (modifier, string.join(command), target, tokens)
 
-    
+   
+def cmdToModifier(cmd_tokens, current_mode):
+    if len(cmd_tokens) == 1 and cmd_tokens[0] == "show" \
+                  and "config" in current_mode :
+
+            tokens = []
+            token = current_mode.split("-")
+            mode = token[1].split(")")
+            if mode[0] in NON_SUB_CMD_MOD and mode[0] != 'terminal':
+                    command_name = "commands."+mode[0]
+    elif len(cmd_tokens) == 1 and cmd_tokens[0] == "edit" \
+		and "config" in current_mode :
+            tokens = []
+            token = current_mode.split("-")
+            mode = token[1].split(")")
+	    if mode[0] in NON_SUB_CMD_MOD and mode[0] != 'terminal':
+		command_name = "commands."+mode[0]
+    return (cmd_tokens[0], mode[0], command_name)
+     
     
 def cmdToPlugin(cmd_tokens, current_mode):
+    """
     # Try to strip the modifier
     if len(cmd_tokens) == 1 and cmd_tokens[0] == "show" \
                   and "config" in current_mode :
             tokens = []
             token = current_mode.split("-")
             mode = token[1].split(")")
-            print COMMAND_MODIFIER_NON_CO_EXISTS
             if mode[0] in COMMAND_MODIFIER_NON_CO_EXISTS and mode[0] != 'terminal':
+		    temp_args = lib.interpreter.vps_current_module
   	            if mode[0] in SUB_CMD_MOD:
 			  if mode[0] == MOD_VADAPTER:
 				mode[0] = "vadpater"
@@ -243,6 +263,7 @@ def cmdToPlugin(cmd_tokens, current_mode):
                     else:
 			  command_name = "commands."+mode[0]
                     return (cmd_tokens[0], mode[0], command_name)
+    """
     modifier = __getModifier(cmd_tokens)
   
     # Lookup the map
@@ -261,10 +282,6 @@ def cmdToPlugin(cmd_tokens, current_mode):
             except KeyError:
                     raise UnknownPluginException(modifier, \
                           string.join(consumed_tokens))
-
-	    #print modifier
-	    #print string.join(consumed_tokens)
- 	    #print target		
 
             return (modifier, string.join(consumed_tokens), target)
 	

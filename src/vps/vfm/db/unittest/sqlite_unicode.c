@@ -452,7 +452,7 @@ void create_vanilla_testdb(uint32_t count)
         uint32_t i, j =0;
         uint8_t bridge_guid[8] = 
                 {0x01, 0x30, 0x48, 0x68, 0xB3, 0xDE, 0x03, 0x00};
-        int gw_module_id = 43;
+        int gw_module_id = 1;
 
         for(i = 0; i < count; i++)
         {
@@ -461,7 +461,7 @@ void create_vanilla_testdb(uint32_t count)
                 test_insert_bridge(bridge_guid);
 
                 for (j = 0; j < 2; j++)
-                        test_insert_gw_module(bridge_guid, gw_module_id+i+j);
+                        test_insert_gw_module(bridge_guid, gw_module_id++);
         }
 }
 
@@ -499,5 +499,5 @@ void main()
 
         //test_read_gw_module();
         printf("Create vanilla test database..\n");
-        create_vanilla_testdb(5);
+        create_vanilla_testdb(2);
 }

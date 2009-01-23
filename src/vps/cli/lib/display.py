@@ -24,7 +24,7 @@ class Display:
   
       def displayVPS(xml_output):
           if isinstance(xml_output, lib.output.XMLoutput): 
-             data_output = xml_output.getOutput(vps_cli.vps_xml_mode)
+             data_output = xml_output.getOutput(vps_cli.get_vps_xml_mode())
              if len(data_output) < Display.__estimatedTotalSize():
                 Display.__differentDisplayVPS(data_output, 'Small')
              else:
