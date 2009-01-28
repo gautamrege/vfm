@@ -7,10 +7,8 @@ import getopt
 import sys
 import re
 
-path = 'src/vps/cli'
-if path not in sys.path:
-     sys.path.append(path)
-
+import lib.vfmapi
+import vfm
 import lib.output
 import lib.process
 import lib.essentials

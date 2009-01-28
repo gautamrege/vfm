@@ -591,6 +591,8 @@ static PyMethodDef VfmMethods[] = {
                    "Edit the vfabric properties and return the vfabric id."},
         {"py_vfm_vfabric_online", py_vfm_vfabric_online, METH_VARARGS,
                 "Change the running mode of vfabric to ONLINE."},
+        {"py_vfm_vadapter_online", py_vfm_vadapter_online, METH_VARARGS,
+                "Change the running mode of vadapter to ONLINE."},
         {"py_vfm_bd_select_inventory", py_vfm_bd_select_inventory,
                  METH_VARARGS, "Display the Bridge device inventory."},
         {"py_vfm_bd_query_general_attr", py_vfm_bd_query_general_attr,

@@ -502,8 +502,44 @@ out:
 	return err;
 }
 
-vfm_error_t process_vfm_vadapter_online(uint8_t *buff,
-		uint32_t *ret_pos, res_packet *op_arg)
+/*
+ * Change the running mode of the vadapter to ONLINE.
+ * Note:  This operation modifies the running mode of the vadapter to ONLINE.
+ * It means that VFM can activate the vadapter and start the services of the
+ * vadapter i.e. it will turn the vadapters as ACTIVE and will start bridging
+ * the packets between the host and the destination via the gateway.
+ * After the call the VFM system will change the vadapter to ONLINE. If the 
+ * primary gateway is ONLINE/ACTIVE, the vfabric will also be ACTIVE.
+ *
+ * [in]   vadapter_id   The id of the vadapter to be activated.
+ * Returns 0 on success, or an error code on failure.
+ */
+
+vfm_error_t
+process_vfm_vadapter_online(uint8_t *buff, uint32_t *ret_pos,
+		                res_packet *op_arg)
 {
-	/* Call internal routine vadapter_online */
+	vfm_vadapter_id_t vadapter_id;
+
+	vps_error err = VPS_SUCCESS;
+	vps_trace(VPS_ENTRYEXIT, "Entering process_vfm_vadapter_online");
+
+	get_api_tlv(buff, ret_pos, &vadapter_id);
+
+        if ( VPS_SUCCESS != __vadapter_online(vadapter_id)) {
+                vps_trace(VPS_WARNING, "Could not activate adapter: %d",
+                                vadapter_id);
+        }
+        else
+        {
+                vps_trace(VPS_INFO, "Vadapter %d successfully activated",
+                                vadapter_id);
+        }
+
+        op_arg->size  = sizeof(vfm_error_t);
+        op_arg->data  = malloc(op_arg->size);
+        memcpy(op_arg->data, &err, sizeof(vfm_error_t));
+
+	vps_trace(VPS_ENTRYEXIT, "Leaving process_vfm_vadapter_online");
+	return err;
 }

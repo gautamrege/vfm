@@ -4,8 +4,6 @@
 #include <vfmapi_common.h>
 #include <vfm_vadapter.h>
    
-uint8_t host_mac[6] = {0x00, 0x02, 0xc9, 0x01, 0xc6, 0xf4};
-
 /*
  * This function Marshals the message for creating the
  * Virtual adapter object
@@ -349,7 +347,7 @@ vfm_vadapter_edit_protocol_attr(vfm_vadapter_id_t vadapter_id,
 
 
 /*
- * Change the running mode of the vfabric to ONLINE.
+ * Change the running mode of the vadapter to ONLINE.
  * This operation modifies the running mode of the vadapter to ONLINE.
  * This operation is the trigger to VFM to start the services of the vadapter.
  * After the call the VFM system can instantiate the vadapter (based on whether
@@ -361,15 +359,14 @@ vfm_vadapter_edit_protocol_attr(vfm_vadapter_id_t vadapter_id,
  * [in]   vadapter_id   The id of the vadapter to be activated.
  *
  * Returns 0 on success, or an error code on failure.
- * TODO : NOT COMPLETE; JJUST A DUMMY .. NOT TESTED XXX
  */
+
 vfm_error_t
 vfm_vadapter_online(vfm_vadapter_id_t vadapter_id)
 {
-
         api_tlv tlv;
         uint32_t mesg_len, res_len;
-        uint32_t no_of_args = 2;
+        uint32_t no_of_args = 1;
         uint8_t *message, *offset;
         vfmapi_ctrl_hdr ctrl_hdr;
         int sock_fd;
@@ -382,7 +379,7 @@ vfm_vadapter_online(vfm_vadapter_id_t vadapter_id)
 
         memset(&ctrl_hdr , 0, sizeof(vfmapi_ctrl_hdr));
 
-        err = create_ctrl_hdr(VFMAPI_VADAPTER, VFM_QUERY, mesg_len, &ctrl_hdr);
+        err = create_ctrl_hdr(VFMAPI_VADAPTER, VFM_ONLINE, mesg_len, &ctrl_hdr);
         if (err)
                 return err;
 
@@ -394,11 +391,21 @@ vfm_vadapter_online(vfm_vadapter_id_t vadapter_id)
         offset += sizeof(vfmapi_ctrl_hdr);
 
 
-        /* TYPE =TLV_BIT_MASK , vfm_protocol_t */
-        create_api_tlv(TLV_INT, sizeof(vfm_vadapter_id_t),
-                              &vadapter_id, &offset);
-        
+        /* TYPE = 1 , vadapter_id */
+        create_api_tlv(TLV_INT, sizeof(vfm_vadapter_id_t), &vadapter_id,
+                        &offset);
 
+        display(message, mesg_len);
+        err = create_connection(&sock_fd);
+        if (err)
+                return err;
 
+        err = process_request(sock_fd, message, mesg_len, &pack);
+        if (err)
+                return err;
+
+        err = unmarshall_response(pack.data, pack.size, &op_pack);
+
+        return err;
 }
 

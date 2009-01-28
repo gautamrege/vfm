@@ -11,12 +11,9 @@ import termios
 import time
 import getpass
 
-path = '/cli/src/vps/cli'
-if path not in sys.path:
-      sys.path.append(path)
-
 import commands
 import command_ref
+#import lib.vfmapi
 import lib.output
 import lib.escape
 import lib.errorhandler

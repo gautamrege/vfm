@@ -1,9 +1,9 @@
 import sys, os
 
-cwd=os.getcwd()
-sys.path.append("%s/build/lib.linux-x86_64-2.4" % cwd)
-sys.path.append("%s/.." % cwd)
-
+#cwd=os.getcwd()
+#sys.path.append("%s/build/lib.linux-x86_64-2.4" % cwd)
+#sys.path.append("%s/.." % cwd)
+#
 #print sys.path
 import vfm
 
@@ -34,6 +34,10 @@ def reg2():
         input = {}
         bridge_info = vfm.py_vfm_bd_select_inventory(input)
         print bridge_info
+def reg3():
+        result = vfm.py_vfm_vadapter_online({'id': 1 })
+        print "vadapter is online:", result
+
 
 def help():
         print """ 1. Create a vfabric
@@ -48,5 +52,5 @@ def help():
 #help()
 #raw_input()
 #reg1()
-reg2()
-reg2()
+#reg2()
+reg3()

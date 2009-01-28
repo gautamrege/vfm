@@ -8,13 +8,6 @@ import sys
 import re
 import string
 
-path = 'src/vps/cli'
-if path not in sys.path:
-     sys.path.append(path)
-
-sys.path.append("/home/rohit/pluto/src/vps/vfm/vfmapi/pyapi/build/lib.linux-x86_64-2.4")
-sys.path.append("/home/rohit/pluto/src/vps/vfm/vfmapi/pyapi")
-
 import vfm
 import lib.output
 import lib.process
@@ -317,6 +310,8 @@ def _parse_edit_or_add_argv(output, argv, valid_args, syntax = None, call_from =
 #
 def edit(argv):
     """
+       [edit] vadapter <vadapter-id> online
+
        [edit] vadapter <vadapter-id> [<general-attrs>]
        protocol [EN <en-attrs>] | [FC <fc-attrs>]
 
@@ -351,7 +346,17 @@ def edit(argv):
     if ( argv[1] == '?' or argv[1] == 'help'):
           output.completeOutputError(lib.errorhandler.InvalidArgumentCount(syntax=edit.__doc__, descape = "Help"))
           return output
-  
+    if argv[2].lower() == 'online':
+           if isEditName(output, argv[1]) == -1:
+                print "Error Not a valid Id"
+                return output  
+           else:
+               dict = {}
+               dict['id'] = int(argv[1])
+               result = vfm.py_vfm_vadapter_online(dict)
+               print result
+               return output
+
     _parse_edit_or_add_argv(output, argv, valid_list,syntax = edit.__doc__ , call_from = 'edit' ) 
 
     return output
@@ -646,12 +651,12 @@ def isAddName(name):
     
     return 0
  
-def isEditName(id):
+def isEditName(output, id):
     """ Checks if the name exists in the database"""
     for char in id:
         if re.compile('[0-9]+').match(char[0]) == None:
-            print NameError("'%s' is not valid name. \n Id should be numeric" % (id))
-            return -1
+           print NameError("'%s' is not valid name. \n Id should be numeric" % (name))
+           return -1
     return 0
 
 # Evaluate String : isVLAN

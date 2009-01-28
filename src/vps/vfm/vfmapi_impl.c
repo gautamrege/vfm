@@ -116,6 +116,12 @@ unmarshall_request(void *buff, uint32_t size, res_packet * pack)
                                         vfm_marshall_response(&op_data,
                                                         &ctrl_hdr, pack, 2);
                                         break;
+				case VFM_ONLINE:
+					process_vfm_vadapter_online(buff,
+							&ret_pos, &op_data);
+                                        vfm_marshall_response(&op_data,
+                                                        &ctrl_hdr, pack, 1);
+					break;
                                 case VFM_QUERY:
                                         process_vfm_query_vadapter(buff,
                                                         &ret_pos, &op_data);

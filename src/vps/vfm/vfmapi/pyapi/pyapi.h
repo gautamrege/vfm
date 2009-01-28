@@ -178,4 +178,23 @@ py_vfm_vfabric_edit_general_attr(PyObject* self, PyObject *args);
 PyObject *
 py_vfm_vfabric_online(PyObject* self, PyObject *args);
 
+
+/*
+ * @brief The python wrapper for calling vfm_vadapter_online.
+ *
+ * @param[in] self The python object
+ *
+ * @param[in] args Dictionary to change the running mode of 
+ *                 the vadapter to online:
+ *                 {'id' : <int:vadapter id>}
+ *
+ * @return PyObject which contains the following dictionary on success:
+ *                 {'id' : <vadapter id>}
+ *                  On failure, it will return NULL and throw the
+ *                  relevant Python exception.
+ *
+ */
+PyObject *
+py_vfm_vadapter_online(PyObject* self, PyObject *args);
+
 #endif /* INCLUDED_pyapi_functions */

@@ -2,7 +2,7 @@
 
 from distutils.core import setup, Extension
 
-vfm = Extension('vfm', sources = ['pyapi.c', 'pyapi_bridge.c'], 
+vfm = Extension('vfm', sources = ['pyapi.c', 'pyapi_bridge.c', 'pyapi_vadapter.c'], 
                 include_dirs = ['.', '../../include/vfmapi', '../../include'],
                 libraries = ['vfmapi'],
                 library_dirs = ['../'])
