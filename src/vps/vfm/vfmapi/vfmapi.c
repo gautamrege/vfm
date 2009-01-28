@@ -61,6 +61,14 @@ unmarshall_response(void *buff, uint32_t size, res_packet *pack)
                         if (err)
                              goto out;
                         break;
+                case VFM_ERROR:
+                        pack->data = malloc(sizeof(vfm_error_t));
+                        err = get_api_tlv(buff, &ret_pos, pack->data);
+                        if (err)
+                             goto out;
+                        /*Memcpy the error message from the packet in the err*/
+                        memcpy(&err, pack->data, sizeof(vfm_error_t));
+                        break;
         }
         display(pack->data, pack->size);
 out:

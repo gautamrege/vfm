@@ -549,7 +549,6 @@ py_vfm_vfabric_online(PyObject* self, PyObject *args)
         /*validate the input object and get the dictionary object*/
         vfm_dict =  validate_dictionary(args, vfm_dict);
         /* Pass this dictionary object to get the vfabric_id*/
-
         if (NULL != (dict_object = 
                          PyDict_GetItemString(vfm_dict, "id"))) {
                 if(PyInt_Check(dict_object))
@@ -561,8 +560,14 @@ py_vfm_vfabric_online(PyObject* self, PyObject *args)
                 }
         }    
         err = vfm_vfabric_online(vfabric_id);
+        printf("\nError no : %d", err);
         if (err != VFM_SUCCESS) {
-                PyErr_SetString(PyExc_StandardError,
+                if (err == VFM_ERROR_VFABRIC)
+                        PyErr_SetString(PyExc_StandardError,"The vfabric is not associated with any vadapter");
+                else if (err == VFM_ERROR_IOMODULE)
+                        PyErr_SetString(PyExc_StandardError,"The io module is not associated with vadapter");
+                else
+                        PyErr_SetString(PyExc_StandardError,
                             "Error in changing the running mode of vfabric");
                 goto out;
         }

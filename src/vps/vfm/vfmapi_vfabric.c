@@ -232,11 +232,20 @@ process_vfm_vfabric_online(uint8_t *buff, uint32_t *ret_pos,
                 err = VPS_DBERROR;
                 goto out;
         }
-
+        /* First check if the vfabric is associated with atleast 
+         * one vadapter or not.
+         */
+         if (res.count == 0) {
+                vps_trace(VPS_ERROR, 
+                        "Associate the vfabric with the vadapter first");
+                err = VFM_ERROR_VFABRIC;
+                goto out;
+         }
 	/* For each vadapter, call vfm_vadapter_online API */
 	for (i = 0; i < res.count; i++) {
 		vadapter = ((vfm_vadapter_attr_t *)res.data) + i;
-		if ( VPS_SUCCESS != __vadapter_online(vadapter->_vadapter_id)) {
+                err = __vadapter_online(vadapter->_vadapter_id);
+		if (err != VPS_SUCCESS) {
 			vps_trace(VPS_WARNING, "Could not activate adapter: %d",
 					vadapter->_vadapter_id);
 		}

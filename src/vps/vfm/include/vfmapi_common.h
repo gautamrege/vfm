@@ -44,6 +44,7 @@
 #define VFM_DESTROY             0x5
 #define VFM_ONLINE              0x6
 #define VFM_EDIT_PROTOCOL_ATTR  0x7
+#define VFM_ERROR               0x8     
 #define VFM_VA_ACTIVATE         0x11
 
 /* Defining the TLV's */

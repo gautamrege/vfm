@@ -21,11 +21,14 @@ def reg1():
                                                 'primary_gateway':1})
         print "vfabric edited:", result
 
-        result = vfm.py_vfm_vadapter_edit_general_attr({'id':vadapter['id'],'io_module_id':1, 'vfabric_id':vfabric['id']})
+        result = vfm.py_vfm_vadapter_edit_general_attr({'id':vadapter['id'], 'vfabric_id':vfabric['id']})
         print "vdapter edited:", result
-
-        result = vfm.py_vfm_vfabric_online({'id':vfabric['id']})
-        print "vfabric is online:", result
+        try :
+                result = vfm.py_vfm_vfabric_online({'id':vfabric['id']})
+        except StandardError, e:
+                print "ERROR ! " ,e 
+        else :
+                print "vfabric is online:", result
 
 def reg2():
         print """\nRegression Test 2:
@@ -47,6 +50,5 @@ def help():
         
 #help()
 #raw_input()
-#reg1()
-reg2()
-reg2()
+reg1()
+#reg2()

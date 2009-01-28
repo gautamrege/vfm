@@ -139,11 +139,11 @@ test_bridge_device()
 int main()
 {
         //test_vadapter_create();
-        test_vadapter_edit();
+        //test_vadapter_edit();
         //test_vadapter_edit_protocol();
         //test_vfabric_create();
         //test_vfabric_edit();
-        //test_vfabric_online();
+        test_vfabric_online();
         //test_bridge_inventory();
         //test_bridge_device();
 }

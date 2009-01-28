@@ -10,7 +10,9 @@
 #define VFM_ERROR_SENDING       1
 #define VFM_ERROR_RECEIVE       2
 #define VFM_ERROR_CONNECT       3
-
+#define VFM_ERROR_VFABRIC       4
+#define VFM_ERROR_VADAPTER      5
+#define VFM_ERROR_IOMODULE      6
 /**
  * @file
  * @brief Error codes for VFM API.

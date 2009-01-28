@@ -60,6 +60,10 @@ vfm_marshall_response(res_packet *buff, vfmapi_ctrl_hdr *ctrl_hdr,
                         create_api_tlv(TLV_BD_ATTR, buff->size,
                                         buff->data, &offset);
                         break;
+                case VFM_ERROR:
+                        create_api_tlv(TLV_INT, sizeof(vps_error),
+                                        &buff->size, &offset);
+
         }
 
         free(buff->data);
@@ -143,8 +147,15 @@ unmarshall_request(void *buff, uint32_t size, res_packet * pack)
                                                         &ctrl_hdr, pack, 1);
 					break;
 				case VFM_ONLINE:
-					process_vfm_vfabric_online(buff,
+					err = process_vfm_vfabric_online(buff,
 							&ret_pos, &op_data);
+                                        /* 
+                                         * If the function returns an error
+                                         * code then change the control header
+                                         * opcode to VFM_ERROR
+                                         */
+                                        if (err != VPS_SUCCESS)
+                                                ctrl_hdr.opcode = VFM_ERROR; 
                                         vfm_marshall_response(&op_data,
                                                         &ctrl_hdr, pack, 1);
 					break;

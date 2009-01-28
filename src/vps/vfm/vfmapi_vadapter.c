@@ -442,6 +442,13 @@ vps_error __vadapter_online(vfm_vadapter_id_t vadapter_id)
                 err = VPS_DBERROR;
                 goto out;
         }
+
+        if (rsc.count <= 0) {
+                vps_trace(VPS_ERROR, "No IO Module associated with Vadapter");
+                err = VFM_ERROR_IOMODULE;
+                goto out;
+                
+        }
 	io_module = (vpsdb_io_module_t *)rsc.data;
 
 	/**** Find the vfabric record ****/
