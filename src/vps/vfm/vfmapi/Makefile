@@ -13,7 +13,10 @@ VFMAPI_INC_PATH= $(BASEDIR)/include/vfmapi
 INC= -I$(BASEDIR)/include -I$(VFMAPI_INC_PATH)
 DEFS=
 #TODO: Add .c.o rules asap
-all: vfmapi
+all: vfmapi install
+
+install:
+	install -T libvfmapi.so /usr/lib64/libvfmapi.so
 
 client: 
 	gcc -o client $(CFLAGS) $(DEFS) $(INC) $(LIBS) $(SRC)
@@ -26,4 +29,5 @@ test: vfmapi
 try:
 	gcc -o test unittest/vfmapi_test.c $(CFLAGS) $(DEFS) $(INC) $(SRC)
 clean:
-	rm -f lib$(VFMAPI).so cli client
+	rm -f /usr/lib64/lib$(VFMAPI).so lib$(VFMAPI}.so cli client
+

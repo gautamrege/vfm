@@ -8,15 +8,7 @@ import sys
 import re
 import string
 
-path = 'src/vps/cli'
-if path not in sys.path:
-     sys.path.append(path)
-
-sys.path.append("/home/rohit/pluto/src/vps/vfm/vfmapi/pyapi/build/lib.linux-x86_64-2.4")
-sys.path.append("/home/rohit/pluto/src/vps/vfm/vfmapi/pyapi")
-
 import vfm
-
 import lib.output
 import lib.process
 import lib.essentials
