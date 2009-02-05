@@ -19,7 +19,6 @@ vfm_vadapter_create(char *name, char *desc,
                 vfm_protocol_t protocol,
                 vfm_vadapter_id_t *vadapter_id)
 {
-        api_tlv tlv;
         uint32_t mesg_len, res_len, sock_fd;
         uint32_t no_of_args = 3;
         uint8_t *message, *offset;
@@ -83,7 +82,6 @@ vfm_vadapter_edit_general_attr(vfm_vadapter_id_t vadapter_id,
                 vfm_vadapter_attr_bitmask_t * bitmask,
                 vfm_vadapter_attr_t * attr)
 {
-        api_tlv tlv;
         uint32_t mesg_len, res_len;
         uint32_t no_of_args = 3;
         uint8_t *message, *offset;
@@ -114,7 +112,7 @@ vfm_vadapter_edit_general_attr(vfm_vadapter_id_t vadapter_id,
         create_api_tlv(TLV_INT, sizeof(vfm_vadapter_id_t), &vadapter_id,
                         &offset);
 
-        /* TYPE =TLV_BIT_MASK , vfm_protocol_t */
+        /* TYPE =TLV_BIT_MASK */
 
         create_api_tlv(TLV_BIT_MASK, sizeof(vfm_vadapter_attr_bitmask_t),
                         (bitmask), &offset);
@@ -144,22 +142,21 @@ vfm_vadapter_edit_general_attr(vfm_vadapter_id_t vadapter_id,
 /*
 * Get the list of existing vadapters in the local inventory.
 * Parameters:
-* [in] attr   : Pointer to the structure containing the attrs of the vadapters
+* @param[in] attr   : Pointer to the structure containing the attrs of the vadapters
 *               that should match with the properties in the inventory.
-* [in] bitmask: Specifies an bit mask value. The bitmask indicates the specific
+* @param[in] bitmask: Specifies an bit mask value. The bitmask indicates the specific
 *               properties of the object to be matched. This bitmask flag
 *               should be bit-AND'ed against order of attributes in the struct
 *               vfm_vadapter_attr_t.
 *
-* [out] num_result : Number of resource objects allocated in result
-* [out] result     : Pointer to an array of vadapter attribute struct. It is
+* @param[out] num_result : Number of resource objects allocated in result
+* @param[out] result     : Pointer to an array of vadapter attribute struct. It is
 *                    responsibility of the caller to allocate and free memory
 *                    of the strucutres. The results found are stored at the
 *                    location to which this argument points. NULL will mark the
 *                    end of the list, if there are less than num_results
 *                    objects found in the inventory.
-* Returns:
-* Returns 0 on success, or an error code on failure.
+* @Returns 0 on success, or an error code on failure.
 */
 vfm_error_t
 vfm_vadapter_select_inventory(vfm_vadapter_attr_t * attr,
@@ -167,8 +164,6 @@ vfm_vadapter_select_inventory(vfm_vadapter_attr_t * attr,
                 uint32_t num_result,
                 vfm_vadapter_id_t *result[])
 {
-
-        api_tlv tlv;
         uint32_t mesg_len, res_len;
         uint32_t no_of_args = 2;
         uint8_t *message, *offset;
@@ -196,7 +191,7 @@ vfm_vadapter_select_inventory(vfm_vadapter_attr_t * attr,
         offset += sizeof(vfmapi_ctrl_hdr);
 
 
-        /* TYPE =TLV_BIT_MASK , vfm_protocol_t */
+        /* TYPE =TLV_BIT_MASK */
         create_api_tlv(TLV_BIT_MASK, sizeof(vfm_vadapter_attr_bitmask_t),
                               bitmask, &offset);
 
@@ -215,15 +210,44 @@ vfm_vadapter_select_inventory(vfm_vadapter_attr_t * attr,
 
         err = unmarshall_response(pack.data, pack.size, &op_pack);
 
+        
+       /* Return the result to the Python Wrapper. */
         return err;
 
 }
+
+/**
+ * @brief Query the properties of a virtual I/O adapter in the local
+ *        configuration
+ *
+ * @param[out] vadapter_id : A valid vadapter id of the vadapter
+ * @param[in] bitmask: Specifies an bit mask value. The bitmask indicates the
+ *            specific properties of the object to be retrieved. This bitmask
+ *            should be bit-AND'ed against order of attributes in the struct
+ *            bxm_vadapter_attr_t.
+ *
+ * @param[out] result: Pointer to the struct of vadapter attribute.
+ *    The caller would be responsibe to allocate and free memory of
+ *   the structure. The result is stored at the location to which
+ *  this argument points. If no match is found or on error, NULL will be
+ *         stored in this location.
+ *
+ * @return Returns 0 on success, or an error code on failure.
+ */
+vfm_error_t
+bxm_vadapter_query_general_attrs(vfm_vadapter_id_t vadapter_id,
+                vfm_vadapter_attr_bitmask_t bitmask,
+                vfm_vadapter_attr_t *result)
+{
+}
+
+
+
 
 /* TODO : NOT COMPLETE;  .. NOT TESTED XXX */
 vfm_error_t
 vfm_vadapter_destroy(vfm_vadapter_id_t vadapter_id)
 {
-        api_tlv tlv;
         uint32_t mesg_len, res_len;
         uint32_t no_of_args = 1;
         uint8_t *message, *offset;
@@ -291,7 +315,6 @@ vfm_vadapter_edit_protocol_attr(vfm_vadapter_id_t vadapter_id,
                 void * bitmask,
                 void * attr)
 {
-        api_tlv tlv;
         uint32_t mesg_len, res_len;
         uint32_t no_of_args = 3;
         uint8_t *message, *offset;
@@ -364,7 +387,6 @@ vfm_vadapter_edit_protocol_attr(vfm_vadapter_id_t vadapter_id,
 vfm_error_t
 vfm_vadapter_online(vfm_vadapter_id_t vadapter_id)
 {
-        api_tlv tlv;
         uint32_t mesg_len, res_len;
         uint32_t no_of_args = 1;
         uint8_t *message, *offset;

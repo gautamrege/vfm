@@ -22,7 +22,8 @@ VFMAPI_SRC = vfmapi_common.c \
 	     vfmapi_vfabric.c \
              vfmapi_vadapter.c \
              vfmimpl_pack.c \
-	     vfmapi_impl.c
+	     vfmapi_impl.c \
+	     vfmimpl_unpack.c
 
 EXT_SRC=ext/open-fcoe/crc32_le.c \
     ext/open-fcoe/crc32_le_tab.c \

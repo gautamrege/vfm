@@ -234,10 +234,14 @@ def edit(argv):
             else:
                 dict = {}
                 dict['id'] = int(argv[1])
-                result = vfm.py_vfm_vfabric_online(dict)                                          
-                print result
-                return output
-
+                try:
+                        result = vfm.py_vfm_vfabric_online(dict)
+                except StandardError, e:
+                        print "Error!" ,e
+                        return output 
+                else:
+                        print result
+                        return output
 
     if ( argv[1] == '?' or argv[1] == 'help'):
              output.completeOutputError(lib.errorhandler.InvalidArgumentCount(syntax=edit.__doc__, 
@@ -729,13 +733,12 @@ def _editing_edit_dictionary(dict):
                     dict['ha_state'] = int('1')
 
     if 'protocol' in dict:
-            if dict['protocol'] == 'en':
+            if dict['protocol'].lower() == 'en':
                    dict['protocol'] = int('1')
-            elif dict['protocol'] == 'fc':
+            elif dict['protocol'].lower() == 'fc':
                    dict['protocol'] = int('3')
-            elif dict['protocol'] == 'ib':
+            elif dict['protocol'].lower() == 'ib':
                    dict['protocol'] = int('2')
 
-    print dict                
     return dict
                     

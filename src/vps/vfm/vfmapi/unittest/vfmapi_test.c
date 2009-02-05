@@ -157,4 +157,5 @@ int main()
         //test_bridge_inventory();
         //test_bridge_device();
         test_vfabric_inventory();
+        make_and_get_packet();
 }

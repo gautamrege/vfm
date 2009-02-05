@@ -5,7 +5,8 @@ SRC= vfmapi.c \
      vfmapi_gateway.c \
      vfmapi_bridge_device.c \
      vfmapi_connect.c \
-     $(BASEDIR)/vfmapi_common.c
+     $(BASEDIR)/vfmapi_common.c \
+     $(BASEDIR)/vfmimpl_unpack.c
 CFLAGS= -g -fPIC
 VFMAPI=vfmapi
 LIBS= -lpthread
@@ -20,14 +21,16 @@ install:
 
 client: 
 	gcc -o client $(CFLAGS) $(DEFS) $(INC) $(LIBS) $(SRC)
+
 vfmapi: 
 	gcc -shared -o lib$(VFMAPI).so $(CFLAGS) $(DEFS) $(INC) $(LIBS) $(SRC)
 
 test: vfmapi
-	gcc -o cli unittest/vfmapi_test.c -L. -lvfmapi $(CFLAGS) $(DEFS) $(INC)
+	gcc -o cli unittest/vfmapi_test.c unittest/vfm_unpack_test.c -L. -lvfmapi $(CFLAGS) $(DEFS) $(INC)
 
 try:
 	gcc -o test unittest/vfmapi_test.c $(CFLAGS) $(DEFS) $(INC) $(SRC)
+
 clean:
 	rm -f /usr/lib64/lib$(VFMAPI).so lib$(VFMAPI}.so cli client
 
