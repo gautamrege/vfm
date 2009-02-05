@@ -264,6 +264,34 @@ out:    op_arg->size  = sizeof(vfm_error_t);
 	return err;
 }
 
+/*
+ * This function processes the message sent by the client.
+ * It then converts it into a proper structure and then gives it to the
+ * db access layer to do the functionality.
+ *
+ * [IN]  buff  : Contains the values of the TLVs.
+ * [IN]  ret_pos : contains the value of the offset
+ * [OUT] op_arg : paraeters that is to given as output.
+ */
+vfm_error_t
+process_vfm_vfabric_select_inventory(uint8_t *buff, uint32_t *ret_pos,
+                res_packet *op_arg)
+{
+        /*read the data from the buff and parse it into vfabric structure*/
+        /*read the bitmask set for the input vfabric structure*/
+        /*pass the structure and its bitmask to populate the information
+          of the vfabric*/
+        vfm_vfabric_attr_t attr;
+        vfm_vfabric_attr_bitmask_t bitmask;
+        res_packet rsc;
+        memset(&rsc, 0, sizeof(res_packet));
+
+        populate_vfabric_information(attr,bitmask,&rsc);
+        /*pack the data and its size into op_arg */  
+        op_arg->count = rsc.count;
+        op_arg->size = rsc.size;
+        op_arg->data = rsc.data;
+}
 
 process_edit_protocol_attr()
 {

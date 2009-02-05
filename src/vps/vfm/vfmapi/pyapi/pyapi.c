@@ -560,7 +560,6 @@ py_vfm_vfabric_online(PyObject* self, PyObject *args)
                 }
         }    
         err = vfm_vfabric_online(vfabric_id);
-        printf("\nError no : %d", err);
         if (err != VFM_SUCCESS) {
                 if (err == VFM_ERROR_VFABRIC)
                         PyErr_SetString(PyExc_StandardError,"The vfabric is not associated with any vadapter");

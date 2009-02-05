@@ -12,6 +12,7 @@ VPS_SRC=server.c \
     db/vfmdb_vadapter.c \
     db/vfmdb_iomodule.c \
     db/vfmdb_bridge_device.c \
+    db/vfmdb_vfabric.c \
     vfm_iomodule.c \
     config.c
 
@@ -20,6 +21,7 @@ VFMAPI_SRC = vfmapi_common.c \
              vfmapi_bridge_device.c \
 	     vfmapi_vfabric.c \
              vfmapi_vadapter.c \
+             vfmimpl_pack.c \
 	     vfmapi_impl.c
 
 EXT_SRC=ext/open-fcoe/crc32_le.c \

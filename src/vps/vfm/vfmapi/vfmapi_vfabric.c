@@ -212,3 +212,59 @@ vfm_vfabric_online(vfm_vfabric_id_t vfabric_id)
         return err;
 }
 
+vfm_error_t 
+vfm_vfabric_select_inventory(vfm_vfabric_attr_t *attr,
+			    vfm_vfabric_attr_bitmask_t bitmask,
+			    uint32_t *num_result,
+			    vfm_vfabric_attr_t *result[])
+{
+        
+        api_tlv tlv;
+        uint32_t mesg_len, res_len;
+        uint32_t no_of_args = 2;
+        uint8_t *message, *offset;
+        vfmapi_ctrl_hdr ctrl_hdr;
+        int sock_fd;
+        res_packet pack, op_pack;
+
+        vfm_error_t err = VFM_SUCCESS;
+
+        mesg_len = (sizeof(vfmapi_ctrl_hdr) + sizeof(vfm_vfabric_attr_t) +
+                        sizeof(vfm_vfabric_attr_bitmask_t) +
+                        TLV_SIZE * no_of_args);
+
+        memset(&ctrl_hdr , 0, sizeof(vfmapi_ctrl_hdr));
+
+        err = create_ctrl_hdr(VFMAPI_VFABRIC, VFM_QUERY_INVENTORY, 
+                                mesg_len, &ctrl_hdr);
+        if (err)
+                return err;
+
+        message = (uint8_t *)malloc(mesg_len);
+        memset(message , 0, mesg_len);
+        offset = message;
+
+        memcpy(offset, &ctrl_hdr, sizeof(vfmapi_ctrl_hdr));
+        offset += sizeof(vfmapi_ctrl_hdr);
+
+
+        /* TYPE = 1 , vfabric_id */
+        create_api_tlv(TLV_VFABRIC_ATTR, sizeof(vfm_vfabric_attr_t), 
+                        attr, &offset);
+        create_api_tlv(TLV_VFABRIC_ATTR_BITMASK,
+        sizeof(vfm_vfabric_attr_bitmask_t), &bitmask, &offset);
+
+
+        display(message, mesg_len);
+        err = create_connection(&sock_fd);
+        if (err)
+                return err;
+
+        err = process_request(sock_fd, message, mesg_len, &pack);
+        if (err)
+                return err;
+
+        err = unmarshall_response(pack.data, pack.size, &op_pack);
+
+        return err;
+}

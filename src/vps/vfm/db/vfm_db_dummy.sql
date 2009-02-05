@@ -173,4 +173,8 @@ left outer join vfm_vadapter_fc_attr on vfm_vadapter_fc_attr.vadapter_id = vfm_v
 left outer join vfm_vadapter_en_attr on vfm_vadapter_en_attr.vadapter_id = vfm_vadapter_attr.id;
 CREATE VIEW `v_vfm_vfabric_attr` AS
 select  id, name, `desc`, ctx_table_id, primary_gw_id, backup_gw_id, protocol,type,auto_failover,auto_failback from vfm_vfabric_attr;
+CREATE VIEW `v_vfm_vfabric_attr_with_vadapter_count` AS 
+select vfm_vfabric_attr.*,count(vfm_vadapter_attr.id) as vadapter_id from
+vfm_vfabric_attr left outer join vfm_vadapter_attr on vfm_vfabric_attr.id =
+vfm_vadapter_attr.vfabric_id group by vfm_vfabric_attr.id;
 COMMIT;

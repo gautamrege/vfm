@@ -5,10 +5,6 @@
 #include <vfmapi_common.h>
 #include <common.h>
 
-
-
-
-
 /*
  * This function will create the message for the request .
  * The op parameter will be filled up (if any)
@@ -55,14 +51,21 @@ vfm_marshall_response(res_packet *buff, vfmapi_ctrl_hdr *ctrl_hdr,
                         break;
                 case VFM_QUERY_INVENTORY:
                 case VFM_QUERY:
-                        create_api_tlv(TLV_INT, sizeof(uint32_t),
-                                        &buff->size, &offset);
-                        create_api_tlv(TLV_BD_ATTR, buff->size,
-                                        buff->data, &offset);
+                        switch (ctrl_hdr->mod_id) {
+                                case VFMAPI_VFABRIC:
+                                        vfm_pack_data(buff, &offset);
+                                break;
+                                case VFMAPI_BRIDGE_DEVICE:
+                                create_api_tlv(TLV_INT, sizeof(uint32_t),
+                                                &buff->size, &offset);
+                                create_api_tlv(TLV_BD_ATTR, buff->size,
+                                                buff->data, &offset);
+                                break;
+                        }
                         break;
                 case VFM_ERROR:
                         create_api_tlv(TLV_INT, sizeof(vps_error),
-                                        &buff->size, &offset);
+                                        buff->data, &offset);
 
         }
 
@@ -116,7 +119,6 @@ unmarshall_request(void *buff, uint32_t size, res_packet * pack)
                                 case VFM_QUERY_INVENTORY:
                                         process_vfm_query_inventory(buff,
                                                         &ret_pos, &op_data);
-
                                         vfm_marshall_response(&op_data,
                                                         &ctrl_hdr, pack, 2);
                                         break;
@@ -165,6 +167,14 @@ unmarshall_request(void *buff, uint32_t size, res_packet * pack)
                                         vfm_marshall_response(&op_data,
                                                         &ctrl_hdr, pack, 1);
 					break;
+                                case VFM_QUERY_INVENTORY :
+                                        err =
+                                        process_vfm_vfabric_select_inventory
+                                        (buff, &ret_pos, &op_data);
+                                        vfm_marshall_response(&op_data,
+                                                        &ctrl_hdr, pack, 0);
+
+
                         }
                         break;
                 case VFMAPI_BRIDGE_DEVICE:

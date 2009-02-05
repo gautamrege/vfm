@@ -1,10 +1,12 @@
 /*
  * Copyright (c) 2008  VirtualPlane Systems, Inc.
  */
-#include <pyapi_bridge.h>
+
 #include <pyapi.h>
-/* Parse the guid and send the actual values in the uint8 array*/        
 //#define TEST1
+
+
+/* Parse the guid and send the actual values in the uint8 array*/        
 int
 parse_string_to_unicode(char *buff,
                 int length,

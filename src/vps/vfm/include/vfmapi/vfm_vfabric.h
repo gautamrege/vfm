@@ -507,7 +507,7 @@ vfm_error_t vfm_vfabric_offline(vfm_vfabric_id_t vfabric_id);
 vfm_error_t vfm_vfabric_select_inventory(vfm_vfabric_attr_t *attr,
 			    vfm_vfabric_attr_bitmask_t bitmask,
 			    uint32_t *num_result,
-			    vfm_vfabric_id_t *result[]);
+			    vfm_vfabric_attr_t *result[]);
 
 /**
  * @brief Query the properties of a vfabric in the local configuration.

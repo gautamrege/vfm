@@ -3,6 +3,7 @@
  */
 #include <vfmdb.h>
 #include <vfmdb_bridge_device.h>
+#include <vfmdb_vfabric.h>
 /* The sqlite database pointer */
 extern sqlite3 *g_db;
 
@@ -339,65 +340,12 @@ out:
         return err;
 }
 
-int
-process_vfabric(void *data, int num_cols, char **values, char **cols)
-{
-        vpsdb_resource *rsc = (vpsdb_resource*)data;
-	vfm_vfabric_attr_t *vfabric;
-        uint32_t i;
-
-        vps_trace(VPS_ENTRYEXIT, "Entering process_vfabric");
-
-        /* Read the existing resrouce count for re-allocation */
-        if (NULL == (rsc->data = realloc(rsc->data,
-                     sizeof(vfm_vfabric_attr_t) * (rsc->count + 1)))) {
-                /*
-                 * The block could not be realloc'ed. This can cause serious
-                 * problems .Hence we return with a db_error
-                 */
-                vps_trace(VPS_ERROR, "Could not realloc memory: %d",
-                                rsc->count + 1);
-                return 1; /* This will propogate with SQL_ABORT */
-        }
-
-        /* Go the the vfabric array offset */
-        vfabric = rsc->data + (sizeof(vfm_vfabric_attr_t) * rsc->count);
-
-        /* Fill the vfabric structure */
-        for (i = 0; i < num_cols; i++) {
-                if (strcmp(cols[i], "primary_gw_id") == 0)
-                        vfabric->primary_gateway = atoi(values[i]);
-		else if (strcmp(cols[i], "id") == 0)
-                        vfabric->_vfabric_id = atoi(values[i]);
-		else if (strcmp(cols[i], "backup_gw_id") == 0)
-                        vfabric->backup_gateway = atoi(values[i]);
-                else if (strcmp(cols[i], "name") == 0)
-                        memcpy(vfabric->name,(values[i]), 6);
-                else if (strcmp(cols[i], "desc") == 0)
-                        memcpy(vfabric->desc,(values[i]), 6);
-                else if (strcmp(cols[i], "ctx_table_id") == 0)
-                        vfabric->_ctx_table_id = atoi(values[i]);
-                else if (strcmp(cols[i], "protocol") == 0)
-                        vfabric->protocol = atoi(values[i]);
-                else if (strcmp(cols[i], "auto_failover") == 0)
-                        vfabric->auto_failover = atoi(values[i]);
-                else if (strcmp(cols[i], "auto_failback") == 0)
-                        vfabric->auto_failback = atoi(values[i]);
-        }
-
-        /* After the data is correctly populated, increment the bridge count */
-        rsc->count++;
-        vps_trace(VPS_INFO, "Vfabric successfully read");
-
-        vps_trace(VPS_ENTRYEXIT, "Leaving process_vfabric");
-        return 0; /* Callback must return 0 on success */
-}
 
 /*
  * This function populates the vfabric info.
  * TODO It can be further optimized to be into the same calling function
  */
-
+/*
 vps_error
 populate_vfabric_info(vpsdb_resource *rsc, const char* where_clause)
 {
@@ -407,25 +355,25 @@ populate_vfabric_info(vpsdb_resource *rsc, const char* where_clause)
         char tmp_str[1024];
         uint8_t i;
 
-        /* If name exists, we need information only for that vfabric */
+        * If name exists, we need information only for that vfabric *
         if (where_clause)
                 sprintf(query, "%s where %s;", query, where_clause);
         else
                 strcat(query, ";");
 
-        /* Update the resource information with the type */
+        * Update the resource information with the type *
         rsc->type = VPS_DB_IO_MODULE;
 
-        /* Get the bridges */
+        * Get the bridges *
         if (VPS_SUCCESS != (err = vpsdb_read(query,
-                            process_vfabric, /* call back function */
+                            process_vfabric, * call back function *
                             rsc))) {
                 vps_trace(VPS_ERROR, "Could not get vfabric information");
         }
 
         return err;
 }
-
+*/
 /*
  * This function will search the database and the max value of the id.
  * Then it will increment the value and return .
@@ -560,9 +508,9 @@ vpsdb_get_resource(uint32_t type, vpsdb_resource *info, const char *name)
                 if (name)
                         vps_trace(VPS_INFO, "Get vfabric info for: %s", name);
 
-                if (VPS_SUCCESS !=
-                   (err = populate_vfabric_info(info, name)))
-                        goto out;
+//                if (VPS_SUCCESS !=
+//                   (err = populate_vfabric_info(info, name)))
+//                        goto out;
 
                 vps_trace(VPS_INFO, "Gathered fabric info");
         }

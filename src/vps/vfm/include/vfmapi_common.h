@@ -105,6 +105,7 @@ typedef struct __api_tlv {
 typedef struct __res_packet {
         void *data;
         int size;
+        int count;
 }res_packet;
 
 /*
@@ -126,5 +127,8 @@ cli_listener(void *arg);
 
 void
 stop_server_processes();
+
+vfm_error_t
+vfm_pack_data(res_packet *ip_pack, uint8_t **offset);
 
 #endif /* VFM_COMMON_H */

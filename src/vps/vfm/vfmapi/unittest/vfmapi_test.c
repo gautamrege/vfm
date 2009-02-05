@@ -135,6 +135,16 @@ test_bridge_device()
 }
 
 
+test_vfabric_inventory()
+{
+       int num = 0;
+       vfm_vfabric_attr_t *result = NULL;
+       memset(&vfabric_bitmask, 0, sizeof(vfm_vfabric_attr_bitmask_t));
+       memset(&vfabric_attr, 0, sizeof(vfm_vfabric_attr_t));
+       vfm_vfabric_select_inventory(&vfabric_attr, vfabric_bitmask, &num
+       , &result);
+
+}
 
 int main()
 {
@@ -143,7 +153,8 @@ int main()
         //test_vadapter_edit_protocol();
         //test_vfabric_create();
         //test_vfabric_edit();
-        test_vfabric_online();
+        //test_vfabric_online();
         //test_bridge_inventory();
         //test_bridge_device();
+        test_vfabric_inventory();
 }
