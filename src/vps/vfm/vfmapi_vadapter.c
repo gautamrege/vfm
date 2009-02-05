@@ -160,58 +160,88 @@ process_vfm_edit_vadpter(uint8_t *buff, uint32_t *ret_pos, res_packet *op_arg)
         vps_trace(VPS_ENTRYEXIT, "Leaving process_vfm_edit_vadpter");
 }
 
-/*
+/**
+ * @brief
  * This function will first strip the message TLV's into values.
  * It will then give a call to the function with the parameters
  * which will return the number of vadapter_id's and the array of
  * vadapter_ids
  *
- * [IN]  buff    : Contains the values of the TLVs.
- * [IN]  ret_pos : contains the value of the offset
- * [OUT] op_arg  : Any paraeters that is to given as output.
+ * @param[IN]  buff    : Contains the values of the TLVs.
+ * @param[IN]  ret_pos : contains the value of the offset
+ * @param[OUT] op_arg  : Any paraeters that is to given as output.
+ * 
+ * @return Returns 0 on success, or an error code on failure.
  */
 vfm_error_t
-process_vfm_query_inventory(uint8_t *buff, uint32_t *ret_pos,
+process_vfm_vadapter_select_inventory(uint8_t *buff, uint32_t *ret_pos,
                              res_packet *op_arg)
 {
 
         vfm_vadapter_attr_bitmask_t bitmask;
-        vfm_vadapter_attr_t attr, attr_db;
+        vfm_vadapter_attr_t attr;
         vpsdb_resource vp_res;
 
         vps_error err = VPS_SUCCESS;
-        vps_trace(VPS_ENTRYEXIT, "Entering process_vfm_query_inventory");
+        vps_trace(VPS_ENTRYEXIT, "Entering process_vfm_vadapter_select_inventory");
 
+        /* The buff contains vadapter structure and bitmask
+         * This function will first strip the message TLV's into values.
+         */
         get_api_tlv(buff, ret_pos, &bitmask);
         get_api_tlv(buff, ret_pos, &attr);
 
         /*
-         * Then call the function from the DB to query the V_Adapter's.
-         * This function will return the number of vadapters and array of
-         * vadapter's .
-         * eg :vpsdb_get_resource();
+         * Call the populate vadapter function which will populate
+         * the vadapter information from the database.
+         *
+         * populate_vadapter_information(bitmask, &attr, &vps_res)
+         * 
+         * Then fill the op_data size and the data.
+         * size = count*sizeof structure
+         * data = res.data
          */
-
-	vpsdb_get_resource(VPS_DB_VADAPTER, &vp_res, NULL);
-
-
-	/* TODO:Formulate the response */
-
-
-        vps_trace(VPS_ENTRYEXIT, "Leaving process_vfm_query_inventory");
+        vps_trace(VPS_ENTRYEXIT, "Leaving process_vfm_vadapter_select_inventory");
 }
 
 
 /*
- * This function will query the properties of the vadapter.
+ * @brief This function will query the properties of the vadapter.
+ * This function will first strip the message TLV's into values.
+ * It will then give a call to the function with the parameters
+ * which will return vadapter structure.
+ * 
+ * @param[IN]  *buff  : Contains the values of the TLVs.
+ * @param[IN]  *ret_pos : contains the value of the offset
+ * @param[OUT] *op_data : any parameters that is to given as output.
+ *
+ * @return Returns 0 on success, or an error code on failure.
  */
 vfm_error_t
-process_vfm_query_vadapter(uint8_t *buff, uint32_t *ret_pos, void *op_data)
+process_vfm_vadapter_query_general_attrs(uint8_t *buff, uint32_t *ret_pos,
+                res_packet *op_data)
 {
 
+        /*
+         * The buff contains vadapter_id and bitmask
+         * This function will first strip the message TLV's into values.
+         * Collect the vadapter_id in the vadapter structure id variable.
+         */
+
+        /*
+         * Call the populate vadapter function which will populate
+         * the vadapter information from the database.
+         * populate_vadapter_information(bitmask, &attr, &vps_res)
+         */
+
+
+        /*
+         * The value will be returned in the op_data which will be passed
+         * Then fill the op_data size and the data.
+         * size = count*sizeof structure
+         * data = res.data
+         */
 }
-
-
 
 /*
  * This function will process the request for editing the properties of
@@ -287,7 +317,6 @@ process_vfm_edit_en_attr(uint8_t *buff, uint32_t *ret_pos, res_packet *op_arg)
          * of the vadpter.
          */
         // err = vpsdb_edit_resource(VPS_DB_EN_VADAPTER, query);
-         
 
 #ifdef VFM_TEST
         void_ptr = &attr;
@@ -337,7 +366,7 @@ process_vfm_vadapter_query_protocol_att(uint8_t *buff,
         if (bitmask.vlan)
                 add_query_parameters(temp, count++, "vlan",
 				&attr.vlan, Q_UINT32);
-        
+
         if (bitmask.promiscuous_mode)
                 add_query_parameters(temp, count++, "promiscuous",
 				&attr.promiscuous_mode, Q_UINT32);
@@ -351,7 +380,7 @@ process_vfm_vadapter_query_protocol_att(uint8_t *buff,
 
 	if (fmt)
 		stmt = vfmdb_prepare_query_ex(query, fmt, attr.mac);
-	else 
+	else
 		stmt = vfmdb_prepare_query_ex(query, fmt, NULL);
         if (!stmt) {
                 vps_trace(VPS_ERROR," Cannot prepare sqlite3 statement");
@@ -419,6 +448,12 @@ vps_error __vadapter_online(vfm_vadapter_id_t vadapter_id)
                 err = VPS_DBERROR;
                 goto out;
         }
+
+        if (rsc.count <= 0) {
+                vps_trace(VPS_ERROR, " No Vadapter found ");
+                err = VFM_ERROR_IOMODULE;
+                goto out;
+        }
 	/* Populate the en / fc attributes */
 	vadapter = (vfm_vadapter_attr_t*)rsc.data;
         /* TODO: Fix the following line later */
@@ -438,7 +473,7 @@ vps_error __vadapter_online(vfm_vadapter_id_t vadapter_id)
         if (VPS_SUCCESS != vfmdb_execute_query(stmt,
 					process_io_module,
 					&rsc)) {
-                vps_trace(VPS_ERROR, "Could not get vadapter");
+                vps_trace(VPS_ERROR, "Could not get io_module");
                 err = VPS_DBERROR;
                 goto out;
         }
@@ -447,7 +482,7 @@ vps_error __vadapter_online(vfm_vadapter_id_t vadapter_id)
                 vps_trace(VPS_ERROR, "No IO Module associated with Vadapter");
                 err = VFM_ERROR_IOMODULE;
                 goto out;
-                
+
         }
 	io_module = (vpsdb_io_module_t *)rsc.data;
 
@@ -468,6 +503,12 @@ vps_error __vadapter_online(vfm_vadapter_id_t vadapter_id)
                 vps_trace(VPS_ERROR, "Could not get vadapter");
                 err = VPS_DBERROR;
                 goto out;
+        }
+        if (rsc.count <= 0) {
+                vps_trace(VPS_ERROR, "No Vfabric associated with Vadapter");
+                err = VFM_ERROR_VFABRIC;
+                goto out;
+
         }
 	vfabric = (vfm_vfabric_attr_t *)rsc.data;
 
@@ -515,7 +556,7 @@ out:
  * It means that VFM can activate the vadapter and start the services of the
  * vadapter i.e. it will turn the vadapters as ACTIVE and will start bridging
  * the packets between the host and the destination via the gateway.
- * After the call the VFM system will change the vadapter to ONLINE. If the 
+ * After the call the VFM system will change the vadapter to ONLINE. If the
  * primary gateway is ONLINE/ACTIVE, the vfabric will also be ACTIVE.
  *
  * [in]   vadapter_id   The id of the vadapter to be activated.
@@ -534,7 +575,7 @@ process_vfm_vadapter_online(uint8_t *buff, uint32_t *ret_pos,
 	get_api_tlv(buff, ret_pos, &vadapter_id);
 
         if ( VPS_SUCCESS != __vadapter_online(vadapter_id)) {
-                vps_trace(VPS_WARNING, "Could not activate adapter: %d",
+                vps_trace(VPS_WARNING, "Could not activate vadapter: %d",
                                 vadapter_id);
         }
         else

@@ -5,10 +5,6 @@
 #include <vfmapi_common.h>
 #include <common.h>
 
-
-
-
-
 /*
  * This function will create the message for the request .
  * The op parameter will be filled up (if any)
@@ -114,8 +110,8 @@ unmarshall_request(void *buff, uint32_t size, res_packet * pack)
                                                         &ctrl_hdr, pack, 1);
                                         break;
                                 case VFM_QUERY_INVENTORY:
-                                        process_vfm_query_inventory(buff,
-                                                        &ret_pos, &op_data);
+                                        process_vfm_vadapter_select_inventory
+                                                (buff, &ret_pos, &op_data);
 
                                         vfm_marshall_response(&op_data,
                                                         &ctrl_hdr, pack, 2);
@@ -123,15 +119,17 @@ unmarshall_request(void *buff, uint32_t size, res_packet * pack)
 				case VFM_ONLINE:
 					process_vfm_vadapter_online(buff,
 							&ret_pos, &op_data);
+                                        if (err != VPS_SUCCESS)
+                                                ctrl_hdr.opcode = VFM_ERROR; 
                                         vfm_marshall_response(&op_data,
                                                         &ctrl_hdr, pack, 1);
 					break;
                                 case VFM_QUERY:
-                                        process_vfm_query_vadapter(buff,
-                                                        &ret_pos, &op_data);
+                                        process_vfm_vadapter_query_general_attrs
+                                                (buff, &ret_pos, &op_data);
 
                                         vfm_marshall_response(&op_data,
-                                                        &ctrl_hdr, pack, 1);
+                                                        &ctrl_hdr, pack, 2);
                                         break;
                         }
                         break;

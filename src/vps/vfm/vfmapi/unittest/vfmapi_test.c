@@ -143,7 +143,8 @@ int main()
         //test_vadapter_edit_protocol();
         //test_vfabric_create();
         //test_vfabric_edit();
-        test_vfabric_online();
+        //test_vfabric_online();
         //test_bridge_inventory();
         //test_bridge_device();
+        make_and_get_packet();
 }

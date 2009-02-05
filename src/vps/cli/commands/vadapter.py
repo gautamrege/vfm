@@ -160,6 +160,7 @@ def _show_vadapter(output, argv):
 
 def _get_vadapter_values(output, mode, vadapter_id = "All"):
     """ Call database to fecth values"""
+# LIKE: bridge_info = vfm.py_vfm_bd_select_inventory(input)
     if vadapter_id == "All":
          query = "Select * from %s " % (_VIEW_VADAPTER)
     elif vadapter_id != "All":
@@ -346,16 +347,22 @@ def edit(argv):
     if ( argv[1] == '?' or argv[1] == 'help'):
           output.completeOutputError(lib.errorhandler.InvalidArgumentCount(syntax=edit.__doc__, descape = "Help"))
           return output
+
     if argv[2].lower() == 'online':
-           if isEditName(output, argv[1]) == -1:
+           if isEditName(argv[1]) == -1:
                 print "Error Not a valid Id"
                 return output  
            else:
                dict = {}
                dict['id'] = int(argv[1])
-               result = vfm.py_vfm_vadapter_online(dict)
-               print result
-               return output
+               try:
+                      result = vfm.py_vfm_vadapter_online(dict)
+               except StandardError, e:
+                      print "Error!" ,e
+                      return output 
+               else:
+                      print result
+                      return output
 
     _parse_edit_or_add_argv(output, argv, valid_list,syntax = edit.__doc__ , call_from = 'edit' ) 
 
@@ -565,11 +572,11 @@ def _editing_edit_dictionary(dict):
         dict['io_module_id'] = int(dict['io_module_id'])
 
     if 'protocol' in dict:
-        if dict['protocol'] == 'en':
+        if dict['protocol'].lower() == 'en':
               dict['protocol'] = int('1')
-        elif dict['protocol'] == 'fc':
+        elif dict['protocol'].lower() == 'fc':
               dict['protocol'] = int('3')
-        elif dict['protocol'] == 'ib':
+        elif dict['protocol'].lower() == 'ib':
               dict['protocol'] = int('2')
     print dict
     
@@ -651,7 +658,7 @@ def isAddName(name):
     
     return 0
  
-def isEditName(output, id):
+def isEditName(id):
     """ Checks if the name exists in the database"""
     for char in id:
         if re.compile('[0-9]+').match(char[0]) == None:
