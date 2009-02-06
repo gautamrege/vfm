@@ -174,10 +174,11 @@ unmarshall_request(void *buff, uint32_t size, res_packet * pack)
                                         err =
                                         process_vfm_vfabric_select_inventory
                                         (buff, &ret_pos, &op_data);
+
                                         vfm_marshall_response(&op_data,
                                                         &ctrl_hdr, pack, 0);
 
-
+                                        break;
                         }
                         break;
                 case VFMAPI_BRIDGE_DEVICE:

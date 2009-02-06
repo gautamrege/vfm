@@ -45,11 +45,14 @@ show_vfabric_data(void * op_data)
 {
         int i;
         vfm_vfabric_attr_t * op_attr = (vfm_vfabric_attr_t *)op_data;
-                printf("\nNAME:%s", op_attr->name);
-                printf("\nDESC:%s", op_attr->desc);
-                printf("\nGW_ID:%d", op_attr->primary_gateway);
-                printf("\nVFAB:%d", op_attr->_vfabric_id);
-                printf("\nPROT:%d", op_attr->protocol);
+        printf("\n\n **-- VFABRIC DATA --** ");
+        printf("\nNAME:%s", op_attr->name);
+        printf("\nDESC:%s", op_attr->desc);
+        printf("\nGW_ID:%d", op_attr->primary_gateway);
+        printf("\nVFAB:%d", op_attr->_vfabric_id);
+        printf("\nPROT:%d", op_attr->protocol);
+        for (i = 0; i < op_attr->_num_vadapter; i++)
+                printf("\nVADAPTER_ID:%d", op_attr->_vadapter_id[i]);
 }
 
 make_and_get_packet()

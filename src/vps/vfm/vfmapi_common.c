@@ -54,12 +54,10 @@ get_api_tlv(uint8_t *buff, uint32_t *ret_pos, void * op_arg)
         memcpy(&(tlv.type), ptr, sizeof(tlv.type));
         ptr += sizeof(tlv.type);
 
-        tlv.type = ntohl(tlv.type);
         /* Copy the length into the tlv */
         memcpy(&(tlv.length), ptr, sizeof(tlv.length));
         ptr += sizeof(tlv.length);
 
-        tlv.length = ntohl(tlv.length);
         memcpy(op_arg, ptr, tlv.length);
         //printf("\nTYPE : %d \t LEN: %d, VALUE: %x ", tlv.type,
           //              tlv.length, *((uint8_t *)op_arg));
@@ -102,8 +100,11 @@ create_api_tlv(uint8_t type, uint32_t len, void *value, uint8_t **offset)
 
 /*        vps_trace(VPS_ENTRYEXIT, "Entering create_api_tlv");*/
 
-        tlv.type = htonl(type);
+/*        tlv.type = htonl(type);
         tlv.length = htonl(len);
+*/
+        tlv.type = type;
+        tlv.length = len;
         memcpy(*offset, &tlv, TLV_SIZE);
         memcpy(*offset + TLV_SIZE, value, len);
         *offset +=(len + TLV_SIZE);

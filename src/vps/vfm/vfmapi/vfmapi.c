@@ -48,11 +48,32 @@ unmarshall_response(void *buff, uint32_t size, res_packet *pack)
                                 goto out;
                         break;
                 case VFM_QUERY_INVENTORY:
+                        switch(ctrl_hdr.mod_id) {
+                                case VFMAPI_VFABRIC:
+                                        err = process_vfabric_data
+                                                (buff, &ret_pos, pack);
+                                        if (err)
+                                                goto out;
+                                        break;
+                                case VFMAPI_BRIDGE_DEVICE:
+                                        err = get_api_tlv
+                                        (buff, &ret_pos, &pack->size);
+                                        pack->data = malloc(pack->size);
+                                        memset(pack->data, 0, pack->size);
+                                        err = get_api_tlv(buff, &ret_pos,
+                                        pack->data);
+                                        break;
+
+                        }
+                        break;
                 case VFM_QUERY:
+                        /*
                         err = get_api_tlv(buff, &ret_pos, &pack->size);
                         pack->data = malloc(pack->size);
                         memset(pack->data, 0, pack->size);
                         err = get_api_tlv(buff, &ret_pos, pack->data);
+                        */
+                        unpack_tlv(buff, &ret_pos, &pack->data);
                         if(err)
                              goto out;
                         break;
@@ -70,7 +91,7 @@ unmarshall_response(void *buff, uint32_t size, res_packet *pack)
                         memcpy(&err, pack->data, sizeof(vfm_error_t));
                         break;
         }
-        display(pack->data, pack->size);
+//        display(pack->data, pack->size);
 out:
         return err;
 

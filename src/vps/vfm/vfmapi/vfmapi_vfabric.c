@@ -49,8 +49,7 @@ vfm_vfabric_create(char *   name,
         create_api_tlv(TLV_CHAR, NAME_SIZE, desc, &offset);
 
         /* TYPE = 1 , vfm_protocol_t */
-        create_api_tlv(TLV_INT, sizeof(vfm_protocol_t),
-                        &(protocol), &offset);
+        create_api_tlv(TLV_INT, sizeof(vfm_protocol_t), &protocol, &offset);
 
 
         /* TODO: Call the function to send the packet to server */
@@ -220,7 +219,7 @@ vfm_vfabric_select_inventory(vfm_vfabric_attr_t *attr,
 {
         
         api_tlv tlv;
-        uint32_t mesg_len, res_len;
+        uint32_t mesg_len, i;
         uint32_t no_of_args = 2;
         uint8_t *message, *offset;
         vfmapi_ctrl_hdr ctrl_hdr;
@@ -265,6 +264,12 @@ vfm_vfabric_select_inventory(vfm_vfabric_attr_t *attr,
                 return err;
 
         err = unmarshall_response(pack.data, pack.size, &op_pack);
+        *result = (vfm_vfabric_attr_t *)(op_pack.data); 
+        *num_result = op_pack.count;
+#ifdef VFABRIC_API_TEST        
+        for(i = 0; i < *num_result; i++)
+                show_vfabric_data(*result + i);
+#endif        
 
         return err;
 }

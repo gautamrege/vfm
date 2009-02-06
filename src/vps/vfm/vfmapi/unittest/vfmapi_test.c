@@ -137,13 +137,15 @@ test_bridge_device()
 
 test_vfabric_inventory()
 {
-       int num = 0;
+       int num = 0, i;
        vfm_vfabric_attr_t *result = NULL;
        memset(&vfabric_bitmask, 0, sizeof(vfm_vfabric_attr_bitmask_t));
        memset(&vfabric_attr, 0, sizeof(vfm_vfabric_attr_t));
-       vfm_vfabric_select_inventory(&vfabric_attr, vfabric_bitmask, &num
-       , &result);
-
+       vfm_vfabric_select_inventory(&vfabric_attr, vfabric_bitmask, &num,
+                       &result);
+       printf("\n\n ** Count of Vfabric: %d", num);
+       for(i = 0; i < num; i++)
+                show_vfabric_data(result+i);
 }
 
 int main()
@@ -157,5 +159,5 @@ int main()
         //test_bridge_inventory();
         //test_bridge_device();
         test_vfabric_inventory();
-        make_and_get_packet();
+//        make_and_get_packet();
 }

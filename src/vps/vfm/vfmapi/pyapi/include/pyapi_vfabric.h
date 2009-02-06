@@ -126,4 +126,38 @@ py_vfm_vfabric_online(PyObject* self, PyObject *args);
  */
 PyObject *
 py_vfm_vfabric_select_inventory(PyObject *self, PyObject *args);
+
+
+/*
+ * @brief The python wrapper for calling vfm_vadapter_query_general_attr.
+ *
+ * @param[in] self The python object
+ *
+ * @param[in] args Dictionary for displaying the properties of the specific 
+ *            vadapter :
+ *            {'vadapter_id' : <vadapter_id>}
+ *                          {
+ *             TODO: These fields may not be needed as we are querying only
+ *                   specific vadapter.
+ *                              'name' : <name>,
+ *                              'desc' : <desc>,
+ *                              'protocol' : <protocol>,
+ *                              'state' : <state>,
+ *                              'running_mode' : <running_mode>,
+ *                              'io_module_id' : <io_module_id>,
+ *                              'init_type'    : <init_type>
+ *                              'assignment_type : <assignment_type>
+ *                              'en_attr : <Dictionary of en attributes>
+ *                              'fc_attr : <Dictionary of fc attributes>
+ *                              'vfabric_id : <vfabric_id>,
+ *                              'gw_id' : <gw_id>
+ *                          }
+ *
+ *           }
+ * On failure, it will return NULL and throw the
+ * relevant Python exception.
+ *
+ */
+PyObject *
+py_vfm_vadapter_query_general_attr(PyObject* self, PyObject *args);
 #endif /* INCLUDED _pyapi_vfabric_functions*/

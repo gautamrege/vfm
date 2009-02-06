@@ -34,10 +34,18 @@ vfm_pack_data(res_packet *ip_pack, uint8_t **offset)
 
         for(i = 0; i < ip_pack->count; i++) {
                 /* get the size of the TLV (including TYPE and LENGTH)*/
-                size = ((api_tlv *)temp[i])->length;
+                size = (((api_tlv *)temp[i])->length + TLV_SIZE);
                 /* Copy the TLV into the offset */
                 memcpy(*offset, temp[i], size);
                 *offset += size;
         }
+        /* first free the data allocated to ip_pack->data. \
+         * Dont free ip_pack->data because it is freed in vfmapi_impl.c
+         */
+
+        for(i =0; i < ip_pack->count; i++) {
+                free(temp[i]);
+        }
+         
         return err;
 }

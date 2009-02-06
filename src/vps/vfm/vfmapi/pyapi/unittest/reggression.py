@@ -8,7 +8,7 @@ import sys, os
 import vfm
 
 vadapter_ip = {'name' : "Vadapter", 'desc' : "Testing vadapter", 'protocol' : 1}
-vfabric_ip = {'name' : "Vfabric", 'desc' : "Testing vfabric"}
+vfabric_ip = {'name' : "Vfabric", 'desc' : "Testing vfabric", 'protocol' : 1}
 
 def reg1():
         vfabric = vfm.py_vfm_vfabric_create(vfabric_ip)
@@ -21,7 +21,7 @@ def reg1():
                                                 'primary_gateway':1})
         print "vfabric edited:", result
 
-        result = vfm.py_vfm_vadapter_edit_general_attr({'id':vadapter['id'], 'vfabric_id':vfabric['id']})
+        result = vfm.py_vfm_vadapter_edit_general_attr({'id':vadapter['id'], 'vfabric_id':vfabric['id'], 'io_module_id' : 1})
         print "vdapter edited:", result
         try :
                 result = vfm.py_vfm_vfabric_online({'id':vfabric['id']})
@@ -54,8 +54,6 @@ def help():
         
 #help()
 #raw_input()
-reg1()
-reg1()
 reg1()
 #reg2()
 #reg1()

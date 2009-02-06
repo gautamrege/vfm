@@ -36,7 +36,7 @@ get_vadapter_count(void *data,
 {
         uint32_t *count = (uint32_t *)(data);
         if (values[0])
-                count = atoi(values[0])
+                *count = atoi(values[0]);
 }
 /*
  * Query: insert into vfm_vadapter_attr_t (id, name, desc, init_type,
@@ -108,19 +108,18 @@ process_vadapter(void *data, int num_cols, uint8_t **values, char **cols)
         uint8_t i;
         vps_trace(VPS_ENTRYEXIT, "Entering process_vadapter. Count: %d",
                 rsc->count);
-/* Now the memory is already allocated so no need to allocate it again.
+/* Now the memory is already allocated so no need to allocate it again.*/
 
         if (NULL == (rsc->data = realloc(rsc->data,
                      sizeof(vfm_vadapter_attr_t) * (rsc->count + 1)))) {
-                *
+                /*
                  * The block could not be realloc'ed. This can cause serious
                  * problems. Hence we return with a db_error
-                 *
+                 */
                 vps_trace(VPS_ERROR, "Could not realloc memory: %d",
                                 rsc->count + 1);
-                return 1; * This will propogate with SQL_ABORT *
+                return 1; /* This will propogate with SQL_ABORT */
         }
- */
 
         /* Go the the vadapter array offset */
         vadapter = rsc->data + (sizeof(vfm_vadapter_attr_t) * rsc->count);
@@ -347,7 +346,7 @@ populate_vadapter_information(vfm_vadapter_attr_bitmask_t bitmask,
          *    The caller function is responsible for freeing this memory.
          */
 
-        rsc->data = malloc(vadapter_count * sizeof(vfm_vadapter_attr));
+        rsc->data = malloc(vadapter_count * sizeof(vfm_vadapter_attr_t));
 
         if(NULL == rsc->data) {
                 vps_trace(VPS_ERROR, "Could not allocate memory");

@@ -62,8 +62,8 @@ process_vfm_create_vfabric(uint8_t *buff, uint32_t *ret_pos,
 	vps_trace(VPS_ENTRYEXIT, "Entering process_vfm_create_vfabric");
 
 
-	get_api_tlv(buff, ret_pos, &(attr.name));
-	get_api_tlv(buff, ret_pos, &(attr.desc));
+	get_api_tlv(buff, ret_pos, (attr.name));
+	get_api_tlv(buff, ret_pos, (attr.desc));
 	get_api_tlv(buff, ret_pos, &(attr.protocol));
 
 	/*
@@ -281,12 +281,17 @@ process_vfm_vfabric_select_inventory(uint8_t *buff, uint32_t *ret_pos,
         /*read the bitmask set for the input vfabric structure*/
         /*pass the structure and its bitmask to populate the information
           of the vfabric*/
-        vfm_vfabric_attr_t attr;
-        vfm_vfabric_attr_bitmask_t bitmask;
+        vfm_vfabric_attr_t *attr;
+        vfm_vfabric_attr_bitmask_t *bitmask;
         res_packet rsc;
         memset(&rsc, 0, sizeof(res_packet));
 
-        populate_vfabric_information(attr,bitmask,&rsc);
+        unpack_tlv(buff, ret_pos, &attr);
+        unpack_tlv(buff, ret_pos, &bitmask);
+
+        populate_vfabric_information(attr, bitmask, &rsc);
+        free(attr);
+        free(bitmask);
         /*pack the data and its size into op_arg */  
         op_arg->count = rsc.count;
         op_arg->size = rsc.size;
