@@ -34,11 +34,16 @@ show_vadapter_data(void * op_data)
 {
         int i;
         vfm_vadapter_attr_t * op_attr = (vfm_vadapter_attr_t *)op_data;
+                printf("\n\n *** --- VADAPTER DATA ---***");
+                printf("\nVADAPTER_ID:%d", op_attr->_vadapter_id);
                 printf("\nNAME:%s", op_attr->name);
                 printf("\nDESC:%s", op_attr->desc);
                 printf("\nIO_ID:%d", op_attr->io_module_id);
                 printf("\nVFAB:%d", op_attr->vfabric_id);
                 printf("\nPROT:%d", op_attr->protocol);
+                printf("\n-- PROTOCOL ATTR --");
+                printf("\nMAC:%lx", op_attr->en_attr.mac);
+                printf("\nVLAN:%d", op_attr->en_attr.vlan);
 }
 
 show_vfabric_data(void * op_data)
@@ -46,6 +51,7 @@ show_vfabric_data(void * op_data)
         int i;
         vfm_vfabric_attr_t * op_attr = (vfm_vfabric_attr_t *)op_data;
         printf("\n\n **-- VFABRIC DATA --** ");
+        printf("\nVFABRIC_ID:%d", op_attr->_vfabric_id);
         printf("\nNAME:%s", op_attr->name);
         printf("\nDESC:%s", op_attr->desc);
         printf("\nGW_ID:%d", op_attr->primary_gateway);

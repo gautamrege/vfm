@@ -101,6 +101,7 @@ create_vadapter_dictionary(PyObject *result, uint32_t num_result,
 
         /* Set the Keys and the values for all the attributes */
 
+        return 0;
 }
 
 /*
@@ -126,6 +127,7 @@ get_vadapter_data(PyObject* self, PyObject* args)
          * Call the parse_vadapter_structure() function.
          * Which internally calls the API function.
          */
+        return args;
 }
 
 /*

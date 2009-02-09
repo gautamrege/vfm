@@ -15,22 +15,14 @@ INC= -I$(BASEDIR)/include -I$(VFMAPI_INC_PATH)
 DEFS=-DAPI_TEST 
 #TODO: Add .c.o rules asap
 all: vfmapi install
-
 install:
 	install -T libvfmapi.so /usr/lib64/libvfmapi.so
-
 client: 
 	gcc -o client $(CFLAGS) $(DEFS) $(INC) $(LIBS) $(SRC)
-
 vfmapi: 
 	gcc -shared -o lib$(VFMAPI).so $(CFLAGS) $(DEFS) $(INC) $(LIBS) $(SRC)
-
 test: vfmapi
 	gcc -o cli unittest/vfmapi_test.c unittest/vfm_unpack_test.c -L. -lvfmapi $(CFLAGS) $(DEFS) $(INC)
-
-try:
-	gcc -o test unittest/vfmapi_test.c $(CFLAGS) $(DEFS) $(INC) $(SRC)
-
 clean:
-	rm -f /usr/lib64/lib$(VFMAPI).so lib$(VFMAPI}.so cli client
+	rm -f /usr/lib64/lib$(VFMAPI).so lib$(VFMAPI).so cli client
 

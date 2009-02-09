@@ -161,10 +161,10 @@ vfm_vadapter_edit_general_attr(vfm_vadapter_id_t vadapter_id,
 vfm_error_t
 vfm_vadapter_select_inventory(vfm_vadapter_attr_t * attr,
                 vfm_vadapter_attr_bitmask_t *bitmask,
-                uint32_t num_result,
-                vfm_vadapter_id_t *result[])
+                uint32_t *num_result,
+                vfm_vadapter_attr_t *result[])
 {
-        uint32_t mesg_len, res_len;
+        uint32_t mesg_len, i;
         uint32_t no_of_args = 2;
         uint8_t *message, *offset;
         vfmapi_ctrl_hdr ctrl_hdr;
@@ -179,7 +179,8 @@ vfm_vadapter_select_inventory(vfm_vadapter_attr_t * attr,
 
         memset(&ctrl_hdr , 0, sizeof(vfmapi_ctrl_hdr));
 
-        err = create_ctrl_hdr(VFMAPI_VADAPTER, VFM_QUERY, mesg_len, &ctrl_hdr);
+        err = create_ctrl_hdr(VFMAPI_VADAPTER, VFM_QUERY_INVENTORY,
+                        mesg_len, &ctrl_hdr);
         if (err)
                 return err;
 
@@ -210,7 +211,14 @@ vfm_vadapter_select_inventory(vfm_vadapter_attr_t * attr,
 
         err = unmarshall_response(pack.data, pack.size, &op_pack);
 
-        
+        *result = (vfm_vadapter_attr_t *)(op_pack.data);
+        *num_result = op_pack.count;
+#define VADAPTER_API_TEST
+#ifdef VADAPTER_API_TEST
+        for(i = 0; i < *num_result; i++)
+                show_vadapter_data(*result + i);
+#endif
+
        /* Return the result to the Python Wrapper. */
         return err;
 

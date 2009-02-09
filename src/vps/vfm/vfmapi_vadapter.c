@@ -177,10 +177,9 @@ vfm_error_t
 process_vfm_vadapter_select_inventory(uint8_t *buff, uint32_t *ret_pos,
                              res_packet *op_arg)
 {
-
-        vfm_vadapter_attr_bitmask_t bitmask;
-        vfm_vadapter_attr_t attr;
-        vpsdb_resource vp_res;
+        int i;
+        vfm_vadapter_attr_bitmask_t *bitmask;
+        vfm_vadapter_attr_t *attr =NULL;
 
         vps_error err = VPS_SUCCESS;
         vps_trace(VPS_ENTRYEXIT, "Entering process_vfm_vadapter_select_inventory");
@@ -188,15 +187,22 @@ process_vfm_vadapter_select_inventory(uint8_t *buff, uint32_t *ret_pos,
         /* The buff contains vadapter structure and bitmask
          * This function will first strip the message TLV's into values.
          */
-        get_api_tlv(buff, ret_pos, &bitmask);
-        get_api_tlv(buff, ret_pos, &attr);
+        unpack_tlv(buff, ret_pos, &bitmask);
+        unpack_tlv(buff, ret_pos, &attr);
 
         /*
          * Call the populate vadapter function which will populate
          * the vadapter information from the database.
-         *
-         * populate_vadapter_information(bitmask, &attr, &vps_res)
-         * 
+         */
+        populate_vadapter_information(bitmask, &attr, op_arg);
+#ifdef VFMAPI_VADAPTER_TEST
+        for (i=0; i < op_arg->count; i++) {
+                op_arg->data += TLV_SIZE;
+                show_vadapter_data(op_arg->data);
+                op_arg->data += sizeof(vfm_vadapter_attr_t);
+        }
+#endif
+        /*
          * Then fill the op_data size and the data.
          * size = count*sizeof structure
          * data = res.data

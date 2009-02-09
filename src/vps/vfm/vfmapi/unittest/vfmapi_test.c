@@ -148,6 +148,19 @@ test_vfabric_inventory()
                 show_vfabric_data(result+i);
 }
 
+test_vadapter_inventory()
+{
+       int num = 0, i;
+       vfm_vadapter_attr_t *result = NULL;
+       memset(&bitmask, 0, sizeof(vfm_vadapter_attr_bitmask_t));
+       memset(&attr, 0, sizeof(vfm_vadapter_attr_t));
+       vfm_vadapter_select_inventory(&attr, &bitmask, &num,
+                       &result);
+       printf("\n\n ** Count of Vadapter: %d", num);
+       for(i = 0; i < num; i++)
+                show_vadapter_data(result+i);
+}
+
 int main()
 {
         //test_vadapter_create();
@@ -158,6 +171,7 @@ int main()
         //test_vfabric_online();
         //test_bridge_inventory();
         //test_bridge_device();
-        test_vfabric_inventory();
+//        test_vfabric_inventory();
+        test_vadapter_inventory();
 //        make_and_get_packet();
 }
