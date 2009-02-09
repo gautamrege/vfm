@@ -63,8 +63,18 @@ def edit4():#ERROR IN UPDATING THE VADAPTER
         except StandardError, e:
                 print e
 
+def inventory():
+        try:
+                result = vfm.py_vfm_vadapter_select_inventory({})
+                print result
+        except StandardError, e:
+                print e
+
+
+inventory()                
+'''
 reg1()
-'''reg2()
+reg2()
 reg3()
 invalid_ip()
 edit2()

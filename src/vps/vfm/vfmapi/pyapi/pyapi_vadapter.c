@@ -424,6 +424,7 @@ create_vadapter_dictionary(PyObject *result, uint32_t num_result,
 out:
         return error;
 
+        return 0;
 }
 
 /*
@@ -456,7 +457,7 @@ get_vadapter_data(PyObject* self, PyObject* args)
 
         err = VFM_SUCCESS;
         
-        err = vfm_vadapter_select_inventory(&attr, bitmask, 
+        err = vfm_vadapter_select_inventory(&attr, &bitmask, 
                                                 &num_result, &results);
 
         if (err != VFM_SUCCESS) {

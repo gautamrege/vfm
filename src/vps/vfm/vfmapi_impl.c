@@ -56,10 +56,16 @@ vfm_marshall_response(res_packet *buff, vfmapi_ctrl_hdr *ctrl_hdr,
                                         vfm_pack_data(buff, &offset);
                                 break;
                                 case VFMAPI_BRIDGE_DEVICE:
-                                create_api_tlv(TLV_INT, sizeof(uint32_t),
-                                                &buff->size, &offset);
-                                create_api_tlv(TLV_BD_ATTR, buff->size,
+                                        create_api_tlv(TLV_INT,
+                                        sizeof(uint32_t), &buff->size, &offset);
+                                        create_api_tlv(TLV_BD_ATTR, buff->size,
                                                 buff->data, &offset);
+                                break;
+                                case VFMAPI_VADAPTER:
+                                        memcpy(offset, &(buff->count),
+                                                        sizeof(buff->count));
+                                        offset += sizeof(buff->count);
+                                        memcpy(offset, buff->data, buff->size);
                                 break;
                         }
                         break;
@@ -121,7 +127,7 @@ unmarshall_request(void *buff, uint32_t size, res_packet * pack)
                                                 (buff, &ret_pos, &op_data);
 
                                         vfm_marshall_response(&op_data,
-                                                        &ctrl_hdr, pack, 2);
+                                                        &ctrl_hdr, pack, 0);
                                         break;
 				case VFM_ONLINE:
 					process_vfm_vadapter_online(buff,

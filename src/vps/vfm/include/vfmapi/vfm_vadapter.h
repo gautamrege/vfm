@@ -597,8 +597,8 @@ vfm_error_t vfm_vadapter_offline(vfm_vadapter_id_t vadapter_id);
  */
 vfm_error_t vfm_vadapter_select_inventory(vfm_vadapter_attr_t *attr,
 			    vfm_vadapter_attr_bitmask_t *bitmask,
-			    uint32_t num_result,
-			    vfm_vadapter_id_t *result[]);
+			    uint32_t *num_result,
+			    vfm_vadapter_attr_t *result[]);
 
 
 /**

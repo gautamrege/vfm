@@ -7,14 +7,18 @@
  * |~~~~~|~~~~~~~|~~~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~|
  * |TYPE |LENGTH |VFABRIC STRUCTURE | VADAPTER ID'S ASSOCIATED WITH VFABRIC|
  * |_____|_______|__________________|______________________________________|
- *                       |          ^   
- *                       |__________| 
- *                                 
+ *                       |          ^
+ *                       |__________|
+ *
  *
  * This TLV will be processed and the srtucture for the vfabric will be
  * and the vadapter id's. It will call the get_api_tlv() routine to fill up
  * the values.
- * @param[IN]
+ * @param[IN] buff: Pointer to the data recived from the server.
+ * @param[IN] ret_pos : Offset in the buff.
+ * @param[OUT] op_data : Pointer to res_packet which will contain the data
+ *                       and the count of the vfabrics.
+ * @returns Returns 0 for success or Non zero error code for failure.
  */
 vfm_error_t
 process_vfabric_data(uint8_t *buff, uint32_t *ret_pos, res_packet *op_data)
@@ -65,6 +69,65 @@ process_vfabric_data(uint8_t *buff, uint32_t *ret_pos, res_packet *op_data)
                 vfabric ++; 
          }
 out: 
+         /*        vps_trace(VPS_ENTRYEXIT, "Leaving %s", __FUNCTION__); */
+         return err;
+}
+
+/* @brief
+ * This function will unpack the data from the Vadapter TLV
+ * The TLV will be in the form of
+ *
+ * |~~~~~|~~~~~~~|~~~~~~~~~~~~~~~~~~|
+ * |TYPE |LENGTH |VADAPTER STRUCTURE|
+ * |_____|_______|__________________|
+ *
+ * @param[IN] buff: Pointer to the data recived from the server.
+ * @param[IN] ret_pos : Offset in the buff.
+ * @param[OUT] op_data : Pointer to res_packet which will contain the data
+ *                       and the count of the vadapters.
+ * @returns Returns 0 for success or Non zero error code for failure.
+ */
+vfm_error_t
+unpack_vadapter_data(uint8_t *buff, uint32_t *ret_pos, res_packet *op_data)
+{
+        int i, type, size, length;
+        uint8_t *temp = buff + *ret_pos;
+        vfm_vadapter_attr_t * vadapter;
+        vfm_error_t err = VPS_SUCCESS;
+
+        /* vps_trace(VPS_ENTRYEXIT, "Entering %s", __FUNCTION__); */
+        /*
+         * First read the count from the packet. i.e. the number of TLVs in
+         * the packet.
+         */
+        memcpy(&op_data->count, temp,  sizeof(op_data->count));
+        temp += sizeof(op_data->count);
+        /*
+         * Allocate the array of structures depending upon the count
+         * Do error handling for allocation.
+         */
+
+        op_data->data = malloc(op_data->count * sizeof(vfm_vadapter_attr_t));
+        if (op_data->data == NULL)
+                goto out;
+        vadapter = (vfm_vadapter_attr_t *)op_data->data;
+
+        /*
+         * Then start processing all the TLVs.
+         */
+        for (i=0; i < op_data->count; i++) {
+
+                memcpy(&type, temp, sizeof(type));
+                temp += sizeof(type);
+                memcpy(&length, temp, sizeof(length));
+                temp += sizeof(length);
+
+                memcpy(vadapter, temp, sizeof(vfm_vadapter_attr_t));
+                temp += sizeof(vfm_vadapter_attr_t);
+                vadapter ++;
+
+         }
+out:
          /*        vps_trace(VPS_ENTRYEXIT, "Leaving %s", __FUNCTION__); */
          return err;
 }

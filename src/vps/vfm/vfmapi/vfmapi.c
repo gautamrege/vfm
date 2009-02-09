@@ -63,6 +63,10 @@ unmarshall_response(void *buff, uint32_t size, res_packet *pack)
                                         err = get_api_tlv(buff, &ret_pos,
                                         pack->data);
                                         break;
+                                case VFMAPI_VADAPTER:
+                                        unpack_vadapter_data(buff, &ret_pos,
+                                                                pack);
+                                        break;
 
                         }
                         break;
