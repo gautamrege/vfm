@@ -39,6 +39,7 @@ process_vadapter_id(void *data, int num_cols, uint8_t **values, char **cols)
         vps_trace(VPS_ENTRYEXIT, "Leaving process_vadapter_id");
         return 0; /* Callback must return 0 on success */
 }
+
 /*
  * This function will get the vadapter id from the databases which are attached
  * to vfabric id.
@@ -71,6 +72,101 @@ populate_vadapter_id(vfm_vfabric_id_t vfabric_id, res_packet *rsc)
 out:
         return err;
 }
+
+int
+process_vfabric_en_attr(void *data, int num_cols, uint8_t **values, char **cols)
+{
+        vfm_vfabric_attr_t *vfabric = (vfm_vfabric_attr_t *)data;
+        uint32_t i;
+
+        vps_trace(VPS_ENTRYEXIT, "Entering process_vfabric_en_attr");
+        
+        /* Fill the vfabric structure */
+        for (i = 0; i < num_cols; i++) {
+                if (strcmp(cols[i], "vlan") == 0)
+                        vfabric->en_attr.vlan = atoi(values[i]);
+                if (strcmp(cols[i], "mac") == 0)
+                        memcpy(vfabric->en_attr._mac, values[i],
+                                        sizeof(en_mac_addr_t));
+        }
+        vps_trace(VPS_ENTRYEXIT, "Leaving process_vfabric_en_attr");
+        return 0; /* Callback must return 0 on success */
+}
+
+int
+process_vfabric_fc_attr(void *data, int num_cols, uint8_t **values, char **cols)
+{
+        vfm_vfabric_attr_t *vfabric = (vfm_vfabric_attr_t *)data;
+        uint32_t i;
+
+        vps_trace(VPS_ENTRYEXIT, "Entering process_vfabric_fc_attr");
+        
+        /* Fill the vfabric structure */
+        for (i = 0; i < num_cols; i++) {
+                if (strcmp(cols[i], "wwnn") == 0)
+                        memcpy(&(vfabric->fc_attr._wwnn), values[i], 8);
+                else if (strcmp(cols[i], "wwpn") == 0)
+                        memcpy(&(vfabric->fc_attr._wwpn), values[i], 8);
+                else if (strcmp(cols[i], "fcid") == 0)
+                        memcpy(vfabric->fc_attr._fcid, values[i], 3);
+        }
+        
+        vps_trace(VPS_ENTRYEXIT, "Leaving process_vfabric_fc_attr");
+        return 0; /* Callback must return 0 on success */
+}
+
+
+/* This function will populate the information of either en or fc attr
+ * depending on the vfabric id.
+ */
+vps_error
+populate_vfabric_protocol_information(vfm_vfabric_attr_t *vfabric)
+{
+        char query[512];
+        void *stmt;
+        memset(query, 0, sizeof(query));
+        vps_error err = VPS_SUCCESS;
+        if (vfabric->protocol == VFM_PROTOCOL_EN) {
+                sprintf(query, "select * from vfm_vfabric_en_attr where vfabric_id = %d ;", vfabric->_vfabric_id);
+
+                stmt = vfmdb_prepare_query(query, NULL, NULL);
+
+                if (!stmt) {
+                        vps_trace(VPS_ERROR," Cannot prepare sqlite3 statement");
+                        err = VPS_DBERROR;
+                        goto out;
+                }
+                /*call process_vfabric and get the data of vfabric from the database*/
+                if (VPS_SUCCESS != (err = vfmdb_execute_query(stmt,
+                                                process_vfabric_en_attr,
+                                                vfabric))) {
+                        vps_trace(VPS_ERROR, "Could not get vfabric protocols ");
+                        err = VPS_DBERROR;
+                        goto out;
+                }
+        }
+        else if (vfabric->protocol == VFM_PROTOCOL_FC) {
+                sprintf(query, "select * from vfm_vfabric_fc_attr where vfabric_id = %d ;", vfabric->_vfabric_id);
+
+                stmt = vfmdb_prepare_query(query, NULL, NULL);
+
+                if (!stmt) {
+                        vps_trace(VPS_ERROR," Cannot prepare sqlite3 statement");
+                        err = VPS_DBERROR;
+                        goto out;
+                }
+                /*call process_vfabric and get the data of vfabric from the database*/
+                if (VPS_SUCCESS != (err = vfmdb_execute_query(stmt,
+                                                process_vfabric_fc_attr,
+                                                vfabric))) {
+                        vps_trace(VPS_ERROR, "Could not get vfabric protocols ");
+                        err = VPS_DBERROR;
+                        goto out;
+                }
+        }
+out:
+        return err;
+}
 /* 
  * Process_vfabric is called for each vfabric present in the database.
  * So in the Query we will get the count of the vadapters attached to the
@@ -88,15 +184,15 @@ out:
  *
  */
 
-int
+        int
 process_vfabric(void *data, int num_cols, uint8_t **values, char **cols)
 {
         res_packet *rsc = (res_packet*)data;
         res_packet vfm_rsc;
-	vfm_vfabric_attr_t vfabric;
+        vfm_vfabric_attr_t vfabric;
         uint8_t **offset;
         uint32_t i, size = 0;
-
+        vps_error err = VPS_SUCCESS;
         vps_trace(VPS_ENTRYEXIT, "Entering process_vfabric");
         memset(&vfabric, 0, sizeof(vfm_vfabric_attr_t));
 
@@ -104,9 +200,9 @@ process_vfabric(void *data, int num_cols, uint8_t **values, char **cols)
         for (i = 0; i < num_cols; i++) {
                 if (strcmp(cols[i], "primary_gw_id") == 0)
                         vfabric.primary_gateway = atoi(values[i]);
-		else if (strcmp(cols[i], "id") == 0)
+                else if (strcmp(cols[i], "id") == 0)
                         vfabric._vfabric_id = atoi(values[i]);
-		else if (strcmp(cols[i], "backup_gw_id") == 0)
+                else if (strcmp(cols[i], "backup_gw_id") == 0)
                         vfabric.backup_gateway = atoi(values[i]);
                 else if (strcmp(cols[i], "name") == 0)
                         strcpy(vfabric.name,values[i]);
@@ -123,6 +219,7 @@ process_vfabric(void *data, int num_cols, uint8_t **values, char **cols)
                 else if (strcmp(cols[i], "vadapter_id") == 0)
                         vfabric._num_vadapter = atoi(values[i]);
         }
+
 
         /* Read the existing resrouce count for re-allocation */
         if (NULL == (rsc->data = realloc(rsc->data,(
@@ -149,6 +246,23 @@ process_vfabric(void *data, int num_cols, uint8_t **values, char **cols)
         
         /* Call populate_vadapter_id to get the vadapter id */
         populate_vadapter_id(vfabric._vfabric_id, &vfm_rsc);
+        
+        if (vfabric.protocol == VFM_PROTOCOL_EN ||
+                        vfabric.protocol == VFM_PROTOCOL_FC) {
+               err = populate_vfabric_protocol_information((vfm_rsc.data +
+                                                                   TLV_SIZE));
+               if (err != VPS_SUCCESS) {
+                       vps_trace(VPS_ERROR, 
+                                  "Error in processing vfabric protocols");
+                       return 1;
+               }
+        }
+        else {
+                vps_trace(VPS_ERROR, "Protocol is not set for vfabric id : %d",
+                                vfabric._vfabric_id);
+                return 1; /* This will propogate with SQL_ABORT */
+        }
+
         offset[rsc->count] = vfm_rsc.data;
         /* After the data is correctly populated, increment the bridge count */
         rsc->count++;

@@ -25,4 +25,13 @@ int
 add_key_values(PyObject* result, const char* key, PyObject * value);
 
 
+/* Parse the guid and send the actual values in the uint8 array*/        
+int
+parse_string_to_unicode(char *buff,
+                int length,
+                uint8_t *out_buff);
+
+PyObject *
+parse_unicode_to_string(uint64_t val, int length);
+
 #endif /* INCLUDED_pyapi_functions*/

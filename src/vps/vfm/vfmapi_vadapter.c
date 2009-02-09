@@ -421,8 +421,10 @@ vps_error __vadapter_online(vfm_vadapter_id_t vadapter_id)
 	vps_error err = VPS_SUCCESS;
 	char query[1024];
 	void *stmt;
+        uint8_t **offset;
 	fcoe_conx_vfm_adv adv;
 	vpsdb_resource rsc;
+        res_packet rsc_pack;
 	vfm_vadapter_attr_t *vadapter;
 	vpsdb_io_module_t *io_module;
 	vfm_gateway_attr_t *gateway;
@@ -496,10 +498,10 @@ vps_error __vadapter_online(vfm_vadapter_id_t vadapter_id)
                 goto out;
         }
 
-	memset(&rsc, 0, sizeof(vpsdb_resource));
+	memset(&rsc_pack, 0, sizeof(res_packet));
         if (VPS_SUCCESS != vfmdb_execute_query(stmt,
 					process_vfabric,
-					&rsc)) {
+					&rsc_pack)) {
                 vps_trace(VPS_ERROR, "Could not get vadapter");
                 err = VPS_DBERROR;
                 goto out;
@@ -510,7 +512,9 @@ vps_error __vadapter_online(vfm_vadapter_id_t vadapter_id)
                 goto out;
 
         }
-	vfabric = (vfm_vfabric_attr_t *)rsc.data;
+        /* assign the offset to rsc_pack.data*/
+        offset = (uint8_t **)rsc_pack.data;
+	vfabric = (vfm_vfabric_attr_t *)(offset[0] + TLV_SIZE);
 
 	/**** Find the gateway record ****/
 	sprintf(query, "select * from vfm_gateway_attr where gw_id = %d",

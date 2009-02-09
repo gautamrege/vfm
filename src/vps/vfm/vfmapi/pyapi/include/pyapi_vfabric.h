@@ -101,15 +101,31 @@ py_vfm_vfabric_online(PyObject* self, PyObject *args);
  *              'ha_state' : <0|1: 0=NORMAL, 1=FAILOVER>
  *              'auto_failover' : <0|1: 0=DISABLED, 1=ENABLEd>
  *              'auto_failback' : <0|1: 0=DISABLED, 1=ENABLEd>
- *              'en_attr' : <Dictionary for the en attributes>
+ *              'ctx_table_id' : <int: context table id>
+ *           }
+ * @return PyObject which contains the following dictionary on success:
+ *            {'id' : <int:vfabric_id> :
+ *                      'name' : <string[64]:name>,
+ *                      'desc' : <string[64]:desc>,
+ *                      'protocol' : <1|2|3: 1=EN, 2=IB, 3=FC>
+ *                      'running_mode' : <0|1: 0=OFFLINE, 1=ONLINE>
+ *                      'primary_gateway' : <int:gateway id>,
+ *                      'backup_gateway' : <int:backup_gateway>,
+ *                      'ha_state' : <0|1: 0=NORMAL, 1=FAILOVER>
+ *                      'auto_failover' : <0|1: 0=DISABLED, 1=ENABLEd>
+ *                      'auto_failback' : <0|1: 0=DISABLED, 1=ENABLEd>
+ *                      'ctx_table_id' : <int: context table id>
+ *                      'num_vadapter_id' : <int: vadapter count>
+ *                      'vadapter_id' : <List of vadapter id>
+ *                      'en_attr' : <Dictionary for the en attributes>
  *                           {
  *                              'mac' : <string : xx:xx:xx:xx:xx:xx>
  *                              'vlan' : <int vlan id>,
  *                           }
- *              'v_fc_attr' : <Dictionary for the fc attributes>
+ *                      'v_fc_attr' : <Dictionary for the fc attributes>
  *                           {
- *                              'wwnn' : <long>
- *                              'wwpn' : <long>
+ *                              'wwnn' : <string : xx:xx:xx:xx:xx:xx:xx:xx>
+ *                              'wwpn' : <string : xx:xx:xx:xx:xx:xx:xx:xx>
  *                              'fcid' : <string : xx:xx:xx>
  *                           }
  *           }
@@ -119,10 +135,8 @@ py_vfm_vfabric_online(PyObject* self, PyObject *args);
  *          }
  *
  * @note Mandatory fields: id
+ * On failure, it will return NULL and throw the relevant Python exception.
  *
- * @return PyObject which contains the following dictionary on success:
- * { 'id' : <int:vfabric id> }. On failure, it will return NULL and throw the
- * relevant Python exception.
  */
 PyObject *
 py_vfm_vfabric_select_inventory(PyObject *self, PyObject *args);

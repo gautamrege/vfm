@@ -58,10 +58,18 @@ def edit4():#ERROR IN UPDATING THE VADAPTER
                 print "vfabric edited:", result
         except StandardError, e:
                 print e
+def Inventory():
+        try:
+                result = vfm.py_vfm_vfabric_select_inventory({})
+                print "Vfabric inventory :", result
+        except StandardError, e:
+                print e
+        
 
+Inventory()                
+"""
 reg1()
 reg2()
-"""
 reg3()
 invalid_ip()
 edit2()

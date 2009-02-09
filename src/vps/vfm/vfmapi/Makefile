@@ -12,7 +12,7 @@ VFMAPI=vfmapi
 LIBS= -lpthread
 VFMAPI_INC_PATH= $(BASEDIR)/include/vfmapi
 INC= -I$(BASEDIR)/include -I$(VFMAPI_INC_PATH)
-DEFS=-DAPI_TEST 
+DEFS=
 #TODO: Add .c.o rules asap
 all: vfmapi install
 

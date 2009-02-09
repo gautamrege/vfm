@@ -465,6 +465,119 @@ void create_vanilla_testdb(uint32_t count)
         }
 }
 
+void 
+insert_vfabric_fc_attr(uint32_t vfabric_id)
+{
+        int ret;
+        void *stmt;
+        void **args;
+        char query[512];
+        int fcid = 1;
+        uint8_t wwnn[8] = 
+                {0x01, 0x30, 0x48, 0x68, 0xB3, 0xDE, 0x02, 0x3A};
+        uint8_t wwpn[8] = 
+                {0x0A, 0x20, 0xA8, 0x68, 0xC1, 0xDE, 0x12, 0x3A};
+
+        sprintf(query,"insert into vfm_vfabric_fc_attr(vfabric_id, fcid,wwnn, wwpn) values(%d,%d,?1,?2);", vfabric_id,fcid);
+
+        args = (void**)malloc(2 * sizeof(void*));
+        args[0] = wwnn;
+        args[1] = wwpn;
+
+        stmt = vfmdb_prepare_query(query, "gg", args);
+
+        if (!stmt) {
+                printf("ERROR: Cannot prepare sqlite3 statement\n");
+                return;
+        }
+
+        ret = vfmdb_execute_query(stmt, NULL, NULL);
+
+        if (!ret) {
+                printf("ERROR: Sqlite3 statement execution failed.\n");
+        }
+        free(args);
+}
+
+void 
+insert_vfabric_en_attr(uint32_t vfabric_id)
+{
+        int ret;
+        void *stmt;
+        void **args;
+        char query[512];
+        int vlan_id = 1;
+        uint8_t mac[6] = {0x01, 0x30, 0x4D, 0x78, 0x23, 0x3A};
+
+        memset(query, 0, sizeof(query));
+
+        sprintf(query,"insert into vfm_vfabric_en_attr(vfabric_id,vlan,mac) values(%d,%d,?1);", vfabric_id, vlan_id);
+
+        args = (void**)malloc(sizeof(void*));
+
+        args[0] = mac;
+
+        stmt = vfmdb_prepare_query(query, "m", args);
+
+        if (!stmt) {
+                printf("ERROR: Cannot prepare sqlite3 statement\n");
+                return;
+        } 
+        ret = vfmdb_execute_query(stmt, NULL, NULL);
+        if (!ret) {
+                printf("ERROR: Sqlite3 statement execution failed.\n");
+        }
+
+        free(args);
+
+}
+
+
+int process_vfabric(void* arg, int nCols, uint8_t** values, char **cols)
+{
+        int i;
+        uint32_t vfabric_id, protocol;
+
+
+        for (i = 0; i < nCols; i++) {
+                if (strcmp(cols[i], "id") == 0) {
+                        vfabric_id = atoi(values[i]);
+                }
+                if (strcmp(cols[i], "protocol") == 0) {
+                        protocol = atoi(values[i]);
+                }
+        }
+        if(protocol == 1) {
+                insert_vfabric_en_attr(vfabric_id);
+        }
+        else {
+                insert_vfabric_fc_attr(vfabric_id);
+        }
+
+        return 0;
+}
+
+void 
+insert_vfabric_attr()
+{
+        int ret;
+        void *stmt;
+        /* Dummy parameters */
+        char *query = "select * from vfm_vfabric_attr;";
+
+        stmt = vfmdb_prepare_query(query, NULL, NULL);
+
+        if (!stmt) {
+                printf("ERROR: Cannot prepare sqlite3 statement\n");
+                return;
+        }
+
+        ret = vfmdb_execute_query(stmt, process_vfabric, NULL);
+        if (!ret) {
+                printf("ERROR: Sqlite3 statement execution failed.\n");
+        }
+}
+
 void main()
 {
         int rc;
@@ -477,11 +590,11 @@ void main()
                 exit(1);
         }
 
-        /*
+        
+/*
         printf("Insert IOModule..\n");
-        //test_insert_iomodule(1);
+        test_insert_iomodule(1);
         //exit(1);
-
 
         printf("Insert Gateway Modules..\n");
         test_insert_gw_module(1);
@@ -498,6 +611,7 @@ void main()
         //test_read_io_module();
 
         //test_read_gw_module();
-        printf("Create vanilla test database..\n");
-        create_vanilla_testdb(2);
+        //printf("Create vanilla test database..\n");
+        //create_vanilla_testdb(2);
+        insert_vfabric_attr();
 }

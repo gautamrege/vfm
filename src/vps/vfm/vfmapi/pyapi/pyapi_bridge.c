@@ -6,66 +6,6 @@
 //#define TEST1
 
 
-/* Parse the guid and send the actual values in the uint8 array*/        
-int
-parse_string_to_unicode(char *buff,
-                int length,
-                uint8_t *out_buff)
-{
-        int i =0, j=0;
-        for (i =0; i < length*3-1; i++) {
-                if (buff[i] == ':')
-                        continue;
-                else if (buff[i] >= 'A' && buff[i] <= 'F')
-                        buff[i] -= 55;
-                else if (buff[i] >= 'a' && buff[i] <= 'f')
-                        buff[i] -= 87;
-                else if (buff[i] >= '0' && buff[i] <= '9')
-                        buff[i] -= 48;
-                else
-                        return -1;
-        }
-        for (i =0; i < length; i++, j+=3)
-                out_buff[i] = buff[j]<<4 | buff[j+1];
-        return 0;
-}
-
-/* Convert the uint64 value in uint8 and generate a string in the guid format
- * e.g : FF:65:00:D3:56:E5:1A:52
- */
-PyObject *
-parse_unicode_to_string(uint64_t val, int length)
-{
-        uint8_t guid[8];
-        uint8_t buff[25];
-        int i = 0; 
-        int j = 0;
-
-        memset(buff, 0, sizeof(buff));
-        memset(guid, 0, sizeof(guid));
-        memcpy(guid, &val, sizeof(guid));
-
-        for(i =0 ; i < length; i++)
-        {
-                buff[j]   = ((guid[i] & 0xF0) >> 4);
-                if (buff[j] <=0x09)
-                        buff[j] += 48;
-                else if (buff[j] >= 0x0A && buff[j] <= 0x0F)
-                        buff[j] += 55;
-
-                j++;
-                buff[j] = (guid[i] & 0x0F );
-                if (buff[j] <= 0x09)
-                        buff[j] += 48;
-                else if (buff[j] >= 0x0A && buff[j] <= 0x0F)
-                        buff[j] += 55;
-                j++;
-                if ( i < (length-1))
-                        buff[j] = ':';
-                j++;
-        }
-        return Py_BuildValue("s", buff);
-}
 
 int 
 parse_bridge_structure(PyObject* i_dict, vfm_bd_attr_t *attr,
@@ -236,6 +176,7 @@ get_bridge_data(PyObject* self, PyObject* args)
         vfm_bd_attr_bitmask_t bitmask;
         uint32_t num_result = 0;
         vfm_bd_attr_t *results = NULL;
+        int i = 0;
 
         memset(&bitmask, 0, sizeof(vfm_bd_attr_bitmask_t));
         /*validate the input object and get the dictionary object*/
@@ -290,8 +231,12 @@ get_bridge_data(PyObject* self, PyObject* args)
                 PyErr_SetString(PyExc_StandardError,
                         "Error in Filling up the result dictionary");
 out:
-        if (results)
+        if (results) {
+                for (i = 0; i < num_result; i++) {
+                        free((results + i)->_gw_module_index);
+                }
                 free(results);
+        }
         return result;
 }
 
