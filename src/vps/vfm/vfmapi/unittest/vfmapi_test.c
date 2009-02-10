@@ -140,7 +140,9 @@ test_vfabric_inventory()
        int num = 0, i;
        vfm_vfabric_attr_t *result = NULL;
        memset(&vfabric_bitmask, 0, sizeof(vfm_vfabric_attr_bitmask_t));
+       vfabric_bitmask.vfm_vfabric_id =1;
        memset(&vfabric_attr, 0, sizeof(vfm_vfabric_attr_t));
+       vfabric_attr._vfabric_id = 1;
        vfm_vfabric_select_inventory(&vfabric_attr, vfabric_bitmask, &num,
                        &result);
        printf("\n\n ** Count of Vfabric: %d", num);
@@ -153,7 +155,13 @@ test_vadapter_inventory()
        int num = 0, i;
        vfm_vadapter_attr_t *result = NULL;
        memset(&bitmask, 0, sizeof(vfm_vadapter_attr_bitmask_t));
-       memset(&attr, 0, sizeof(vfm_vadapter_attr_t));
+        bitmask.id = 1;
+        bitmask.name = 1;
+
+	memset(&attr, 0, sizeof(vfm_vadapter_attr_t));
+        strcpy(attr.name, "Vadapter");
+        attr._vadapter_id = 1;
+
        vfm_vadapter_select_inventory(&attr, &bitmask, &num,
                        &result);
        printf("\n\n ** Count of Vadapter: %d", num);
@@ -171,7 +179,7 @@ int main()
         //test_vfabric_online();
         //test_bridge_inventory();
         //test_bridge_device();
-//        test_vfabric_inventory();
+        test_vfabric_inventory();
         test_vadapter_inventory();
 //        make_and_get_packet();
 }

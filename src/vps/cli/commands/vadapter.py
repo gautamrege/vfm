@@ -32,8 +32,8 @@ def _output_vadapter_list_verbose(outf, name, vadapter_list):
 
     if vadapter_list:
          FMT = "%s\n%-10s\n%-20s\n%-5s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n"
-         HEADER = ("id","name","io_module","vfabric","protocol","init_type","desc","status","mac"
-                     ,"prmiscuous","silent","vlan","wwnn","wwpn","fc_id","spma","fmpa") 
+#         HEADER = ("id","name","io_module_id","vfabric_id","protocol","init_type","desc","status","mac"
+#                     ,"prmiscuous_mode","silent_listener","vlan","wwnn","wwpn","fc_id","spma","fmpa") 
 	
          for (n , vadapter) in vadapter_list:
                 name = vadapter['NAME']
@@ -44,31 +44,29 @@ def _output_vadapter_list_verbose(outf, name, vadapter_list):
                 desc  = vadapter['DESC']
                 status = vadapter['STATUS']
                 init_type = vadapter['INIT_TYPE']
-                mac = vadapter['MAC']
-                promiscuous = vadapter['PROMISCUOUS']
-                silent = vadapter['SILENT']
-                vlan = vadapter['VLAN']
-                wwnn = vadapter['WWNN']
-                wwpn = vadapter['WWPN']
-                spma = vadapter['SPMA']
-                fmpa = vadapter['FMPA']
-                fc_id = vadapter['FC_ID']
+                running_mode = vadapter['RUNNING_MODE']
+                if protocol == 1:
+                        mac = vadapter['MAC']
+                        promiscuous = vadapter['PROMISCUOUS']
+                        silent = vadapter['SILENT']
+                        vlan = vadapter['VLAN']
+                elif protocol == 3:
+                        wwnn = vadapter['WWNN']
+                        wwpn = vadapter['WWPN']
+                        spma = vadapter['SPMA']
+                        fpma = vadapter['FPMA']
+                        fc_id = vadapter['FC_ID']
 
-
-                print "Name " , name 
-                print "id", id
-                print "vfabric", vfabric
-	        print "PROTOCOL",protocol
 
                 if _LIMITED_SHOW:
                      outf.write('General Attr:\nId: %s\n\tName: %s\n\tIO_Module: %s\n\tVfabric: %s\n\tProtocol: %s\n\tInitization_Type: %s\n\tDescription: %s\n\tStatus: %-20s\n\n' % (id, name, io_module, vfabric, protocol, init_type, desc, status))     
                 
 		elif _DETAIL_SHOW: 
-                     if protocol.lower() == 'fc':
-                              outf.write('General Attr:\nId: %s\nName: %s\nIO_Module: %s\nVfabric: %s\nProtocol: %s\nInitization_Type: %s\nDescription: %s\nStatus: %-20s\nFC_Attr:\n\tWWNN: %s\n\tWWNP: %s\n\tFC_ID: %s\n\tSPMA: %s\n\tFMPA: %s\n\n' % (id, name, io_module, vfabric, protocol, init_type, desc, status,wwnn, wwpn,fc_id,spma,fmpa)) 
+                     if protocol == 3:
+                              outf.write('General Attr:\nId: %s\nName: %s\nIO_Module: %s\nVfabric: %s\nProtocol: %s\nInitization_Type: %s\nDescription: %s\nStatus: %-20s\nRUNNING_MODE :%s\nFC_Attr:\n\tWWNN: %s\n\tWWNP: %s\n\tFC_ID: %s\n\tSPMA: %s\n\tFMPA: %s\n\n' % (id, name, io_module, vfabric, protocol, init_type, desc, status, running_mode, wwnn, wwpn,fc_id,spma,fpma)) 
                
-                     elif protocol.lower() == 'en':
-			   outf.write('General Attr:\nId: %s\nName: %s\nIO_Module: %s\nVfabric: %s\nProtocol: %s\nInitization_Type: %s\nDescription: %s\nStatus: %-20s\nEN_Attr:\n\tMAC: %s\n\tVLAN: %s\n\tPromiscuous: %s\n\tSilent Listener: %s\n\n' % (id , name, io_module,vfabric, protocol, init_type, desc, status,mac,vlan, promiscuous, silent))
+                     elif protocol == 1:
+			   outf.write('General Attr:\nId: %s\nName: %s\nIO_Module: %s\nVfabric: %s\nProtocol: %s\nInitization_Type: %s\nDescription: %s\nStatus: %-20s\nRUNNING_MODE :%s\nEN_Attr:\n\tMAC: %s\n\tVLAN: %s\n\tPromiscuous: %s\n\tSilent Listener: %s\n\n' % (id , name, io_module,vfabric, protocol, init_type, desc, status, running_mode, mac,vlan, promiscuous, silent))
 
 
 
@@ -152,56 +150,111 @@ def _show_vadapter(output, argv):
     """
     param1 = 0
     output.beginList("VadapterSpecList")
-    param1 =_get_vadapter_values(output, "vadapter")    
+    param1 =_get_vadapter_values(output, "vadapter")
     output.endList("VadapterSpecList")
     if param1 != -1 :
          output.completeOutputSuccess()
     return output
 
+        
 def _get_vadapter_values(output, mode, vadapter_id = "All"):
-    """ Call database to fecth values"""
+    # Get all the attributes from the database ad 
+    #if vadapter_id == "ALL":
+    #elif vadapter_id != "ALL":
+    input = {}
+    try:
+        vadapter_info = vfm.py_vfm_vadapter_select_inventory(input)
+        #print vadapter_info
+    except e:
+       print e
+
+    for (id, value) in vadapter_info.items():
+       _vadapter_spec(output, id, value)
+
+    return output
+
+
+
+#Legacy Routine - directly queries database.
+#'''def _get_vadapter_values(output, mode, vadapter_id = "All"):
 # LIKE: bridge_info = vfm.py_vfm_bd_select_inventory(input)
-    if vadapter_id == "All":
-         query = "Select * from %s " % (_VIEW_VADAPTER)
-    elif vadapter_id != "All":
-         query = "Select * from %s where id = %s " % (_VIEW_VADAPTER, vadapter_id)
-    database = lib.db.db.Database()
-    cursor = database._execute(query)
-    if cursor == "Null":
-        return -1 
-    if cursor.rowcount == 0 :
-	message = "Response : No Record Found"
-	output.completeOutputError(InvalidArgumentCount(descape = message))
-	return -1 
-    for row in cursor:
-            _vadapter_spec(output, row[0], row[1], row[2], row[3],row[4],row[5],row[6],row[7],row[8],
-			row[9],row[10],row[11],row[12],row[13],row[14],row[15], row[16]) 
-    return output 
-     
+#    if vadapter_id == "All":
+#         query = "Select * from %s " % (_VIEW_VADAPTER)
+#    elif vadapter_id != "All":
+#         query = "Select * from %s where id = %s " % (_VIEW_VADAPTER, vadapter_id)
+#    database = lib.db.db.Database()
+#    cursor = database._execute(query)
+#    if cursor == "Null":
+#        return -1 
+#    if cursor.rowcount == 0 :
+#	message = "Response : No Record Found"
+#	output.completeOutputError(InvalidArgumentCount(descape = message))
+#	return -1 
+#    for row in cursor:
+#            _vadapter_spec(output, row[0], row[1], row[2], row[3],row[4],row[5],row[6],row[7],row[8],
+#			row[9],row[10],row[11],row[12],row[13],row[14],row[15], row[16]) 
+#    return output 
+#'''     
 # Id and status missing from the databse.
 
-def _vadapter_spec(output, id, name, desc, init_type, protocol, status, io_module_id,vfabric,
-		    wwnn, wwpn, fc_id, spma, fmpa, mac, promiscuous, silent_listener,vlan):
-    """ Display for the show vadapter """
+def _vadapter_spec(output, id, value):    
+
     output.beginAssembling("VadapterListAll")
+
     output.setVirtualNameValue("ID", id)
-    output.setVirtualNameValue("NAME", name)
-    output.setVirtualNameValue("IO_MODULE_ID", io_module_id)
-    output.setVirtualNameValue("VFABRIC", vfabric)
-    output.setVirtualNameValue("PROTOCOL", protocol)
-    output.setVirtualNameValue("INIT_TYPE", init_type)
-    output.setVirtualNameValue("DESC", desc)
-    output.setVirtualNameValue("STATUS", status)
-    output.setVirtualNameValue("MAC", mac)
-    output.setVirtualNameValue("PROMISCUOUS", promiscuous)
-    output.setVirtualNameValue("SILENT", silent_listener)
-    output.setVirtualNameValue("VLAN", vlan)
-    output.setVirtualNameValue("WWNN", wwnn)
-    output.setVirtualNameValue("WWPN", wwpn)
-    output.setVirtualNameValue("FC_ID",fc_id)
-    output.setVirtualNameValue("SPMA", spma)
-    output.setVirtualNameValue("FMPA", fmpa)
+    output.setVirtualNameValue("NAME", value['name'])
+    output.setVirtualNameValue("IO_MODULE_ID", value['io_module_id'])
+    output.setVirtualNameValue("VFABRIC", value['vfabric_id'])
+    output.setVirtualNameValue("PROTOCOL", value['protocol'])
+    output.setVirtualNameValue("INIT_TYPE", value['init_type'])
+    output.setVirtualNameValue("DESC", value['desc'])
+
+    # When we get transient states, the state will automatically get udpated.
+    # By default, it is RUNNING
+    output.setVirtualNameValue("STATUS", value.get('status', 'RUNNING'))
+    output.setVirtualNameValue("RUNNING_MODE", value.get('running_mode', 'OFFLINE'))
+
+
+    if value['protocol'] == 1:
+        output.setVirtualNameValue("MAC", value['en_attr']['mac'])
+        output.setVirtualNameValue("PROMISCUOUS", value['en_attr']['promiscuous_mode'])
+        output.setVirtualNameValue("SILENT", value['en_attr']['silent_listener'])
+        output.setVirtualNameValue("VLAN", value['en_attr']['vlan'])
+    
+    elif value['protocol'] == 3:
+        output.setVirtualNameValue("WWNN", value['fc_attr']['wwnn'])
+        output.setVirtualNameValue("WWPN", value['fc_attr']['wwpn'])
+        output.setVirtualNameValue("FC_ID",value['fc_attr']['fcid'])
+        output.setVirtualNameValue("SPMA", value['fc_attr']['spma'])
+        output.setVirtualNameValue("FPMA", value['fc_attr']['fpma'])
+
     output.endAssembling("VadapterListAll") 
+
+
+#'''
+#def _vadapter_spec(output, id, name, desc, init_type, protocol, status, io_module_id,vfabric,
+#		    wwnn, wwpn, fc_id, spma, fmpa, mac, promiscuous, silent_listener,vlan):
+#    """ Display for the show vadapter """
+#    output.beginAssembling("VadapterListAll")
+#    output.setVirtualNameValue("ID", id)
+#    output.setVirtualNameValue("NAME", name)
+#    output.setVirtualNameValue("IO_MODULE_ID", io_module_id)
+#    output.setVirtualNameValue("VFABRIC", vfabric)
+#    output.setVirtualNameValue("PROTOCOL", protocol)
+#    output.setVirtualNameValue("INIT_TYPE", init_type)
+#    output.setVirtualNameValue("DESC", desc)
+#    output.setVirtualNameValue("STATUS", status)
+#    output.setVirtualNameValue("MAC", mac)
+#    output.setVirtualNameValue("PROMISCUOUS", promiscuous)
+#    output.setVirtualNameValue("SILENT", silent_listener)
+#    output.setVirtualNameValue("VLAN", vlan)
+#    output.setVirtualNameValue("WWNN", wwnn)
+#    output.setVirtualNameValue("WWPN", wwpn)
+#    output.setVirtualNameValue("FC_ID",fc_id)
+#    output.setVirtualNameValue("SPMA", spma)
+#    output.setVirtualNameValue("FMPA", fmpa)
+#    output.endAssembling("VadapterListAll") 
+#'''
 
 def _parse_edit_or_add_argv(output, argv, valid_args, syntax = None, call_from = 'None'):
     arg_dict = {}
@@ -408,7 +461,6 @@ def _add_vadapter_database(output, argv, arg_dict, call_from, syntax = None):
     #print arg_dict
     dict = {}
     if call_from == 'edit':
-        #print "AFTER",arg_dict
         arg_dict = _editing_edit_dictionary(arg_dict)
         result = vfm.py_vfm_vadapter_edit_general_attr(arg_dict)
 	print "vdapter edited:", result
@@ -519,9 +571,6 @@ def _add_vadapter_fc_prop(output, argv, arg_dict, call_from):
         vadapter = vfm.py_vfm_vadapter_create(arg_dict)
         print "vadpter created:", vadapter
 
-    print "vadpter created:", vadapter
-    	
-	
 # Add in the function.
 def add(argv):
     """
@@ -578,7 +627,6 @@ def _editing_edit_dictionary(dict):
               dict['protocol'] = int('3')
         elif dict['protocol'].lower() == 'ib':
               dict['protocol'] = int('2')
-    print dict
     
     if 'running_mode' in dict:
         if dict['running_mode'] == 'OFFLINE' or dict['running_mode'] == 'offline':

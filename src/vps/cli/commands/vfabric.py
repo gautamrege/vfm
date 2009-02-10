@@ -22,7 +22,7 @@ _DETAIL_SHOW = False
 _VIEW_VFABRIC = " v_vfm_vfabric_attr "
 
 def _output_vfabric_list_verbose(outf, name, vfabric_list):
-    """ OUTPUT FORMAT IN ROW"""
+    print """ OUTPUT FORMAT IN ROW"""
     if vfabric_list:
 	for (n , vfabric) in vfabric_list:
 		name = vfabric['NAME']
@@ -32,30 +32,31 @@ def _output_vfabric_list_verbose(outf, name, vfabric_list):
 		primary_gw_id = vfabric['PRIMARY_GW_ID']
 		backup_gw_id = vfabric['BACKUP_GW_ID']
 		protocol =  vfabric['PROTOCOL']
+		num_vadapter =  vfabric['NUM_VADAPTER']
+		vadapter_id =  vfabric['VADAPTER_IDs']
+		running_mode =  vfabric['RUNNING_MODE']
+		ha_state =  vfabric['HA_STATE']
 		type = vfabric['TYPE']
 		auto_failover = vfabric['AUTO_FAILOVER']
 		auto_failback = vfabric['AUTO_FAILBACK']
-		component_mask = vfabric['COMPONENT_MASK']
-		vlan = vfabric['VLAN']
-		mac = vfabric['MAC']
-		fcid = vfabric['FCID']
-		wwnn = vfabric['WWNN']
-		wwpn = vfabric['WWPN']
+                if protocol == 1:
+        		vlan = vfabric['VLAN']
+	        	mac = vfabric['MAC']
+                if protocol == 3:
+		        fcid = vfabric['FCID']
+        		wwnn = vfabric['WWNN']
+        		wwpn = vfabric['WWPN']
 		
-
-                print id
-                print name
-
 
                 if _LIMITED_SHOW:
 	 	   outf.write('General Attr:\nId: %s\n\tName: %s\n\tDesc: %s\n\tCTX_Table_ID: %s\n\tPrimary_Gateway_Id: %s\n\tProtocol: %s\n\tType: %s\n\t\n' % (id, name, desc, ctx_table_id, primary_gw_id, protocol, type))		
 	
 		elif _DETAIL_SHOW:
-		     if protocol.lower() == 'fc':
-			outf.write('General Attr:\nId: %s\n\tName: %s\n\tDesc: %s\n\tCTX_Table_ID: %s\n\tPrimary_Gateway_Id: %s\n\tBackUp_Gateway_Id: %s\n\tProtocol: %s\n\tType: %s\n\tAuto_FailOver: %s\n\tAuto_Failback: %s\n\tComponent_Mask: %s\nFC_Attr:\n\tFCID: %s\n\tWWNN: %s\n\tWWPN: %s\n\t\n' % (id, name, desc, ctx_table_id, primary_gw_id,backup_gw_id, protocol, type,auto_failover,auto_failback,component_mask,fcid,wwnn,wwpn))
+		     if protocol == 3:
+			outf.write('General Attr:\nId: %s\n\tName: %s\n\tDesc: %s\n\tCTX_Table_ID: %s\n\tPrimary_Gateway_Id: %s\n\tBackUp_Gateway_Id: %s\n\tProtocol: %s\n\tType: %s\n\tAuto_FailOver: %s\n\tAuto_Failback: %s\n\tRUNNING_MODE: %s\n\tHA_STATE : %s\nFC_Attr:\n\tFCID: %s\n\tWWNN: %s\n\tWWPN: %s\n\t\n' % (id, name, desc, ctx_table_id, primary_gw_id,backup_gw_id, protocol, type,auto_failover,auto_failback, running_mode, ha_state, fcid,wwnn,wwpn))
 
-		     elif protocol.lower() == 'en':
-			  outf.write('General Attr:\nId: %s\n\tName: %s\n\tDesc: %s\n\tCTX_Table_ID: %s\n\tPrimary_Gateway_Id: %s\n\tBackUp_Gateway_Id: %s\n\tProtocol: %s\n\tType: %s\n\tAuto_FailOver: %s\n\tAuto_Failback: %s\n\tComponent_Mask: %s\nEN_Attr:\n\tMAC: %s\n\tVLAN: %s\n\t\n' % (id, name, desc, ctx_table_id, primary_gw_id,backup_gw_id, protocol, type,auto_failover,auto_failback,component_mask,mac, vlan))
+		     elif protocol == 1:
+			  outf.write('General Attr:\nId: %s\n\tName: %s\n\tDesc: %s\n\tCTX_Table_ID: %s\n\tPrimary_Gateway_Id: %s\n\tBackUp_Gateway_Id: %s\n\tProtocol: %s\n\tType: %s\n\tAuto_FailOver: %s\n\tAuto_Failback: %s\n\tRUNNING_MODE: %s\n\tHA_STATE : %s\nEN_Attr:\n\tMAC: %s\n\tVLAN: %s\n\t\n' % (id, name, desc, ctx_table_id, primary_gw_id,backup_gw_id, protocol, type,auto_failover,auto_failback, running_mode, ha_state, mac, vlan))
 
 	 	
 
@@ -92,8 +93,8 @@ def show(argv):
         return output
 
     if len(argv) == 2:
-        _DETAIL_SHOW = True
-        _LIMITED_SHOW = False
+        _DETAIL_SHOW = False
+        _LIMITED_SHOW = True
         if argv[1] == "--detail":
            _show_vfabric(output, argv)
         elif argv[1] == "?" or argv[1] == "help":
@@ -108,8 +109,8 @@ def show(argv):
         return output
 
     elif len(argv) == 1:
-        _DETAIL_SHOW = False
-        _LIMITED_SHOW = True
+        _DETAIL_SHOW = True
+        _LIMITED_SHOW = False
         _show_vfabric(output, argv)
         return output
     else:
@@ -144,9 +145,22 @@ def _show_vfabric(output, argv):
         output.completeOutputSuccess()
     return output
 
-
 def _get_vfabric_values(output, mode, vfabric_id = "All"):
-    """ Call database to fecth values"""
+        input = {}
+        try:
+                vfabric_info = vfm.py_vfm_vfabric_select_inventory(input)
+                #print vfabric_info
+        except e:
+                print e
+
+        for (id, value) in vfabric_info.items():
+                _vfabric_spec(output, id, value)
+           
+        return output
+
+
+'''
+def _get_vfabric_values(output, mode, vfabric_id = "All"):
     if vfabric_id == "All":
          query = "Select * from %s " % (_VIEW_VFABRIC)
     elif vfabric_id != "All":
@@ -164,7 +178,6 @@ def _get_vfabric_values(output, mode, vfabric_id = "All"):
     return output
 
 def _vfabric_spec(output, id, name, desc, ctx_table_id, primary_gw_id, backup_gw_id, protocol,type,auto_failover,auto_failback,component_mask, vlan, mac, fcid, wwnn, wwpn): 
-    """ Display for the show vfabric """
     output.beginAssembling("VfabricListAll")
     output.setVirtualNameValue("ID", id)
     output.setVirtualNameValue("NAME", name)
@@ -182,6 +195,38 @@ def _vfabric_spec(output, id, name, desc, ctx_table_id, primary_gw_id, backup_gw
     output.setVirtualNameValue("WWPN", wwpn)
     output.setVirtualNameValue("FCID",fcid)
     output.setVirtualNameValue("COMPONENT_MASK",component_mask )
+    output.endAssembling("VfabricListAll")
+
+'''
+def _vfabric_spec(output, id, value):
+    """ Display for the show vfabric """
+    output.beginAssembling("VfabricListAll")
+
+    output.setVirtualNameValue("ID", id)
+    output.setVirtualNameValue("NAME", value['name'])
+    output.setVirtualNameValue("CTX_TABLE_ID", value['ctx_table_id'])
+    output.setVirtualNameValue("PRIMARY_GW_ID", value['primary_gateway'])
+    output.setVirtualNameValue("PROTOCOL", value['protocol'])
+    output.setVirtualNameValue("TYPE", value.get('type','HOST_INITIATED'))
+    output.setVirtualNameValue("NUM_VADAPTER", value['num_vadapter_id'])
+    output.setVirtualNameValue("VADAPTER_IDs", value['vadapter_id'])
+    output.setVirtualNameValue("DESC", value['desc'])
+    output.setVirtualNameValue("BACKUP_GW_ID",value['backup_gateway'])
+    output.setVirtualNameValue("AUTO_FAILOVER",value['auto_failover'])
+    output.setVirtualNameValue("AUTO_FAILBACK",value['auto_failback'])
+    #Running mode:default set to OFFLINE
+    output.setVirtualNameValue("RUNNING_MODE", value.get('running_mode', 'OFFLINE'))
+    output.setVirtualNameValue("HA_STATE", value.get('ha_state', 'NORMAL'))
+
+    if value['protocol'] == 1:
+        output.setVirtualNameValue("MAC", value['en_attr']['mac'])
+        output.setVirtualNameValue("VLAN", value['en_attr']['vlan'])
+
+    if value['protocol'] == 3:
+        output.setVirtualNameValue("WWNN", value['fc_attr']['wwnn'])
+        output.setVirtualNameValue("WWPN", value['fc_attr']['wwpn'])
+        output.setVirtualNameValue("FCID", value['fc_attr']['fcid'])
+        
     output.endAssembling("VfabricListAll")
 
 

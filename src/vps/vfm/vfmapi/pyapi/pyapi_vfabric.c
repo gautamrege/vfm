@@ -28,6 +28,7 @@ parse_vfabric_structure(PyObject* i_dict, vfm_vfabric_attr_t *attr,
                         attr->_vfabric_id = PyInt_AsLong(dict_object);
                 else
                         goto out;
+                bitmask->vfm_vfabric_id = 1;
        }
 
        if (NULL != (dict_object = PyDict_GetItemString(i_dict, "name"))) {

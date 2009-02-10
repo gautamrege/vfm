@@ -194,7 +194,8 @@ process_vfm_vadapter_select_inventory(uint8_t *buff, uint32_t *ret_pos,
          * Call the populate vadapter function which will populate
          * the vadapter information from the database.
          */
-        populate_vadapter_information(bitmask, &attr, op_arg);
+        populate_vadapter_information(bitmask, attr, op_arg);
+
 #ifdef VFMAPI_VADAPTER_TEST
         for (i=0; i < op_arg->count; i++) {
                 op_arg->data += TLV_SIZE;

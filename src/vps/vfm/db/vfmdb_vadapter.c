@@ -153,7 +153,6 @@ process_vadapter(void *data, int num_cols, uint8_t **values, char **cols)
 }
 
 /* PROTOCOL ATTRIBUTES PROCESSING */
-/* NOT TESTED */
 int
 process_vadapter_en(void *data, int num_cols, uint8_t **values, char **cols)
 {
@@ -175,7 +174,7 @@ process_vadapter_en(void *data, int num_cols, uint8_t **values, char **cols)
 }
 
 int
-process_vadapter_fc(void *data, int num_cols, char **values, char **cols)
+process_vadapter_fc(void *data, int num_cols, uint8_t **values, char **cols)
 {
         uint32_t i;
         vfm_vadapter_attr_t *vadapter = (vfm_vadapter_attr_t*)data;
@@ -259,41 +258,66 @@ populate_vadapter_ex(vfm_vadapter_attr_t *vadapter, void *bitmask)
                         add_query_parameters(query, count++, "mtu",
                                         &(vadapter->en_attr.mtu), Q_UINT32);
                 }
-        }
-        add_query_parameters(query, count++, "vadapter_id",
-                        &(vadapter->_vadapter_id), Q_UINT32);
-        sprintf(en_query + strlen(en_query), "%s ", query);
-        stmt = vfmdb_prepare_query(en_query, fmt, args);
-        if (!stmt) {
-                vps_trace(VPS_ERROR," Cannot prepare sqlite3 statement");
-                err = VPS_DBERROR;
-                goto out;
-        }
+                add_query_parameters(query, count++, "vadapter_id",
+                                &(vadapter->_vadapter_id), Q_UINT32);
+                sprintf(en_query + strlen(en_query), "%s ", query);
+                stmt = vfmdb_prepare_query(en_query, fmt, args);
+                if (!stmt) {
+                        vps_trace(VPS_ERROR," Cannot prepare sqlite3 statement");
+                        err = VPS_DBERROR;
+                        goto out;
+                }
 
-        if (VPS_SUCCESS != (err = vfmdb_execute_query(stmt,
-                              process_vadapter_en, /* call back function */
-                              (void *)vadapter))) {
-                vps_trace(VPS_ERROR, "Could not en attribures of vadapter");
-                err = VPS_DBERROR;
-                goto out;
-        }
-/*
-        else if (vadapter->protocol == VFM_PROTOCOL_FC) {
-                sprintf(query, "select * from vfm_vadapter_fc_attr "
-                       "where vadapter_id = %d;", vadapter->_vadapter_id);
-
-                if (VPS_SUCCESS != (err = vpsdb_read(query,
-                                          process_vadapter_fc,
-                                          (vpsdb_resource*)vadapter))) {
-                        vps_trace(VPS_ERROR,
-                                        "Could not get extra information");
+                if (VPS_SUCCESS != (err = vfmdb_execute_query(stmt,
+                                                process_vadapter_en, /* call back function */
+                                                (void *)vadapter))) {
+                        vps_trace(VPS_ERROR, "Could not en attribures of vadapter");
                         err = VPS_DBERROR;
                         goto out;
                 }
         }
- */
+#define FC_ATTR_TEST
+#ifdef FC_ATTR_TEST
+        else if (vadapter->protocol == VFM_PROTOCOL_FC) {
+
+                fc_bitmask = (vfm_vadapter_fc_attr_bitmask_t*)bitmask;
+                if (fc_bitmask->wwnn) {
+                        add_query_parameters(query, count++, "wwnn",
+                                        "?1", Q_NAMED_PARAM);
+                        sprintf(fmt, "g");
+                        args[i++] = &(vadapter->fc_attr.wwnn);
+                }
+                if (fc_bitmask->wwpn) {
+                        add_query_parameters(query, count++, "wwpn",
+                                        "?2", Q_NAMED_PARAM);
+                        sprintf(fmt, "%sg", fmt);
+                        args[i++] = &(vadapter->fc_attr.wwnn);
+                }
+                if (fc_bitmask->mtu) {
+                        add_query_parameters(query, count++, "mtu",
+                                        &(vadapter->fc_attr.mtu), Q_UINT32);
+                }
+                add_query_parameters(query, count++, "vadapter_id",
+                                &(vadapter->_vadapter_id), Q_UINT32);
+                sprintf(fc_query + strlen(fc_query), "%s ", query);
+                stmt = vfmdb_prepare_query(fc_query, fmt, args);
+                if (!stmt) {
+                        vps_trace(VPS_ERROR," Cannot prepare sqlite3 statement");
+                        err = VPS_DBERROR;
+                        goto out;
+                }
+
+                if (VPS_SUCCESS != (err = vfmdb_execute_query(stmt,
+                                                process_vadapter_fc, /* call back function */
+                                                (void *)vadapter))) {
+                        vps_trace(VPS_ERROR, "Could not fc attribures of vadapter");
+                        err = VPS_DBERROR;
+                        goto out;
+                }
+        }
+#endif        
 out:
-                vps_trace(VPS_ENTRYEXIT, "Leaving %s", __FUNCTION__);
+        vps_trace(VPS_ENTRYEXIT, "Leaving %s", __FUNCTION__);
 }
 
 /*
@@ -392,7 +416,7 @@ populate_vadapter_information(vfm_vadapter_attr_bitmask_t *bitmask,
          */
 
         if (bitmask->id) {
-                add_query_parameters(query, count++, "_vadapter_id",
+                add_query_parameters(query, count++, "id",
                                &(attr->_vadapter_id) , Q_UINT32);
         }
         if (bitmask->desc) {
@@ -410,6 +434,10 @@ populate_vadapter_information(vfm_vadapter_attr_bitmask_t *bitmask,
         if (bitmask->io_module_id) {
                 add_query_parameters(query, count++, "io_module_id",
                                 &(attr->io_module_id), Q_UINT32);
+        }
+        if (bitmask->vfabric_id) {
+                add_query_parameters(query, count++, "vfabric_id",
+                                &(attr->vfabric_id), Q_UINT32);
         }
         query[strlen(query)] = ';';
 
