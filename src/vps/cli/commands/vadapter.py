@@ -150,19 +150,22 @@ def _show_vadapter(output, argv):
     """
     param1 = 0
     output.beginList("VadapterSpecList")
-    param1 =_get_vadapter_values(output, "vadapter")
+    param1 =_get_vadapter_values(output, "vadapter", "ALL")
     output.endList("VadapterSpecList")
     if param1 != -1 :
          output.completeOutputSuccess()
     return output
 
         
-def _get_vadapter_values(output, mode, vadapter_id = "All"):
+#def _get_vadapter_values(output, mode, vadapter_id = "All"):
+def _get_vadapter_values(output, mode, vadapter_id):
     # Get all the attributes from the database ad 
-    #if vadapter_id == "ALL":
-    #elif vadapter_id != "ALL":
-    input = {}
+    if vadapter_id != "ALL":
+        input = {'id' : int(vadapter_id)}
+    elif vadapter_id == "ALL":
+        input = {}
     try:
+        print input 
         vadapter_info = vfm.py_vfm_vadapter_select_inventory(input)
         #print vadapter_info
     except e:

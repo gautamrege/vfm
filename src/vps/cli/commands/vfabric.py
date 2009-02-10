@@ -22,7 +22,7 @@ _DETAIL_SHOW = False
 _VIEW_VFABRIC = " v_vfm_vfabric_attr "
 
 def _output_vfabric_list_verbose(outf, name, vfabric_list):
-    print """ OUTPUT FORMAT IN ROW"""
+    """ OUTPUT FORMAT IN ROW"""
     if vfabric_list:
 	for (n , vfabric) in vfabric_list:
 		name = vfabric['NAME']
@@ -93,8 +93,8 @@ def show(argv):
         return output
 
     if len(argv) == 2:
-        _DETAIL_SHOW = False
-        _LIMITED_SHOW = True
+        _DETAIL_SHOW = True
+        _LIMITED_SHOW = False
         if argv[1] == "--detail":
            _show_vfabric(output, argv)
         elif argv[1] == "?" or argv[1] == "help":
@@ -109,8 +109,8 @@ def show(argv):
         return output
 
     elif len(argv) == 1:
-        _DETAIL_SHOW = True
-        _LIMITED_SHOW = False
+        _DETAIL_SHOW = False
+        _LIMITED_SHOW = True
         _show_vfabric(output, argv)
         return output
     else:
@@ -139,24 +139,29 @@ def _show_vfabric(output, argv):
     """
     param1 = 0
     output.beginList("VfabricSpecList")
-    param1 = _get_vfabric_values(output, "vfabric")
+    param1 = _get_vfabric_values(output, "vfabric", "All")
     output.endList("VfabricSpecList")
     if param1 != -1 :
         output.completeOutputSuccess()
     return output
 
-def _get_vfabric_values(output, mode, vfabric_id = "All"):
+def _get_vfabric_values(output, mode, vfabric_id):
+    if vfabric_id == "All":
         input = {}
-        try:
-                vfabric_info = vfm.py_vfm_vfabric_select_inventory(input)
-                #print vfabric_info
-        except e:
-                print e
+        print "vfabric_id", vfabric_id
+    elif vfabric_id != "All":
+        vfabric_id = int(vfabric_id)
+        input = {'id' : vfabric_id}
+    try:
+        vfabric_info = vfm.py_vfm_vfabric_select_inventory(input)
+        #print vfabric_info
+    except e:
+        print e
 
-        for (id, value) in vfabric_info.items():
-                _vfabric_spec(output, id, value)
+    for (id, value) in vfabric_info.items():
+        _vfabric_spec(output, id, value)
            
-        return output
+    return output
 
 
 '''
