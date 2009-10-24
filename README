@@ -1,0 +1,27 @@
+The 'Virtual Fabric Manager' (VFM) serves the data center fabric needs of the
+fast growing converged I/O, FC-based storage networking, and blade server
+markets.  The next generation data center fabric equipment and services TAM is
+forecasted at $150B.  The SAN market commands a $2B TAM and is predominantly FC 
+with 10-15% CAGR through 2011.  Cisco and Brocade's initiatives in the Fibre 
+Channel over Ethernet (FCoE) space validate the moves in the data center to 
+converge I/O over 10GigE networking while maintaining connectivity to FC 
+storage.  Blade and virtualized servers - the fastest growing segments of the 
+server market are further exacerbating the need for converged I/O and networked 
+storage, aka technologies like FCoE with virtualized I/O capabilities.  VFM willempower networking semiconductor vendors, networking infrastructure and server 
+OEMs to offer FCoE switch/bridge, virtualized I/O management and dynamic server management solutions.  VFM will serve as cost-effective and more complete 
+alternate solutions to those offered by Cisco and Brocade. 
+
+
+The VFM setup is currently in a very generic mode and has capabilities of
+FCoE and IBoE and works on the data-link layer. It can be easily configured 
+with the OpenFCoE stack.
+
+The work is still in progress and anyone interested in helping out in this
+effort is welcome to join us.
+
+Contact:
+Gautam Rege (gautam@joshsoftware.com)
+Josh Software Private Limited
+
+www.joshsoftware.com
+
